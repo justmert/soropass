@@ -1,20 +1,21 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-    'src/create.ts',
-    'src/connect.ts',
-    'src/sign.ts',
-    'src/recover.ts',
-    'src/types.ts',
-  ],
+  entry: {
+    index: 'src/index.ts',
+    create: 'src/create.ts',
+    connect: 'src/connect.ts',
+    sign: 'src/sign.ts',
+    recover: 'src/recover.ts',
+    types: 'src/types.ts',
+    // Deterministic mock mode — separate entry so it stays out of prod bundles.
+    testing: 'src/testing/index.ts',
+  },
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
   sourcemap: true,
   treeshake: true,
-  // Invariant #6: never bundle @stellar/stellar-sdk; @noble/* stays external
-  // too (normal deps) so the SDK output carries no vendored crypto.
+  // Invariant #6: never bundle @stellar/stellar-sdk; @noble/* stays external too.
   external: [/^@stellar\//, /^@noble\//],
 });
