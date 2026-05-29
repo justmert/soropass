@@ -13,3 +13,9 @@ export {
 } from './webauthn/clientData';
 export { parseAuthenticatorData, verifyRpIdHash } from './webauthn/authData';
 export { verifyAssertionSignature } from './webauthn/verify';
+
+// Soroban auth assembly (S11): sign a tx or a bare auth entry → SorobanAuthorizationEntry.
+export { signAuthEntry, signTransaction } from './soroban/sign';
+export { authEntryChallenge, authEntryChallengeBytes } from './soroban/preimage';
+export { applyAssertionToEntry } from './soroban/assemble';
+export { referenceCheckAuth } from './soroban/checkAuth';
