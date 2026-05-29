@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "matrix:pull": "pnpm --filter @stellar-passkey/matrix matrix:pull"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
