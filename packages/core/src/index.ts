@@ -1,10 +1,12 @@
 /**
- * `@stellar-passkey/core` — the minimal, headless, ES256-only passkey SDK.
+ * `@stellar-passkey/core` — minimal, headless, ES256-only passkey SDK.
  *
- * The public surface is intentionally tiny. Crypto primitives (S03/YK-429),
- * battle-tested anchors (S04/YK-430), Soroban auth assembly (S11/YK-437),
- * pluggable adapters (S12/YK-438), and the `create`/`connect`/`recover`
- * ceremonies (S13/YK-439) are added in their own issues — this skeleton only
- * pins the package identity so the monorepo builds and tree-shakes.
+ * The umbrella entry re-exports the subpath modules. Prefer importing from the
+ * subpaths (`@stellar-passkey/core/sign`, `/create`, `/types`, …) for the best
+ * tree-shaking; this package is `sideEffects: false`.
  */
-export const SDK_VERSION = '0.0.0';
+export * from './types';
+export * from './create';
+export * from './sign';
+export * from './connect';
+export * from './recover';

@@ -18,7 +18,58 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./create": {
+      "import": {
+        "types": "./dist/create.d.ts",
+        "default": "./dist/create.js"
+      },
+      "require": {
+        "types": "./dist/create.d.cts",
+        "default": "./dist/create.cjs"
+      }
+    },
+    "./connect": {
+      "import": {
+        "types": "./dist/connect.d.ts",
+        "default": "./dist/connect.js"
+      },
+      "require": {
+        "types": "./dist/connect.d.cts",
+        "default": "./dist/connect.cjs"
+      }
+    },
+    "./sign": {
+      "import": {
+        "types": "./dist/sign.d.ts",
+        "default": "./dist/sign.js"
+      },
+      "require": {
+        "types": "./dist/sign.d.cts",
+        "default": "./dist/sign.cjs"
+      }
+    },
+    "./recover": {
+      "import": {
+        "types": "./dist/recover.d.ts",
+        "default": "./dist/recover.js"
+      },
+      "require": {
+        "types": "./dist/recover.d.cts",
+        "default": "./dist/recover.cjs"
+      }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types.d.ts",
+        "default": "./dist/types.js"
+      },
+      "require": {
+        "types": "./dist/types.d.cts",
+        "default": "./dist/types.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -36,6 +87,10 @@
     "@stellar/stellar-sdk": {
       "optional": false
     }
+  },
+  "dependencies": {
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

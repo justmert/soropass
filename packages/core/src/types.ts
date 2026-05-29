@@ -1,0 +1,26 @@
+/**
+ * `@stellar-passkey/core/types` — the shared type surface + error taxonomy.
+ */
+export { KitError, isKitError, KIT_ERROR_CODES } from './errors';
+export type { KitErrorCode } from './errors';
+
+export type { ClientData } from './webauthn/clientData';
+export type { ParsedAuthenticatorData, AuthenticatorDataFlags } from './webauthn/authData';
+export type {
+  BuildCreateOptionsInput,
+  PublicKeyCredentialCreationOptionsJSON,
+  PubKeyCredParam,
+  ResidentKeyRequirement,
+  UserVerificationRequirement,
+} from './webauthn/createOptions';
+export type { VerifyAssertionInput } from './webauthn/verify';
+
+/** A passkey-backed Stellar smart account (populated by the S13 ceremonies). */
+export interface PasskeyCredential {
+  /** Soroban contract (C…) address of the smart account. */
+  contractId: string;
+  /** base64url credential id returned by the authenticator. */
+  credentialId: string;
+  /** SEC-1 uncompressed public key (65 bytes). */
+  publicKey: Uint8Array;
+}
