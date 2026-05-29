@@ -1,0 +1,10 @@
+{
+  "name": "@stellar-passkey/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference integration demo through stellar-wallets-kit. Implemented in S21 (YK-447).",
+  "scripts": {
+    "dev": "echo \"demo app — implemented in S21 (YK-447)\" && exit 0"
+  }
+}

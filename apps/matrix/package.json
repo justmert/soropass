@@ -1,0 +1,10 @@
+{
+  "name": "@stellar-passkey/matrix",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "VitePress compatibility-matrix + docs site. Implemented in S05–S10, S22.",
+  "scripts": {
+    "dev": "echo \"matrix site — implemented in S05-S10 (YK-431..YK-436)\" && exit 0"
+  }
+}

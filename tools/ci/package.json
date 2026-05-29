@@ -1,0 +1,7 @@
+{
+  "name": "@stellar-passkey/ci-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Virtual-authenticator harness + matrix builder. Implemented in S07/S09 (YK-433/YK-435)."
+}
