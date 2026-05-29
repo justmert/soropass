@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const MATRIX_SCHEMA_VERSION = 1;
 
 /** Where a row's data came from. BCD is machine-sourced; the rest are cross-referenced. */
-export const SOURCES = ['BCD', 'caniuse', 'passkeys.dev', 'curated'] as const;
+export const SOURCES = ['BCD', 'caniuse', 'passkeys.dev', 'curated', 'live'] as const;
 export type Source = (typeof SOURCES)[number];
 
 /** Support status for one feature on one browser+OS. */
