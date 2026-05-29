@@ -1,3 +1,4 @@
+import { p256 } from '@noble/curves/nist';
 import { KitError } from '../errors';
 import { concatBytes } from '../internal/bytes';
 import { decodeCborFirst, type CborMap } from '../internal/cbor';
@@ -54,7 +55,14 @@ export function coseKeyToSec1(coseKey: Uint8Array): Uint8Array {
   if (!(y instanceof Uint8Array) || y.length !== 32) {
     throw new KitError('INVALID_PUBLIC_KEY', 'COSE key Y coordinate is not 32 bytes');
   }
-  return concatBytes(new Uint8Array([0x04]), x, y);
+  const sec1 = concatBytes(new Uint8Array([0x04]), x, y);
+  // Reject off-curve / invalid points so an invalid key can never be persisted.
+  try {
+    p256.Point.fromHex(sec1);
+  } catch (cause) {
+    throw new KitError('INVALID_PUBLIC_KEY', 'public key is not a valid P-256 point', { cause });
+  }
+  return sec1;
 }
 
 /** Extract the SEC-1 public key from raw authenticatorData (attested data). */

@@ -23,7 +23,10 @@ function byteAt(bytes: Uint8Array, index: number): number {
 }
 
 /** Decode the first CBOR item at `offset`, returning its value and byte length. */
-export function decodeCbor(bytes: Uint8Array, offset = 0): Decoded {
+const MAX_DEPTH = 16; // COSE keys / attestation objects nest at most ~3 levels.
+
+export function decodeCbor(bytes: Uint8Array, offset = 0, depth = 0): Decoded {
+  if (depth > MAX_DEPTH) throw new Error('CBOR: maximum nesting depth exceeded');
   const first = byteAt(bytes, offset);
   const major = first >> 5;
   const info = first & 0x1f;
@@ -71,7 +74,7 @@ export function decodeCbor(bytes: Uint8Array, offset = 0): Decoded {
       const items: CborValue[] = [];
       let cursor = pos;
       for (let i = 0; i < argument; i += 1) {
-        const item = decodeCbor(bytes, cursor);
+        const item = decodeCbor(bytes, cursor, depth + 1);
         items.push(item.value);
         cursor += item.length;
       }
@@ -82,12 +85,15 @@ export function decodeCbor(bytes: Uint8Array, offset = 0): Decoded {
       const map: CborMap = new Map();
       let cursor = pos;
       for (let i = 0; i < argument; i += 1) {
-        const key = decodeCbor(bytes, cursor);
+        const key = decodeCbor(bytes, cursor, depth + 1);
         cursor += key.length;
-        const val = decodeCbor(bytes, cursor);
+        const val = decodeCbor(bytes, cursor, depth + 1);
         cursor += val.length;
         if (typeof key.value !== 'number' && typeof key.value !== 'string') {
           throw new Error('CBOR: unsupported map key type');
+        }
+        if (map.has(key.value)) {
+          throw new Error('CBOR: duplicate map key (non-canonical)');
         }
         map.set(key.value, val.value);
       }

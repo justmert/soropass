@@ -34,4 +34,18 @@ describe('decodeCbor', () => {
   it('throws on truncated input', () => {
     expect(() => decodeCborFirst(new Uint8Array([0x18]))).toThrow(/end of input/);
   });
+
+  it('rejects duplicate map keys (non-canonical CBOR)', () => {
+    // map(2){ 1:2, 1:3 } — duplicate key 1
+    expect(() => decodeCborFirst(new Uint8Array([0xa2, 0x01, 0x02, 0x01, 0x03]))).toThrow(
+      /duplicate map key/,
+    );
+  });
+
+  it('rejects pathologically nested input (depth cap)', () => {
+    // 20 nested single-element arrays exceeds MAX_DEPTH
+    const nested = new Uint8Array(21).fill(0x81);
+    nested[20] = 0x00;
+    expect(() => decodeCborFirst(nested)).toThrow(/nesting depth/);
+  });
 });

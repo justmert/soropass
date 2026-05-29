@@ -20,5 +20,7 @@ export interface VerifyAssertionInput {
 export function verifyAssertionSignature(input: VerifyAssertionInput): boolean {
   const payload = reconstructSignedPayload(input);
   const compact = input.signature.length === 64 ? input.signature : derToCompact(input.signature);
-  return p256.verify(compact, payload, input.publicKey, { lowS: false });
+  // `format: 'compact'` pins the 64-byte interpretation — without it noble tries
+  // DER-first and could misread a compact signature that happens to start 0x30.
+  return p256.verify(compact, payload, input.publicKey, { lowS: false, format: 'compact' });
 }
