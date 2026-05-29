@@ -10,3 +10,4 @@ export * from './create';
 export * from './sign';
 export * from './connect';
 export * from './recover';
+export * from './adapters';

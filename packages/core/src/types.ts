@@ -19,6 +19,12 @@ export type { VerifyAssertionInput } from './webauthn/verify';
 export type { AssertionResult, WebAuthnSigner, SorobanSignOptions } from './soroban/sign';
 export type { AssembledSignature } from './soroban/assemble';
 export type { CheckAuthResult } from './soroban/checkAuth';
+export type {
+  SubmissionAdapter,
+  IndexerAdapter,
+  SubmitResult,
+  ResolvedAccount,
+} from './adapters/types';
 
 /** A passkey-backed Stellar smart account (populated by the S13 ceremonies). */
 export interface PasskeyCredential {
