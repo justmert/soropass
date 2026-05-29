@@ -46,6 +46,9 @@ importers:
 
   apps/matrix:
     dependencies:
+      '@stellar-passkey/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -53,6 +56,9 @@ importers:
       '@mdn/browser-compat-data':
         specifier: ^8.0.0
         version: 8.0.0
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19

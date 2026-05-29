@@ -7,14 +7,17 @@
   "scripts": {
     "dev": "echo \"matrix site — implemented in S09 (YK-435)\" && exit 0",
     "matrix:pull": "tsx scripts/pull-bcd.ts",
+    "matrix:ci": "tsx ci/run-matrix-ci.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@stellar-passkey/core": "workspace:^",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@mdn/browser-compat-data": "^8.0.0",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.22.3",
     "typescript": "^5.6.0",

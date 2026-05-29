@@ -5,5 +5,5 @@
     "verbatimModuleSyntax": false,
     "noEmit": true
   },
-  "include": ["src", "scripts"]
+  "include": ["src", "scripts", "ci"]
 }

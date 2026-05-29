@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const MATRIX_SCHEMA_VERSION = 1;
 
 /** Where a row's data came from. BCD is machine-sourced; the rest are cross-referenced. */
-export const SOURCES = ['BCD', 'caniuse', 'passkeys.dev', 'curated', 'live'] as const;
+export const SOURCES = ['BCD', 'caniuse', 'passkeys.dev', 'curated', 'live', 'ci'] as const;
 export type Source = (typeof SOURCES)[number];
 
 /** Support status for one feature on one browser+OS. */
@@ -48,6 +48,46 @@ export const MatrixSnapshotSchema = z.object({
   rows: z.array(MatrixRowSchema),
 });
 export type MatrixSnapshot = z.infer<typeof MatrixSnapshotSchema>;
+
+/** Transports swept by the virtual-authenticator CI (S07). */
+export const TRANSPORTS = ['internal', 'usb'] as const;
+
+/** One cell of the virtual-authenticator CI grid. */
+export const CiGridResultSchema = z.object({
+  browser: z.string(),
+  browserVersion: z.string(),
+  runnerOs: z.string(),
+  transport: z.enum(TRANSPORTS),
+  residentKey: z.boolean(),
+  userVerification: z.boolean(),
+  created: z.boolean(),
+  asserted: z.boolean(),
+  /** create→get round-trip verified via p256.verify. */
+  verified: z.boolean(),
+  /** COSE alg the authenticator emitted (-7 = ES256). */
+  alg: z.number().nullable(),
+  error: z.string().optional(),
+});
+export type CiGridResult = z.infer<typeof CiGridResultSchema>;
+
+export const CiSnapshotSchema = z.object({
+  schemaVersion: z.literal(MATRIX_SCHEMA_VERSION),
+  pulledAt: z.string(),
+  runnerOs: z.string(),
+  browsers: z.array(
+    z.object({
+      name: z.string(),
+      version: z.string(),
+      available: z.boolean(),
+      note: z.string().optional(),
+    }),
+  ),
+  gridResults: z.array(CiGridResultSchema),
+  rows: z.array(MatrixRowSchema),
+  /** Honest scope notes — what virtual authenticators cannot reproduce. */
+  limitations: z.array(z.string()),
+});
+export type CiSnapshot = z.infer<typeof CiSnapshotSchema>;
 
 /** BCD browser key → human { browser, os }. The passkey-relevant set. */
 export const BROWSER_OS: Record<string, { browser: string; os: string }> = {

@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly — re-verify the living compatibility matrix against current browsers.
+    - cron: '0 6 * * 1'
 
 jobs:
   lint:
@@ -61,11 +64,47 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
 
-  # Stub — the living compatibility-matrix publish pipeline is implemented in
-  # S07 (YK-433, virtual-authenticator CI) and S09 (YK-435, dated/diffable site).
+  # ⭐ S07 (YK-433) — virtual-authenticator CI: real WebAuthn create→get
+  # ceremonies against CDP virtual authenticators (Chromium + Edge), each
+  # round-trip verified via p256.verify. Regenerates apps/matrix/data/ci.<date>.json.
+  matrix-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build SDK core (the harness verifies against it)
+        run: pnpm --filter @stellar-passkey/core build
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Edge (best-effort)
+        run: pnpm exec playwright install msedge || echo "msedge unavailable on this runner"
+      - name: Run the virtual-authenticator grid (p256.verify round-trip gate)
+        run: pnpm matrix:ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matrix-ci-data
+          path: apps/matrix/data/ci.*.json
+          if-no-files-found: error
+
+  # Consumes the REAL virtual-authenticator results (S07). The full dated/diffable
+  # site publish lands in S09 (YK-435).
   matrix-publish:
-    needs: [lint, typecheck, test, build]
+    needs: [lint, typecheck, test, build, matrix-ci]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Stub — compatibility-matrix publish lands in S07/S09 (YK-433/YK-435)."
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: matrix-ci-data
+          path: apps/matrix/data
+      - name: Summarize the real CI matrix data it now consumes
+        run: |
+          file=$(ls apps/matrix/data/ci.*.json | tail -1)
+          echo "Consuming real virtual-authenticator results from $file"
+          node -e "const s=require(process.argv[1]); const v=s.gridResults.filter(g=>g.verified).length; console.log('verified '+v+'/'+s.gridResults.length+' cells across '+s.browsers.filter(b=>b.available).map(b=>b.name+' '+b.version).join(', '));" "$PWD/$file"
