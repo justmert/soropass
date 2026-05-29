@@ -3,11 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "VitePress compatibility-matrix + docs site. Implemented in S05–S10, S22.",
+  "description": "VitePress living compatibility-matrix + docs site.",
   "scripts": {
-    "dev": "echo \"matrix site — implemented in S09 (YK-435)\" && exit 0",
     "matrix:pull": "tsx scripts/pull-bcd.ts",
     "matrix:ci": "tsx ci/run-matrix-ci.ts",
+    "matrix:build": "tsx scripts/build-matrix.ts",
+    "build": "vitepress build site",
+    "docs:dev": "vitepress dev site",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -21,6 +23,8 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.22.3",
     "typescript": "^5.6.0",
-    "vitest": "^2.0.0"
+    "vitepress": "^1.6.3",
+    "vitest": "^2.0.0",
+    "vue": "^3.5.0"
   }
 }

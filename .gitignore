@@ -23,3 +23,5 @@ coverage/
 tmp/
 .cache/
 references/
+**/.vitepress/cache/
+**/.vitepress/dist/

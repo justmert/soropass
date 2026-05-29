@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "changeset": "changeset",
     "matrix:pull": "pnpm --filter @stellar-passkey/matrix matrix:pull",
-    "matrix:ci": "pnpm --filter @stellar-passkey/matrix matrix:ci"
+    "matrix:ci": "pnpm --filter @stellar-passkey/matrix matrix:ci",
+    "matrix:build": "pnpm --filter @stellar-passkey/matrix matrix:build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

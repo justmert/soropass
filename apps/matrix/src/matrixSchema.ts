@@ -100,3 +100,33 @@ export const BROWSER_OS: Record<string, { browser: string; os: string }> = {
   firefox_android: { browser: 'Firefox', os: 'Android' },
   samsunginternet_android: { browser: 'Samsung Internet', os: 'Android' },
 };
+
+/** Verification tiers (S08). Mirrors `tiers.ts` `Tier`. */
+export const TIERS = ['tier-1-automated', 'tier-2-manual'] as const;
+
+/** One merged matrix cell: the chosen value for (feature, browser, os) + provenance. */
+export const MergedCellSchema = z.object({
+  feature: z.string(),
+  featureLabel: z.string(),
+  browser: z.string(),
+  os: z.string(),
+  status: z.enum(STATUSES),
+  source: z.enum(SOURCES),
+  tier: z.enum(TIERS),
+  /** ISO date of the source that produced this cell's value. */
+  lastVerified: z.string(),
+  since: z.string().nullable().optional(),
+  notes: z.string().optional(),
+  sourceUrl: z.string().optional(),
+});
+export type MergedCell = z.infer<typeof MergedCellSchema>;
+
+/** The published, dated, diffable matrix — BCD ⊕ live ⊕ CI merged (S09). */
+export const MergedMatrixSnapshotSchema = z.object({
+  schemaVersion: z.literal(MATRIX_SCHEMA_VERSION),
+  builtAt: z.string(),
+  inputs: z.object({ bcd: z.string().nullable(), ci: z.string().nullable() }),
+  features: z.array(z.object({ id: z.string(), label: z.string() })),
+  cells: z.array(MergedCellSchema),
+});
+export type MergedMatrixSnapshot = z.infer<typeof MergedMatrixSnapshotSchema>;
