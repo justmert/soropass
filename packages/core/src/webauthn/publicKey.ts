@@ -3,6 +3,7 @@ import { KitError } from '../errors';
 import { concatBytes } from '../internal/bytes';
 import { decodeCborFirst, type CborMap } from '../internal/cbor';
 import { parseAuthenticatorData } from './authData';
+import { assertES256 } from '../anchors';
 
 // COSE key common parameters (RFC 9052) and EC2 key parameters.
 const COSE_KTY = 1;
@@ -12,7 +13,6 @@ const COSE_X = -2;
 const COSE_Y = -3;
 
 const KTY_EC2 = 2;
-const ALG_ES256 = -7;
 const CRV_P256 = 1;
 
 /**
@@ -32,9 +32,10 @@ export function coseKeyToSec1(coseKey: Uint8Array): Uint8Array {
   }
   const map = decoded as CborMap;
   const alg = map.get(COSE_ALG);
-  if (alg !== ALG_ES256) {
+  if (typeof alg !== 'number') {
     throw new KitError('ES256_NOT_SUPPORTED', `COSE alg ${String(alg)} is not ES256 (-7)`);
   }
+  assertES256(alg); // anchor RS256_HARD_FAIL
   if (map.get(COSE_KTY) !== KTY_EC2) {
     throw new KitError(
       'INVALID_PUBLIC_KEY',

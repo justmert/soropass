@@ -9,3 +9,4 @@ export {
   extractPublicKeyFromAuthData,
   coseKeyToSec1,
 } from './webauthn/publicKey';
+export { assertES256, assertUserActivation } from './anchors';

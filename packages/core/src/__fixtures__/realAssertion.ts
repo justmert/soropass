@@ -51,4 +51,7 @@ export const EXPECTED = {
   /** SEC-1 public key extracted from ATTESTATION_OBJECT. */
   attestationSec1Hex:
     '042168404321391feffd58cffff3bb5866adf224f434ae8b2da1fd34cf730c48ca86dd2b818764da4d41d00f0778087c80acf4381212a849c3dbab4cf19b593f0f',
+  /** A high-S malleable variant of compactSigHex (same R, S' = n − S). */
+  highSCompactSigHex:
+    'd85c13a9096496ab62e5e39e7c189283d91a1683de7c96f25207f19d7a8931a2a51eeabb486117f5cfbe72f14d1bc533fa3a1075493407c12bdc1a3589b62e04',
 } as const;

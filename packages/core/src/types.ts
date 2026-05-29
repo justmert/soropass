@@ -3,6 +3,8 @@
  */
 export { KitError, isKitError, KIT_ERROR_CODES } from './errors';
 export type { KitErrorCode } from './errors';
+export { BATTLE_TESTED_ANCHORS } from './anchors';
+export type { BattleTestedAnchor } from './anchors';
 
 export type { ClientData } from './webauthn/clientData';
 export type { ParsedAuthenticatorData, AuthenticatorDataFlags } from './webauthn/authData';
