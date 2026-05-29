@@ -1,11 +1,15 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: {
+    index: 'src/index.ts',
+    headless: 'src/headless/index.ts',
+  },
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
   sourcemap: true,
   treeshake: true,
-  external: ['@stellar/stellar-sdk', '@stellar-passkey/core'],
+  // No styling deps; core stays external.
+  external: [/^@stellar(-passkey)?\//, /^@noble\//],
 });

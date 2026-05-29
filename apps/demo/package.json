@@ -3,8 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Reference integration demo through stellar-wallets-kit. Implemented in S21 (YK-447).",
+  "description": "Reference integration demo through stellar-wallets-kit. Built out in S21 (YK-447).",
   "scripts": {
-    "dev": "echo \"demo app — implemented in S21 (YK-447)\" && exit 0"
+    "dev": "echo \"demo app — implemented in S21 (YK-447)\" && exit 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@stellar-passkey/core": "workspace:^",
+    "@stellar-passkey/ui": "workspace:^"
   }
 }

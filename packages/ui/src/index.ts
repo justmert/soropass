@@ -1,9 +1,7 @@
 /**
- * `@stellar-passkey/ui` — headless-first UI primitives.
- *
- * Real primitives (logic, state machines, a11y, i18n; no styles) land in
- * S18 (YK-444). The styled reference layer is design-gated: S19 (YK-445) is a
- * human design handoff, and only then is S20 (YK-446) built. This skeleton
- * only pins the package identity.
+ * `@stellar-passkey/ui` — headless-first UI for passkey create/sign/recover.
+ * The headless primitives (logic + a11y + i18n, no styles) are the umbrella
+ * export; prefer `@stellar-passkey/ui/headless`. The styled layer is
+ * design-gated (S19 → S20) and ships separately.
  */
-export const UI_VERSION = '0.0.0';
+export * from './headless';

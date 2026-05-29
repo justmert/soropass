@@ -42,7 +42,14 @@ importers:
         specifier: ^8.15.0
         version: 8.60.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
 
-  apps/demo: {}
+  apps/demo:
+    dependencies:
+      '@stellar-passkey/core':
+        specifier: workspace:^
+        version: link:../../packages/core
+      '@stellar-passkey/ui':
+        specifier: workspace:^
+        version: link:../../packages/ui
 
   apps/matrix:
     dependencies:
@@ -129,6 +136,10 @@ importers:
         version: 2.1.9(@types/node@22.19.19)
 
   packages/ui:
+    dependencies:
+      '@stellar-passkey/core':
+        specifier: workspace:^
+        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.0.0
