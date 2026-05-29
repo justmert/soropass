@@ -25,6 +25,14 @@ export type {
   SubmitResult,
   ResolvedAccount,
 } from './adapters/types';
+export type {
+  WebAuthnClient,
+  WebAuthnCreateResult,
+  WebAuthnGetResult,
+  WebAuthnGetOptions,
+  CredentialStorage,
+  AccountDeployer,
+} from './ceremonies/types';
 
 /** A passkey-backed Stellar smart account (populated by the S13 ceremonies). */
 export interface PasskeyCredential {

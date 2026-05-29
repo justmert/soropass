@@ -1,8 +1,10 @@
 /**
- * `@stellar-passkey/core/create` — registration-side primitives: ES256-only
- * creation options and SEC-1 public-key extraction. The full `createPasskey`
- * ceremony (deploy + connect) lands in S13 (YK-439).
+ * `@stellar-passkey/core/create` — the `createPasskey` ceremony plus the
+ * registration-side primitives (ES256-only options, SEC-1 pubkey extraction).
  */
+export { createPasskey } from './ceremonies/create';
+export type { CreatePasskeyOptions } from './ceremonies/create';
+export { browserWebAuthnClient, defaultCredentialStorage } from './ceremonies/browserClient';
 export { buildCreateOptions } from './webauthn/createOptions';
 export {
   extractPublicKeyFromAttestationObject,

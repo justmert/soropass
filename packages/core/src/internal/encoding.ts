@@ -12,11 +12,11 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 }
 
 /** Decode base64 or base64url (padding optional) to bytes. */
-export function base64UrlToBytes(input: string): Uint8Array {
+export function base64UrlToBytes(input: string): Uint8Array<ArrayBuffer> {
   const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
   const binary = atob(padded);
-  const out = new Uint8Array(binary.length);
+  const out = new Uint8Array(new ArrayBuffer(binary.length));
   for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
   return out;
 }
