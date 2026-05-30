@@ -10,6 +10,25 @@ import type {
   WebAuthnGetResult,
 } from './types';
 
+/**
+ * Map a `navigator.credentials` rejection to a `KitError`. Dismissing the OS
+ * passkey sheet rejects with a `NotAllowedError` (a DOMException) — surface that
+ * as `USER_CANCELLED` so the UI shows the true "you cancelled" copy instead of
+ * the generic unsupported-authenticator fallback (S20 / S04 polish).
+ */
+function asKitError(error: unknown): KitError {
+  if (error instanceof KitError) return error;
+  const name =
+    typeof error === 'object' && error !== null && 'name' in error
+      ? (error as { name?: unknown }).name
+      : undefined;
+  if (name === 'NotAllowedError') {
+    return new KitError('USER_CANCELLED', 'The passkey prompt was dismissed.');
+  }
+  const message = error instanceof Error ? error.message : 'WebAuthn request failed';
+  return new KitError('UNSUPPORTED_AUTHENTICATOR', message);
+}
+
 /** The browser `WebAuthnClient` backed by `navigator.credentials`. */
 export function browserWebAuthnClient(): WebAuthnClient {
   const credentials = (globalThis as { navigator?: Navigator }).navigator?.credentials;
@@ -31,7 +50,12 @@ export function browserWebAuthnClient(): WebAuthnClient {
         attestation: options.attestation,
         timeout: options.timeout,
       };
-      const credential = (await credentials.create({ publicKey })) as PublicKeyCredential | null;
+      let credential: PublicKeyCredential | null;
+      try {
+        credential = (await credentials.create({ publicKey })) as PublicKeyCredential | null;
+      } catch (error) {
+        throw asKitError(error);
+      }
       if (!credential) throw new KitError('USER_CANCELLED', 'credential creation returned null');
       const response = credential.response as AuthenticatorAttestationResponse;
       return {
@@ -52,7 +76,12 @@ export function browserWebAuthnClient(): WebAuthnClient {
       };
       const request: CredentialRequestOptions = { publicKey };
       if (options.mediation) request.mediation = options.mediation;
-      const credential = (await credentials.get(request)) as PublicKeyCredential | null;
+      let credential: PublicKeyCredential | null;
+      try {
+        credential = (await credentials.get(request)) as PublicKeyCredential | null;
+      } catch (error) {
+        throw asKitError(error);
+      }
       if (!credential) throw new KitError('USER_CANCELLED', 'assertion returned null');
       const response = credential.response as AuthenticatorAssertionResponse;
       return {
