@@ -3,14 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Passkey — headless harness (unstyled)</title>
+    <title>Stellar Passkey UI — styled reference (S20)</title>
   </head>
   <body>
     <!--
-      Deliberately unstyled — the headless flows (S18) carry all logic + a11y.
-      The styled layer is design-gated (S19 → S20). S21 wires mountHeadlessHarness
-      to a PasskeyModule + kit here.
+      S20 styled reference demo. The headless flows (S18) carry all logic + a11y;
+      the styled layer (S20) is pure DOM + token-driven CSS. Re-theme by
+      overriding tokens — see the tweaks bar. ?mode=webauthn drives a real
+      WebAuthn ceremony (virtual authenticator / Touch ID); default is mock.
     -->
     <main id="app"></main>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

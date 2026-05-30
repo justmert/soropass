@@ -1,0 +1,110 @@
+/* Demo CHROME only — page scaffolding, gallery grid, tweaks bar. NOT part of the
+   shipped component (that's @stellar-passkey/ui/styled.css). Kept deliberately
+   plain so the styled cards are what stands out. */
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--pk-font-sans, system-ui, sans-serif);
+}
+
+/* The themable scope: every token override lands here, cascading to all cards. */
+.pk.demo-scope {
+  display: block;
+  min-height: 100vh;
+  background: var(--pk-color-background);
+  color: var(--pk-color-text);
+  transition:
+    background 200ms ease,
+    color 200ms ease;
+}
+
+.demo-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--pk-color-surface);
+  border-bottom: 1px solid var(--pk-color-border);
+}
+.demo-bar__title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-inline-end: auto;
+}
+.demo-bar__title small {
+  font-weight: 400;
+  color: var(--pk-color-text-muted);
+  margin-inline-start: 8px;
+}
+.demo-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--pk-color-border);
+  border-radius: 10px;
+}
+.demo-group__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pk-color-text-faint);
+  margin-inline-end: 4px;
+}
+.demo-btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--pk-color-border-strong);
+  background: var(--pk-color-surface);
+  color: var(--pk-color-text);
+  cursor: pointer;
+}
+.demo-btn[aria-pressed='true'] {
+  background: var(--pk-color-brand);
+  color: var(--pk-color-on-brand);
+  border-color: var(--pk-color-brand);
+}
+
+.demo-section {
+  padding: 28px 20px 8px;
+}
+.demo-section__title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pk-color-text-muted);
+  margin: 0 0 16px;
+}
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px 24px;
+  align-items: start;
+}
+.demo-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.demo-tile__cap {
+  font-size: 12px;
+  font-family: var(--pk-font-mono);
+  color: var(--pk-color-text-muted);
+}
+.demo-live {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px 24px;
+  align-items: start;
+  padding-bottom: 40px;
+}

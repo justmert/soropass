@@ -6,3 +6,10 @@ references
 CHANGELOG.md
 CLAUDE.md
 apps/matrix/site/matrix-table.md
+# Playwright run artifacts
+**/test-results
+**/playwright-report
+# Design handoff (kept verbatim for provenance) + the token CSS shipped as-is
+packages/ui/styled/design
+packages/ui/styled/tokens.css
+packages/ui/styled/passkey.css

@@ -4,7 +4,9 @@
   "description": "Headless-first UI primitives for passkey create/sign/recover; styling is optional and token-driven.",
   "license": "Apache-2.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,10 +30,25 @@
         "types": "./dist/headless.d.cts",
         "default": "./dist/headless.cjs"
       }
-    }
+    },
+    "./styled": {
+      "import": {
+        "types": "./dist/styled.d.ts",
+        "default": "./dist/styled.js"
+      },
+      "require": {
+        "types": "./dist/styled.d.cts",
+        "default": "./dist/styled.cjs"
+      }
+    },
+    "./styled.css": "./styled/index.css",
+    "./tokens.css": "./styled/tokens.css",
+    "./styles.css": "./styled/passkey.css",
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "styled/*.css"
   ],
   "scripts": {
     "build": "tsup",
@@ -43,6 +60,7 @@
     "@stellar-passkey/core": "workspace:^"
   },
   "devDependencies": {
+    "jsdom": "^25.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"

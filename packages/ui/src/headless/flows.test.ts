@@ -121,4 +121,15 @@ describe('createRecoverFlow (S18)', () => {
     await flow.start();
     expect(flow.getState().status).toBe('none');
   });
+  it('allows re-selecting a different account from the selected state', async () => {
+    const flow = createRecoverFlow({ recover: () => Promise.resolve(accounts) });
+    await flow.start();
+    const [a, b] = accounts;
+    if (!a || !b) throw new Error('no account');
+    flow.select(a);
+    expect(flow.getState().status).toBe('selected');
+    flow.select(b); // re-select while already in selected
+    const state = flow.getState();
+    expect(state.status === 'selected' && state.account.contractId).toBe('C2');
+  });
 });

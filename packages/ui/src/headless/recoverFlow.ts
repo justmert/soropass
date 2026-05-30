@@ -60,7 +60,12 @@ export function createRecoverFlow(config: RecoverFlowConfig): RecoverFlow {
   }
 
   function select(account: RecoverResult): void {
-    if (store.getState().status === 'resolved') store.set({ status: 'selected', account });
+    // Allow (re-)selection from both resolved and selected so the user can
+    // change their mind before continuing — keeps the styled listbox in sync.
+    const status = store.getState().status;
+    if (status === 'resolved' || status === 'selected') {
+      store.set({ status: 'selected', account });
+    }
   }
 
   return {

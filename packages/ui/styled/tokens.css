@@ -1,0 +1,193 @@
+/* ============================================================================
+   Stellar Passkey UI — SHARED THEME TOKENS
+   ----------------------------------------------------------------------------
+   This is the ONLY theming surface. Components reference these custom
+   properties exclusively — never raw colors, sizes, or fonts. An adopter
+   re-skins the whole set by overriding tokens (e.g. on :root or a scope),
+   not by editing components.
+
+   Themes: default is light. Set [data-theme="dark"] on a wrapping element to
+   switch. Both themes share ONE scale — only the values listed under the dark
+   block change.
+
+   Categories (per spec):
+     1. color           brand/primary, surface/background, text, border
+     2. status color    success, error, info/progress
+     3. shape & space   radius scale, spacing scale
+     4. typography      family, size scale, weight, line-height
+     5. a11y / interaction extras
+            focus-ring · busy/disabled · spinner/progress
+            elevation/z-index · motion/transition (+ reduced-motion)
+   ========================================================================== */
+
+:root {
+  /* color hue is OKLCH so adopters can shift the whole brand by one channel */
+
+  /* -- 1. COLOR ----------------------------------------------------------- */
+  --pk-color-brand:           oklch(0.55 0.18 264);   /* indigo — main button + focus */
+  --pk-color-brand-hover:     oklch(0.49 0.18 264);
+  --pk-color-brand-active:    oklch(0.43 0.17 264);
+  --pk-color-on-brand:        oklch(0.99 0.01 264);   /* text/icon on brand fill */
+  --pk-color-brand-soft:      color-mix(in oklch, var(--pk-color-brand) 12%, transparent);
+
+  --pk-color-background:      oklch(0.985 0.003 264); /* page / behind the card */
+  --pk-color-surface:         oklch(1    0      0);    /* the component card */
+  --pk-color-surface-sunken:  oklch(0.975 0.004 264); /* summary rows, wells */
+
+  --pk-color-text:            oklch(0.26 0.02 271);   /* primary text */
+  --pk-color-text-muted:      oklch(0.55 0.018 271);  /* secondary / captions */
+  --pk-color-text-faint:      oklch(0.68 0.014 271);  /* disabled-ish, hints */
+
+  --pk-color-border:          oklch(0.92 0.005 271);  /* hairlines, card edge */
+  --pk-color-border-strong:   oklch(0.86 0.006 271);  /* inputs, focus targets */
+
+  /* -- 2. STATUS COLOR ---------------------------------------------------- */
+  /* success / error / info-progress are SEMANTICALLY distinct:
+     errors are surfaced assertively, progress calmly. */
+  --pk-color-success:         oklch(0.62 0.14 158);
+  --pk-color-success-soft:    color-mix(in oklch, var(--pk-color-success) 14%, transparent);
+  --pk-color-error:           oklch(0.59 0.20 25);
+  --pk-color-error-soft:      color-mix(in oklch, var(--pk-color-error) 13%, transparent);
+  --pk-color-info:            oklch(0.62 0.13 245);   /* progress / "we're working" */
+  --pk-color-info-soft:       color-mix(in oklch, var(--pk-color-info) 14%, transparent);
+
+  /* -- 3. SHAPE & SPACE --------------------------------------------------- */
+  --pk-radius-none:  0px;
+  --pk-radius-xs:    6px;
+  --pk-radius-sm:    8px;
+  --pk-radius-md:    12px;   /* default control radius */
+  --pk-radius-lg:    16px;   /* the card */
+  --pk-radius-xl:    22px;
+  --pk-radius-full:  999px;
+
+  --pk-space-0:   0px;
+  --pk-space-1:   4px;
+  --pk-space-2:   8px;
+  --pk-space-3:   12px;
+  --pk-space-4:   16px;
+  --pk-space-5:   20px;
+  --pk-space-6:   24px;
+  --pk-space-8:   32px;
+  --pk-space-10:  40px;
+
+  /* -- 4. TYPOGRAPHY ------------------------------------------------------ */
+  --pk-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+                  "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  --pk-font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+                  "Liberation Mono", monospace;
+
+  --pk-text-xs:   12px;
+  --pk-text-sm:   13px;
+  --pk-text-base: 15px;
+  --pk-text-md:   17px;
+  --pk-text-lg:   20px;
+  --pk-text-xl:   24px;
+
+  --pk-weight-regular:  400;
+  --pk-weight-medium:   500;
+  --pk-weight-semibold: 600;
+
+  --pk-leading-tight:  1.25;
+  --pk-leading-normal: 1.5;
+
+  /* -- 5a. FOCUS RING ----------------------------------------------------- */
+  --pk-focus-color:  var(--pk-color-brand);
+  --pk-focus-width:  2px;
+  --pk-focus-offset: 2px;
+  /* halo used in addition to outline for extra contrast on any surface */
+  --pk-focus-halo:   color-mix(in oklch, var(--pk-color-brand) 25%, transparent);
+
+  /* -- 5b. BUSY / DISABLED ----------------------------------------------- */
+  --pk-disabled-opacity: 0.5;
+  --pk-busy-opacity:     0.12;   /* dimmed UI while the OS sheet is on top */
+  --pk-scrim:            var(--pk-color-surface);   /* opaque calm panel while OS sheet is up */
+
+  /* -- 5c. SPINNER / PROGRESS -------------------------------------------- */
+  --pk-spinner-size:   22px;
+  --pk-spinner-width:  2.5px;
+  --pk-spinner-track:  var(--pk-color-border-strong);
+  --pk-spinner-head:   var(--pk-color-info);   /* "we're working" busy color */
+  --pk-progress-track: var(--pk-color-surface-sunken);
+  --pk-progress-head:  var(--pk-color-info);
+
+  /* -- 5d. ELEVATION / Z-INDEX ------------------------------------------- */
+  /* shadows keep our card under, never competing with, the native OS sheet */
+  --pk-shadow-sm: 0 1px 2px oklch(0.2 0.02 271 / 0.06);
+  --pk-shadow-md: 0 4px 16px oklch(0.2 0.02 271 / 0.08),
+                  0 1px 3px  oklch(0.2 0.02 271 / 0.06);
+  --pk-shadow-lg: 0 12px 40px oklch(0.2 0.02 271 / 0.12);
+
+  --pk-z-base:    0;
+  --pk-z-card:    1;
+  --pk-z-overlay: 10;   /* our in-card busy overlay / scrim */
+  --pk-z-toast:   20;
+  /* NOTE: the OS passkey sheet renders ABOVE everything natively — our top
+     layer stays at z-toast so we never fight it. */
+
+  /* -- 5e. MOTION / TRANSITION ------------------------------------------- */
+  --pk-ease:           cubic-bezier(0.2, 0.6, 0.2, 1);
+  --pk-duration-fast:  120ms;
+  --pk-duration-base:  200ms;
+  --pk-duration-slow:  360ms;
+  --pk-spin-duration:  900ms;
+  --pk-pulse-duration: 2000ms;  /* calm pulse for "waiting on OS" */
+  --pk-progress-duration: 1400ms;  /* indeterminate progress sweep */
+}
+
+/* ----------------------------------------------------------------------------
+   DARK THEME — overrides only the values that change. One scale, two skins.
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --pk-color-brand:           oklch(0.66 0.16 264);
+  --pk-color-brand-hover:     oklch(0.72 0.15 264);
+  --pk-color-brand-active:    oklch(0.60 0.16 264);
+  --pk-color-on-brand:        oklch(0.16 0.02 271);
+  --pk-color-brand-soft:      color-mix(in oklch, var(--pk-color-brand) 20%, transparent);
+
+  --pk-color-background:      oklch(0.18 0.012 271);
+  --pk-color-surface:         oklch(0.225 0.013 271);
+  --pk-color-surface-sunken:  oklch(0.265 0.014 271);
+
+  --pk-color-text:            oklch(0.95 0.006 271);
+  --pk-color-text-muted:      oklch(0.72 0.012 271);
+  --pk-color-text-faint:      oklch(0.58 0.012 271);
+
+  --pk-color-border:          oklch(0.32 0.012 271);
+  --pk-color-border-strong:   oklch(0.40 0.014 271);
+
+  --pk-color-success:         oklch(0.72 0.14 158);
+  --pk-color-error:           oklch(0.68 0.18 25);
+  --pk-color-info:            oklch(0.72 0.12 245);
+
+  --pk-spinner-track:  var(--pk-color-border-strong);
+  --pk-scrim:          var(--pk-color-surface);
+
+  --pk-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
+  --pk-shadow-md: 0 4px 16px oklch(0 0 0 / 0.4), 0 1px 3px oklch(0 0 0 / 0.3);
+  --pk-shadow-lg: 0 12px 40px oklch(0 0 0 / 0.55);
+}
+
+/* ----------------------------------------------------------------------------
+   REDUCED MOTION — single fallback for the whole set. Adopters get this free.
+   Spins/pulses freeze; transitions collapse to near-instant.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pk-duration-fast:  1ms;
+    --pk-duration-base:  1ms;
+    --pk-duration-slow:  1ms;
+    --pk-spin-duration:  1ms;
+    --pk-pulse-duration: 1ms;
+    --pk-progress-duration: 1ms;
+  }
+}
+/* Manual override the prototype can set (so reviewers can preview the
+   reduced-motion variant without OS settings). Mirrors the media query. */
+[data-reduced-motion="true"] {
+  --pk-duration-fast:  1ms;
+  --pk-duration-base:  1ms;
+  --pk-duration-slow:  1ms;
+  --pk-spin-duration:  1ms;
+  --pk-pulse-duration: 1ms;
+  --pk-progress-duration: 1ms;
+}

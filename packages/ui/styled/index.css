@@ -1,0 +1,6 @@
+/* The one stylesheet to ship: the token theming surface + the component styles.
+   Adopters: `import '@stellar-passkey/ui/styled.css'`. Re-theme by overriding the
+   tokens from tokens.css on :root (or any wrapping scope) — never by editing
+   passkey.css. */
+@import './tokens.css';
+@import './passkey.css';
