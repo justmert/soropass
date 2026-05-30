@@ -1,0 +1,435 @@
+/* ============================================================================
+   Stellar Passkey UI — COMPONENT STYLES
+   Every value here resolves to a token from tokens.css. No raw colors/sizes.
+   Re-skin by overriding tokens, never by editing this file.
+   ========================================================================== */
+
+.pk, .pk * { box-sizing: border-box; }
+
+.pk {
+  font-family: var(--pk-font-sans);
+  color: var(--pk-color-text);
+  font-size: var(--pk-text-base);
+  line-height: var(--pk-leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* The component card — works at 360px mobile, an extension popup, or web. */
+.pk-card {
+  position: relative;
+  width: 100%;
+  max-width: 384px;
+  background: var(--pk-color-surface);
+  border: 1px solid var(--pk-color-border);
+  border-radius: var(--pk-radius-lg);
+  box-shadow: var(--pk-shadow-md);
+  padding: var(--pk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pk-space-5);
+  z-index: var(--pk-z-card);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---- Header: glyph badge + title + subtitle ---------------------------- */
+.pk-head { display: flex; flex-direction: column; gap: var(--pk-space-4); }
+.pk-head--center { align-items: center; text-align: center; }
+/* title + subtitle get their own vertical rhythm so they never crowd */
+.pk-head__text { display: flex; flex-direction: column; gap: var(--pk-space-2); }
+
+.pk-glyph {
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border-radius: var(--pk-radius-md);
+  background: var(--pk-color-brand-soft);
+  color: var(--pk-color-brand);
+  flex: none;
+}
+.pk-glyph svg { width: 26px; height: 26px; }
+.pk-glyph--success { background: var(--pk-color-success-soft); color: var(--pk-color-success); }
+.pk-glyph--error   { background: var(--pk-color-error-soft);   color: var(--pk-color-error); }
+.pk-glyph--info    { background: var(--pk-color-info-soft);    color: var(--pk-color-info); }
+.pk-glyph--muted   { background: var(--pk-color-surface-sunken); color: var(--pk-color-text-muted); }
+
+.pk-title {
+  margin: 0;
+  font-size: var(--pk-text-lg);
+  font-weight: var(--pk-weight-semibold);
+  line-height: var(--pk-leading-tight);
+  letter-spacing: -0.01em;
+}
+.pk-subtitle {
+  margin: 0;
+  font-size: var(--pk-text-base);
+  color: var(--pk-color-text-muted);
+  line-height: var(--pk-leading-normal);
+  text-wrap: pretty;
+}
+
+/* ---- Buttons ----------------------------------------------------------- */
+.pk-actions { display: flex; flex-direction: column; gap: var(--pk-space-2); }
+.pk-actions--row { flex-direction: row; }
+.pk-actions--row > * { flex: 1; }
+
+.pk-btn {
+  appearance: none;
+  font-family: inherit;
+  font-size: var(--pk-text-base);
+  font-weight: var(--pk-weight-semibold);
+  line-height: 1;
+  border-radius: var(--pk-radius-md);
+  padding-inline: var(--pk-space-5);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pk-space-2);
+  min-height: 48px;            /* ≥44px touch target */
+  padding-block: 14px;
+  transition: background var(--pk-duration-fast) var(--pk-ease),
+              border-color var(--pk-duration-fast) var(--pk-ease),
+              color var(--pk-duration-fast) var(--pk-ease),
+              transform var(--pk-duration-fast) var(--pk-ease);
+}
+.pk-btn:active { transform: translateY(1px); }
+
+.pk-btn--primary {
+  background: var(--pk-color-brand);
+  color: var(--pk-color-on-brand);
+}
+.pk-btn--primary:hover { background: var(--pk-color-brand-hover); }
+.pk-btn--primary:active { background: var(--pk-color-brand-active); }
+
+.pk-btn--secondary {
+  background: var(--pk-color-surface);
+  color: var(--pk-color-text);
+  border-color: var(--pk-color-border-strong);
+}
+.pk-btn--secondary:hover { background: var(--pk-color-surface-sunken); }
+
+.pk-btn--ghost {
+  background: transparent;
+  color: var(--pk-color-brand);
+  min-height: auto;
+  padding: var(--pk-space-1) var(--pk-space-2);
+}
+.pk-btn--ghost:hover { background: var(--pk-color-brand-soft); }
+
+.pk-btn:disabled,
+.pk-btn[aria-disabled="true"] {
+  opacity: var(--pk-disabled-opacity);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pk-btn__spinner { width: 18px; height: 18px; }
+
+/* ---- Text link --------------------------------------------------------- */
+.pk-link {
+  display: inline-flex; align-items: center; gap: var(--pk-space-1);
+  color: var(--pk-color-brand);
+  font-size: var(--pk-text-sm);
+  font-weight: var(--pk-weight-medium);
+  text-decoration: none;
+  border-radius: var(--pk-radius-xs);
+  background: none; border: 0; cursor: pointer; font-family: inherit;
+  align-self: center;
+}
+.pk-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.pk-link svg { width: 14px; height: 14px; }
+
+/* ---- Focus ring (every interactive element) ---------------------------- */
+.pk :focus-visible,
+.pk-card :focus-visible {
+  outline: var(--pk-focus-width) solid var(--pk-focus-color);
+  outline-offset: var(--pk-focus-offset);
+  box-shadow: 0 0 0 calc(var(--pk-focus-width) + 2px) var(--pk-focus-halo);
+  border-radius: var(--pk-radius-sm);
+}
+
+/* ---- Address chip: identicon + middle-truncate + copy ------------------ */
+.pk-address {
+  display: flex; align-items: center; gap: var(--pk-space-3);
+  padding: 14px;
+  background: var(--pk-color-surface-sunken);
+  border: 1px solid var(--pk-color-border);
+  border-radius: var(--pk-radius-md);
+}
+.pk-identicon {
+  width: 28px; height: 28px; border-radius: var(--pk-radius-sm);
+  flex: none; overflow: hidden;
+}
+.pk-address__text {
+  font-family: var(--pk-font-mono);
+  font-size: var(--pk-text-sm);
+  color: var(--pk-color-text);
+  letter-spacing: 0.01em;
+  flex: 1; min-width: 0;
+  white-space: nowrap;
+}
+.pk-address__label {
+  display: block;
+  font-family: var(--pk-font-sans);
+  font-size: 11px;
+  color: var(--pk-color-text-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.pk-copy {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  width: 34px; height: 34px; flex: none;
+  border-radius: var(--pk-radius-sm);
+  display: grid; place-items: center;
+  color: var(--pk-color-text-muted);
+  transition: background var(--pk-duration-fast) var(--pk-ease),
+              color var(--pk-duration-fast) var(--pk-ease);
+}
+.pk-copy:hover { background: var(--pk-color-brand-soft); color: var(--pk-color-brand); }
+.pk-copy svg { width: 17px; height: 17px; }
+.pk-copy.is-copied { color: var(--pk-color-success); }
+
+/* ---- Transaction summary card ------------------------------------------ */
+.pk-summary {
+  border: 1px solid var(--pk-color-border);
+  border-radius: var(--pk-radius-md);
+  background: var(--pk-color-surface-sunken);
+  overflow: hidden;
+}
+.pk-summary__amount {
+  padding: var(--pk-space-5) var(--pk-space-5) var(--pk-space-4);
+  display: flex; flex-direction: column; gap: 3px;
+  border-bottom: 1px solid var(--pk-color-border);
+}
+.pk-summary__amount-value {
+  font-size: var(--pk-text-xl);
+  font-weight: var(--pk-weight-semibold);
+  letter-spacing: -0.02em;
+}
+.pk-summary__amount-fiat { font-size: var(--pk-text-sm); color: var(--pk-color-text-muted); }
+.pk-summary__rows { display: flex; flex-direction: column; }
+.pk-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--pk-space-4);
+  padding: 14px var(--pk-space-5);
+}
+.pk-row + .pk-row { border-top: 1px solid var(--pk-color-border); }
+.pk-row__key { font-size: var(--pk-text-sm); color: var(--pk-color-text-muted); flex: none; }
+.pk-row__val {
+  font-size: var(--pk-text-sm); color: var(--pk-color-text);
+  font-weight: var(--pk-weight-medium);
+  text-align: end; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pk-row__val--mono { font-family: var(--pk-font-mono); }
+.pk-tag {
+  font-size: var(--pk-text-xs); font-weight: var(--pk-weight-semibold);
+  color: var(--pk-color-brand);
+  background: var(--pk-color-brand-soft);
+  padding: 3px var(--pk-space-2);
+  border-radius: var(--pk-radius-full);
+  white-space: nowrap;
+}
+
+/* ---- Status line (aria-live region) ------------------------------------ */
+.pk-status {
+  display: flex; align-items: center; gap: var(--pk-space-2);
+  font-size: var(--pk-text-sm);
+  color: var(--pk-color-text-muted);
+}
+.pk-status--success { color: var(--pk-color-success); }
+.pk-status--error   { color: var(--pk-color-error); }
+.pk-status--info    { color: var(--pk-color-info); }
+.pk-status svg { width: 16px; height: 16px; flex: none; }
+.pk-status:focus { outline: none; }   /* programmatic focus target, no visible ring */
+.pk-status:focus-visible {
+  outline: var(--pk-focus-width) solid var(--pk-focus-color);
+  outline-offset: var(--pk-focus-offset);
+  border-radius: var(--pk-radius-sm);
+}
+
+/* ---- Spinner ("we're working": deploying / submitting) ----------------- */
+.pk-spinner {
+  width: var(--pk-spinner-size); height: var(--pk-spinner-size);
+  border-radius: var(--pk-radius-full);
+  border: var(--pk-spinner-width) solid var(--pk-spinner-track);
+  border-top-color: var(--pk-spinner-head);
+  animation: pk-spin var(--pk-spin-duration) linear infinite;
+  flex: none;
+}
+@keyframes pk-spin { to { transform: rotate(360deg); } }
+
+/* Indeterminate progress bar — used by deploying / submitting */
+.pk-progress {
+  height: 6px; width: 100%;
+  background: var(--pk-progress-track);
+  border-radius: var(--pk-radius-full);
+  overflow: hidden;
+  position: relative;
+}
+.pk-progress__bar {
+  position: absolute; inset-block: 0; inline-size: 40%;
+  background: var(--pk-progress-head);
+  border-radius: inherit;
+  animation: pk-indeterminate 1.4s var(--pk-ease) infinite;
+}
+@keyframes pk-indeterminate {
+  0%   { inset-inline-start: -40%; }
+  100% { inset-inline-start: 100%; }
+}
+.pk-work {
+  display: flex; flex-direction: column; gap: var(--pk-space-5);
+  align-items: center; text-align: center;
+  padding-block: var(--pk-space-4);
+}
+.pk-work__text { display: flex; flex-direction: column; gap: var(--pk-space-2); align-items: center; }
+.pk-work__title { font-size: var(--pk-text-md); font-weight: var(--pk-weight-semibold); }
+.pk-work__hint  { margin: 0; font-size: var(--pk-text-base); color: var(--pk-color-text-muted); max-width: 30ch; line-height: var(--pk-leading-normal); }
+.pk-work__hint:focus { outline: none; }
+.pk-work .pk-progress { align-self: stretch; }
+
+/* ---- WAITING look ("OS sheet is open": prompting / discovering) --------
+   The native sheet dims our app, so we mirror that: a scrim + a calm pulsing
+   passkey glyph. No spinner competing with the system dialog. */
+.pk-card.is-waiting { box-shadow: var(--pk-shadow-sm); }
+.pk-card__dim {
+  transition: opacity var(--pk-duration-base) var(--pk-ease),
+              filter var(--pk-duration-base) var(--pk-ease);
+}
+.pk-card.is-waiting .pk-card__dim {
+  opacity: var(--pk-busy-opacity);
+  filter: saturate(0.5) blur(2px);
+  pointer-events: none;
+}
+.pk-wait {
+  position: absolute; inset: 0; z-index: var(--pk-z-overlay);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--pk-space-5);
+  padding: var(--pk-space-8) var(--pk-space-6);
+  text-align: center;
+  background: var(--pk-scrim);
+  backdrop-filter: blur(6px);
+}
+.pk-wait__glyph {
+  width: 72px; height: 72px; border-radius: var(--pk-radius-full);
+  display: grid; place-items: center;
+  background: var(--pk-color-surface);
+  border: 1px solid var(--pk-color-border);
+  color: var(--pk-color-brand);
+  box-shadow: var(--pk-shadow-md);
+  animation: pk-pulse var(--pk-pulse-duration) var(--pk-ease) infinite;
+}
+.pk-wait__glyph svg { width: 34px; height: 34px; }
+.pk-wait__text { display: flex; flex-direction: column; gap: var(--pk-space-2); align-items: center; }
+.pk-wait__title { font-size: var(--pk-text-md); font-weight: var(--pk-weight-semibold); }
+.pk-wait__hint  { margin: 0; font-size: var(--pk-text-base); color: var(--pk-color-text-muted); max-width: 28ch; line-height: var(--pk-leading-normal); }
+.pk-wait__hint:focus { outline: none; }
+@keyframes pk-pulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 var(--pk-focus-halo); }
+  50%      { transform: scale(1.04); box-shadow: 0 0 0 10px transparent; }
+}
+/* The OS sheet metaphor: a hint of the native sheet rising from the bottom edge */
+.pk-ossheet {
+  position: absolute; inset-inline: 0; inset-block-end: 0; z-index: var(--pk-z-toast);
+  height: 12px;
+  background: var(--pk-color-text);
+  opacity: 0.06;
+  border-start-start-radius: var(--pk-radius-xl);
+  border-start-end-radius: var(--pk-radius-xl);
+}
+
+/* ---- Listbox (Recover: resolved) --------------------------------------- */
+.pk-listbox {
+  display: flex; flex-direction: column; gap: var(--pk-space-2);
+  max-height: 348px; overflow-y: auto;
+  margin: 0; padding: 2px; list-style: none;
+  outline: none;
+}
+.pk-option {
+  display: flex; align-items: center; gap: var(--pk-space-3);
+  padding: 14px;
+  border: 1px solid var(--pk-color-border);
+  border-radius: var(--pk-radius-md);
+  background: var(--pk-color-surface);
+  cursor: pointer;
+  transition: border-color var(--pk-duration-fast) var(--pk-ease),
+              background var(--pk-duration-fast) var(--pk-ease);
+}
+.pk-option:hover { border-color: var(--pk-color-border-strong); background: var(--pk-color-surface-sunken); }
+.pk-option[aria-selected="true"] {
+  border-color: var(--pk-color-brand);
+  background: var(--pk-color-brand-soft);
+}
+/* roving focus look — the focused row in the listbox */
+.pk-option.is-active {
+  outline: var(--pk-focus-width) solid var(--pk-focus-color);
+  outline-offset: var(--pk-focus-offset);
+  box-shadow: 0 0 0 calc(var(--pk-focus-width) + 2px) var(--pk-focus-halo);
+}
+.pk-option__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pk-option__addr { font-family: var(--pk-font-mono); font-size: var(--pk-text-base); }
+.pk-option__meta { font-size: var(--pk-text-xs); color: var(--pk-color-text-muted); }
+.pk-option__check { color: var(--pk-color-brand); opacity: 0; flex: none; }
+.pk-option__check svg { width: 20px; height: 20px; }
+.pk-option[aria-selected="true"] .pk-option__check { opacity: 1; }
+
+/* ---- Centered result layout (success / done / none / error) -----------
+   One consistent, perfectly-centered column so messages never look ragged. */
+.pk-result {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--pk-space-5);
+}
+.pk-result__head { display: flex; flex-direction: column; align-items: center; gap: var(--pk-space-3); }
+.pk-result__copy { display: flex; flex-direction: column; align-items: center; gap: var(--pk-space-2); }
+.pk-result .pk-glyph { width: 56px; height: 56px; border-radius: var(--pk-radius-lg); }
+.pk-result .pk-glyph svg { width: 30px; height: 30px; }
+.pk-message {
+  margin: 0;
+  font-size: var(--pk-text-base);
+  color: var(--pk-color-text-muted);
+  line-height: var(--pk-leading-normal);
+  max-width: 34ch;
+  text-wrap: pretty;
+}
+.pk-message:focus { outline: none; }
+.pk-message:focus-visible {
+  outline: var(--pk-focus-width) solid var(--pk-focus-color);
+  outline-offset: var(--pk-focus-offset);
+  border-radius: var(--pk-radius-sm);
+}
+.pk-errcode {
+  font-family: var(--pk-font-mono); font-size: var(--pk-text-xs);
+  color: var(--pk-color-text-faint); letter-spacing: 0.02em;
+}
+/* full-width children inside the centered column */
+.pk-result > .pk-actions,
+.pk-result > .pk-address { align-self: stretch; width: 100%; }
+
+/* ---- Banner (error / success inline) ----------------------------------- */
+.pk-banner {
+  display: flex; gap: var(--pk-space-3);
+  padding: var(--pk-space-3) var(--pk-space-4);
+  border-radius: var(--pk-radius-md);
+  font-size: var(--pk-text-sm);
+  align-items: flex-start;
+}
+.pk-banner--error { background: var(--pk-color-error-soft); color: var(--pk-color-error); }
+.pk-banner svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.pk-banner__body { color: var(--pk-color-text); }
+.pk-banner__code {
+  font-family: var(--pk-font-mono); font-size: 11px;
+  color: var(--pk-color-text-faint); margin-top: 2px;
+}
+
+/* Small print under the card */
+.pk-foot {
+  font-size: var(--pk-text-xs); color: var(--pk-color-text-faint);
+  text-align: center; text-wrap: pretty;
+}
+
+/* RTL: everything uses logical properties, so this Just Works. Provided as a
+   hook for the prototype to flip direction. */
+.pk[dir="rtl"] { direction: rtl; }
