@@ -32,15 +32,7 @@ function buildUnsignedEntry(): string {
 }
 
 function assembledSignature(entry: xdr.SorobanAuthorizationEntry): Uint8Array {
-  const structMap = entry
-    .credentials()
-    .address()
-    .signature()
-    .vec()![0]!
-    .map()![0]!
-    .val()
-    .vec()![1]!
-    .map()!;
+  const structMap = entry.credentials().address().signature().map()!;
   const field = structMap.find((e) => e.key().sym().toString() === 'signature')!;
   return new Uint8Array(field.val().bytes());
 }

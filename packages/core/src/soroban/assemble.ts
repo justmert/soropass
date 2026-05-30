@@ -1,59 +1,38 @@
 import { xdr } from '@stellar/stellar-sdk';
-import { KitError } from '../errors';
-
-const sym = (s: string): xdr.ScVal => xdr.ScVal.scvSymbol(s);
-const scBytes = (u: Uint8Array): xdr.ScVal => xdr.ScVal.scvBytes(Buffer.from(u));
-
-export interface AssembledSignature {
-  credentialId: Uint8Array;
-  authenticatorData: Uint8Array;
-  clientDataJSON: Uint8Array;
-  /** 64-byte low-S compact R‖S. */
-  signature: Uint8Array;
-}
+import type { AssertionResult } from './sign';
 
 /**
- * Build the contract `Secp256r1Signature` struct as an ScVal map with sorted
- * symbol keys: { authenticator_data, client_data_json, signature }. This is the
- * kalepail `webauthn-wallet` struct; it is also the standard Soroban
- * struct-as-Map encoding OZ Smart Accounts consume. (Note: kalepail carries the
- * credential id as the *SignerKey*, not a struct field — we follow that.)
- */
-export function buildSignatureStruct(input: AssembledSignature): xdr.ScVal {
-  return xdr.ScVal.scvMap([
-    new xdr.ScMapEntry({ key: sym('authenticator_data'), val: scBytes(input.authenticatorData) }),
-    new xdr.ScMapEntry({ key: sym('client_data_json'), val: scBytes(input.clientDataJSON) }),
-    new xdr.ScMapEntry({ key: sym('signature'), val: scBytes(input.signature) }),
-  ]);
-}
-
-/** `SignerKey::Secp256r1(credentialId)` as a Soroban enum (Vec[symbol, ...]). */
-export function buildSignerKey(credentialId: Uint8Array): xdr.ScVal {
-  return xdr.ScVal.scvVec([sym('Secp256r1'), scBytes(credentialId)]);
-}
-
-/** `Signature::Secp256r1(struct)` as a Soroban enum (Vec[symbol, struct]). */
-export function buildSignatureEnum(signatureStruct: xdr.ScVal): xdr.ScVal {
-  return xdr.ScVal.scvVec([sym('Secp256r1'), signatureStruct]);
-}
-
-/**
- * Insert the assembled WebAuthn signature into an entry's address credentials
- * as `Vec[ Map{ SignerKey => Signature } ]` (kalepail `Signatures`). Mutates and
- * returns the entry.
+ * Set an address-credential auth entry's signature to the `Secp256r1Signature`
+ * struct the on-chain `__check_auth` consumes:
+ *
+ *   ScVal::Map { authenticator_data: Bytes, client_data_json: Bytes, signature: BytesN<64> }
+ *
+ * Map keys are alphabetical, so the ScMap is canonically sorted as Soroban
+ * requires. `signature` MUST already be 64-byte low-S compact (`signAuthEntry`
+ * normalizes before calling this). This is the exact shape the audited
+ * webauthn-verifier reference expects — proven on testnet by the on-chain
+ * integration test (scripts/onchain-e2e.ts).
  */
 export function applyAssertionToEntry(
   entry: xdr.SorobanAuthorizationEntry,
-  assertion: AssembledSignature,
+  assertion: AssertionResult,
 ): xdr.SorobanAuthorizationEntry {
-  const credentials = entry.credentials();
-  if (credentials.switch().name !== 'sorobanCredentialsAddress') {
-    throw new KitError('CONTRACT_AUTH_FAILED', 'auth entry has no address credentials to sign');
-  }
-  const mapEntry = new xdr.ScMapEntry({
-    key: buildSignerKey(assertion.credentialId),
-    val: buildSignatureEnum(buildSignatureStruct(assertion)),
-  });
-  credentials.address().signature(xdr.ScVal.scvVec([xdr.ScVal.scvMap([mapEntry])]));
+  entry.credentials().address().signature(buildSignatureScVal(assertion));
   return entry;
+}
+
+/** The `Secp256r1Signature` ScVal — a contracttype struct → sorted ScMap. */
+export function buildSignatureScVal(assertion: AssertionResult): xdr.ScVal {
+  return xdr.ScVal.scvMap([
+    bytesField('authenticator_data', assertion.authenticatorData),
+    bytesField('client_data_json', assertion.clientDataJSON),
+    bytesField('signature', assertion.signature),
+  ]);
+}
+
+function bytesField(name: string, bytes: Uint8Array): xdr.ScMapEntry {
+  return new xdr.ScMapEntry({
+    key: xdr.ScVal.scvSymbol(name),
+    val: xdr.ScVal.scvBytes(Buffer.from(bytes)),
+  });
 }

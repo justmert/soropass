@@ -35,10 +35,10 @@ export function referenceCheckAuth(
   if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') {
     return fail('no address credentials');
   }
-  const mapEntry = entry.credentials().address().signature().vec()?.[0]?.map()?.[0];
-  if (!mapEntry) return fail('no signature map entry');
-  const structMap = mapEntry.val().vec()?.[1]?.map();
-  if (!structMap) return fail('malformed Signature enum');
+  // The signature is the Secp256r1Signature struct directly: a sorted ScMap
+  // { authenticator_data, client_data_json, signature } (see assemble.ts).
+  const structMap = entry.credentials().address().signature().map();
+  if (!structMap) return fail('signature is not a Secp256r1Signature map');
 
   const field = (name: string): Uint8Array | undefined => {
     const e = structMap.find((x) => x.key().sym().toString() === name);
