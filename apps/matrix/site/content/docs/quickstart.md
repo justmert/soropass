@@ -103,6 +103,6 @@ try {
 ## Next
 
 - **[Integrate a wallet](/integration/)** — adopt the `PasskeyModule` in
-  `@creit-tech/stellar-wallets-kit`, zero → signing.
+  `@creit.tech/stellar-wallets-kit`, zero → signing.
 - **[API reference](/api/)** — generated from the source.
 - **[Security & recovery](/security/)** — the threat model + the on-chain proof.

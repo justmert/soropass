@@ -45,4 +45,4 @@ after the final tranche**: the automated Tier-1 cadence above runs continuously,
 the Tier-2 fleet is re-checked on the stated cadence, **security-relevant fixes
 are prioritized** (see [`telemetry.md`](./telemetry.md) for how field failures are
 surfaced opt-in), and the upstream `PasskeyModule` PR is kept in sync with
-`@creit-tech/stellar-wallets-kit` releases.
+`@creit.tech/stellar-wallets-kit` releases.

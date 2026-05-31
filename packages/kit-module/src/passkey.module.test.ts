@@ -98,7 +98,7 @@ afterEach(() => {
   delete (globalThis as { PublicKeyCredential?: unknown }).PublicKeyCredential;
 });
 
-describe('PasskeyModule (S17) — @creit-tech/stellar-wallets-kit v2.2.0', () => {
+describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () => {
   it('registers via StellarWalletsKit.init({ modules }) + setWallet, with correct metadata', () => {
     const { module } = makeModule();
     const kit = new MiniKit().init({ modules: [module] });
@@ -106,6 +106,23 @@ describe('PasskeyModule (S17) — @creit-tech/stellar-wallets-kit v2.2.0', () =>
     expect(kit.selectedModule.productId).toBe(PASSKEY_ID);
     expect(kit.selectedModule.productName).toBe('Passkey (Smart Account)');
     expect(module.moduleType).toBe('HOT_WALLET');
+  });
+
+  it('GATE: conforms to the full @creit.tech/stellar-wallets-kit v2.2.0 ModuleInterface', () => {
+    const { module } = makeModule();
+    // Compile-time conformance against the complete v2.2.0 surface (vendored in
+    // kitTypes.ts); the upstream PR swaps this for the kit's own ModuleInterface.
+    const asInterface: ModuleInterface = module;
+    for (const method of [
+      'isAvailable',
+      'getAddress',
+      'signTransaction',
+      'signAuthEntry',
+      'signMessage',
+      'getNetwork',
+    ] as const) {
+      expect(typeof (asInterface as unknown as Record<string, unknown>)[method]).toBe('function');
+    }
   });
 
   it('GATE: getAddress() (C-address) + signTransaction() verify THROUGH the module', async () => {

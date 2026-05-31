@@ -189,7 +189,7 @@ alone if you have your own components.
 
 ## Optional: stellar-wallets-kit
 
-A `PasskeyModule` adopts this SDK into `@creit-tech/stellar-wallets-kit`. See
+A `PasskeyModule` adopts this SDK into `@creit.tech/stellar-wallets-kit`. See
 [`docs/integration/stellar-wallets-kit.md`](./stellar-wallets-kit.md).
 
 ## Guarantees (invariants)

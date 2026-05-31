@@ -41,7 +41,7 @@ export interface PasskeyModuleOptions {
 type SignOpts = { networkPassphrase?: string; address?: string; path?: string };
 
 /**
- * `PasskeyModule` for `@creit-tech/stellar-wallets-kit` v2.2.0 — a thin adapter
+ * `PasskeyModule` for `@creit.tech/stellar-wallets-kit` v2.2.0 — a thin adapter
  * that wires the kit's `ModuleInterface` onto `@stellar-passkey/core` ceremonies
  * (S11/S13). No crypto/logic is duplicated here. Drop-in for the kit's
  * `src/sdk/modules/` (upstream PR, S27).

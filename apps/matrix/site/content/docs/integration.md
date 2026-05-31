@@ -1,10 +1,10 @@
 ---
 title: Integration guide (wallet teams)
-description: Adopt the PasskeyModule in @creit-tech/stellar-wallets-kit — zero to signing.
+description: Adopt the PasskeyModule in @creit.tech/stellar-wallets-kit — zero to signing.
 ---
 
 This walks a wallet team from **zero → signing** by adopting the **`PasskeyModule`**
-into [`@creit-tech/stellar-wallets-kit`](https://github.com/Creit-Tech/Stellar-Wallets-Kit).
+into [`@creit.tech/stellar-wallets-kit`](https://github.com/Creit-Tech/Stellar-Wallets-Kit).
 The module is a thin adapter over `@stellar-passkey/core` — it implements the
 kit's `ModuleInterface`, so a passkey smart account behaves like any other wallet
 in the kit.
@@ -22,7 +22,7 @@ The SDK is contract-agnostic on purpose. You bring:
 ## 1. Install
 
 ```bash
-pnpm add @creit-tech/stellar-wallets-kit @stellar-passkey/core @stellar/stellar-sdk
+pnpm add @creit.tech/stellar-wallets-kit @stellar-passkey/core @stellar/stellar-sdk
 # the PasskeyModule ships from this repo (packages/kit-module); upstream PR is S27
 ```
 
@@ -52,7 +52,7 @@ const passkey = new PasskeyModule({
 ## 3. Register it with the kit
 
 ```ts
-import { StellarWalletsKit, WalletNetwork } from '@creit-tech/stellar-wallets-kit';
+import { StellarWalletsKit, WalletNetwork } from '@creit.tech/stellar-wallets-kit';
 
 const kit = new StellarWalletsKit({
   network: WalletNetwork.TESTNET,

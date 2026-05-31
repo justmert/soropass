@@ -8,7 +8,7 @@ const doc = readFileSync(join(repoRoot, 'docs/integration/stellar-wallets-kit.md
 
 describe('stellar-wallets-kit integration design (S16)', () => {
   it('GATE: pins the exact studied version', () => {
-    expect(doc).toMatch(/`@creit-tech\/stellar-wallets-kit`\s*`?2\.2\.0`?/);
+    expect(doc).toMatch(/`@creit\.tech\/stellar-wallets-kit`\s*`?2\.2\.0`?/);
   });
 
   it('covers all five ModuleInterface methods + metadata + isAvailable budget', () => {

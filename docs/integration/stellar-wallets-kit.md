@@ -1,6 +1,6 @@
-# Integration design — `PasskeyModule` for `@creit-tech/stellar-wallets-kit`
+# Integration design — `PasskeyModule` for `@creit.tech/stellar-wallets-kit`
 
-**Studied version: `@creit-tech/stellar-wallets-kit` `2.2.0`** (pinned; verified
+**Studied version: `@creit.tech/stellar-wallets-kit` `2.2.0`** (pinned; verified
 against `references/Stellar-Wallets-Kit/src/types/mod.ts` and `src/sdk/kit.ts`).
 This doc is the design that S17 implements and the technical substance we bring
 to **Issue #90** (S25).
@@ -35,7 +35,7 @@ which is exactly what S11's Soroban auth assembly produces.
 ## Registration (how the wallet is added)
 
 ```ts
-import { StellarWalletsKit } from '@creit-tech/stellar-wallets-kit';
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit';
 import { PasskeyModule } from './passkey.module';
 
 StellarWalletsKit.init({
