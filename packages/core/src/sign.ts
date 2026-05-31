@@ -14,6 +14,10 @@ export {
 export { parseAuthenticatorData, verifyRpIdHash } from './webauthn/authData';
 export { verifyAssertionSignature } from './webauthn/verify';
 
+// One-line browser passkey signer for `signTransaction` / `signAuthEntry`.
+export { browserPasskeySigner } from './ceremonies/browserSigner';
+export type { BrowserPasskeySignerOptions } from './ceremonies/browserSigner';
+
 // Soroban auth assembly (S11): sign a tx or a bare auth entry → SorobanAuthorizationEntry.
 export { signAuthEntry, signTransaction } from './soroban/sign';
 export { authEntryChallenge, authEntryChallengeBytes } from './soroban/preimage';
