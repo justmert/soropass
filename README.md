@@ -10,8 +10,9 @@ invariants and the build plan.
 | --------------- | --------------------------- | --------------------------------------------------------------- |
 | `packages/core` | `@stellar-passkey/core`     | Minimal, headless, **ES256-only** passkey SDK.                  |
 | `packages/ui`   | `@stellar-passkey/ui`       | Headless-first UI primitives; styling is optional/token-driven. |
-| `apps/matrix`   | `@stellar-passkey/matrix`   | VitePress living compatibility-matrix + docs site.              |
-| `apps/demo`     | `@stellar-passkey/demo`     | Reference demo through `@creit.tech/stellar-wallets-kit`.       |
+| `apps/matrix`   | `@stellar-passkey/matrix`   | Astro Starlight compatibility-matrix + generated API reference. |
+| `apps/docs`     | `@stellar-passkey/docs`     | Mintlify developer docs + wallet-team integration guide.        |
+| `apps/demo`     | `@stellar-passkey/demo`     | Reference demo of the create / sign / recover flows.            |
 | `tools/ci`      | `@stellar-passkey/ci-tools` | Virtual-authenticator harness + matrix builder.                 |
 | `contracts/`    | —                           | Reference Soroban smart-account contracts (OZ-compatible).      |
 
@@ -26,7 +27,9 @@ pnpm -r test          # vitest
 ```
 
 CI (`.github/workflows/ci.yml`) runs `lint` / `typecheck` / `test` / `build` on a
-Node 20/22 matrix; a stubbed `matrix-publish` job is filled in by S07/S09.
+Node 20/22 matrix, plus a virtual-authenticator `matrix-ci` job. The
+`matrix-publish` job currently prints a run summary; scheduled commit-back +
+site deploy of the dated snapshot is pending.
 
 ## Non-negotiable invariants
 
