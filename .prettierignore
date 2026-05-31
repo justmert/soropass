@@ -6,6 +6,8 @@ references
 CHANGELOG.md
 CLAUDE.md
 apps/matrix/site/matrix-table.md
+# typedoc-generated API reference (generated; regenerated on build)
+apps/matrix/site/api
 # Playwright run artifacts
 **/test-results
 **/playwright-report

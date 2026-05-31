@@ -8,8 +8,9 @@
     "matrix:pull": "tsx scripts/pull-bcd.ts",
     "matrix:ci": "tsx ci/run-matrix-ci.ts",
     "matrix:build": "tsx scripts/build-matrix.ts",
-    "build": "vitepress build site",
-    "docs:dev": "vitepress dev site",
+    "docs:api": "typedoc && tsx scripts/sanitize-api.ts",
+    "build": "pnpm run docs:api && vitepress build site",
+    "docs:dev": "pnpm run docs:api && vitepress dev site",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -21,9 +22,14 @@
     "@mdn/browser-compat-data": "^8.0.0",
     "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
+    "mermaid": "^11.15.0",
     "tsx": "^4.22.3",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
+    "typedoc-vitepress-theme": "^1.1.2",
     "typescript": "^5.6.0",
     "vitepress": "^1.6.3",
+    "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^2.0.0",
     "vue": "^3.5.0"
   }

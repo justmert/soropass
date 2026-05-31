@@ -1,0 +1,26 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "name": "@stellar-passkey/core API",
+  "entryPoints": [
+    "../../packages/core/src/types.ts",
+    "../../packages/core/src/create.ts",
+    "../../packages/core/src/connect.ts",
+    "../../packages/core/src/sign.ts",
+    "../../packages/core/src/recover.ts",
+    "../../packages/core/src/adapters/index.ts",
+    "../../packages/core/src/testing/index.ts"
+  ],
+  "tsconfig": "../../packages/core/tsconfig.json",
+  "out": "site/api",
+  "entryFileName": "index",
+  "readme": "none",
+  "githubPages": false,
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "skipErrorChecking": true,
+  "hidePageHeader": true,
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "parametersFormat": "table"
+}
