@@ -1,4 +1,7 @@
-# Integration guide (wallet teams)
+---
+title: Integration guide (wallet teams)
+description: Adopt the PasskeyModule in @creit-tech/stellar-wallets-kit — zero to signing.
+---
 
 This walks a wallet team from **zero → signing** by adopting the **`PasskeyModule`**
 into [`@creit-tech/stellar-wallets-kit`](https://github.com/Creit-Tech/Stellar-Wallets-Kit).
@@ -96,14 +99,14 @@ const { signedTxXdr } = await passkey.signTransaction(preparedTxXdr, {
 // then submit (directSubmission / Launchtube / OZ Relayer) — see Adapters below
 ```
 
-::: warning Prepare + budget the transaction first
+:::caution[Prepare + budget the transaction first]
 `signTransaction` signs the Soroban **auth entries** in a prepared tx. Build and
 **simulate** the invocation first (to populate nonces + resource fees), set a
 valid `signatureExpirationLedger`, and — because simulation skips
 `secp256r1_verify` — **inflate the instruction budget + resource fee** before
 submitting. A complete, runnable build → simulate → sign → submit reference is
-[`packages/core/scripts/onchain-e2e.ts`](https://github.com/), which is the same
-flow proven on testnet in [Security & recovery](/security).
+`packages/core/scripts/onchain-e2e.ts`, which is the same flow proven on testnet
+in [Security & recovery](/security/).
 :::
 
 `signAuthEntry(xdr, opts)` does the same for a single `SorobanAuthorizationEntry`.
@@ -138,5 +141,5 @@ Map `KitError.code` to UI copy (the styled UI does this for you):
 
 ## Don't want the kit?
 
-Use `@stellar-passkey/core` directly — see the [Quickstart](/quickstart) — or the
+Use `@stellar-passkey/core` directly — see the [Quickstart](/quickstart/) — or the
 headless/styled UI primitives in `@stellar-passkey/ui`.

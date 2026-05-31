@@ -1,4 +1,7 @@
-# Contributing matrix cells
+---
+title: Contributing cells
+description: How to contribute Tier-2 real-device compatibility results.
+---
 
 The matrix is **sourced, not hand-typed** — most cells come from MDN BCD or the
 virtual-authenticator CI. But real-device (Tier-2) cells — Safari/iOS, Firefox,

@@ -1,4 +1,7 @@
-# Quickstart
+---
+title: Quickstart
+description: Install @stellar-passkey/core and create / sign / recover a passkey smart account.
+---
 
 `@stellar-passkey/core` is a minimal, headless, **ES256-only** passkey SDK for
 Stellar smart accounts. It owns the WebAuthn ceremonies, the crypto (SEC-1 key
@@ -57,7 +60,7 @@ const indexer = eventsIndexer({ rpcUrl, factoryContractId: 'C…FACTORY' });
 const session = await connect({ rpId, indexer }); // { contractId, credentialId } | null
 
 // build + simulate your invocation with @stellar/stellar-sdk, then:
-const sign = browserPasskeySigner({ rpId, allowCredentials: [session!.credentialId] });
+const sign = browserPasskeySigner({ rpId, allowCredentials: [session.credentialId] });
 const signedAuthXdr = await signTransaction(preparedTxXdr, { networkPassphrase, sign });
 
 // sign the envelope (source/fees) and submit:
@@ -65,7 +68,7 @@ const result = await directSubmission({ rpcUrl, networkPassphrase }).send(fullyS
 // → { status: 'SUCCESS' | 'FAILED' | 'PENDING', hash }
 ```
 
-::: tip Resource budget
+:::tip[Resource budget]
 `simulateTransaction` records auth but does **not** run `secp256r1_verify`, so it
 under-budgets CPU instructions; a naive submit fails with `ExceededLimit`. Inflate
 the Soroban instruction budget + resource fee before submitting — a complete,
@@ -99,7 +102,7 @@ try {
 
 ## Next
 
-- **[Integrate a wallet](/integration)** — adopt the `PasskeyModule` in
+- **[Integrate a wallet](/integration/)** — adopt the `PasskeyModule` in
   `@creit-tech/stellar-wallets-kit`, zero → signing.
 - **[API reference](/api/)** — generated from the source.
-- **[Security & recovery](/security)** — the threat model + the on-chain proof.
+- **[Security & recovery](/security/)** — the threat model + the on-chain proof.

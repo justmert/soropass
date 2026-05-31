@@ -1,4 +1,7 @@
-# Security & recovery
+---
+title: Security & recovery
+description: On-chain proof, threat model, and recovery for passkey smart accounts.
+---
 
 ## Proven on-chain (testnet)
 
