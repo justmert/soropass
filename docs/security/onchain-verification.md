@@ -13,12 +13,13 @@ This is the **live** proof that an authorization entry assembled and signed by
   `secp256r1_verify` inside a deployed custom-account contract's `__check_auth`.
 - A **wrong key** is rejected on-chain (the host crypto traps).
 
-| Run | Key | On-chain result |
-|---|---|---|
-| Positive | the account's registered P-256 key | **SUCCESS** |
-| Negative | a different P-256 key | **FAILED** (`secp256r1_verify` trap) |
+| Run      | Key                                | On-chain result                      |
+| -------- | ---------------------------------- | ------------------------------------ |
+| Positive | the account's registered P-256 key | **SUCCESS**                          |
+| Negative | a different P-256 key              | **FAILED** (`secp256r1_verify` trap) |
 
 Reference run (testnet):
+
 - Contract: `CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2`
 - Success tx: `f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418`
   (https://stellar.expert/explorer/testnet/tx/f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418)
