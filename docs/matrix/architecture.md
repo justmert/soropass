@@ -12,9 +12,9 @@ flowchart TB
   subgraph T1["Tier 1 — automated · every release + weekly cron"]
     BCD["matrix:pull<br/>MDN BCD → bcd.&lt;date&gt;.json"]
     LIVE["detectCapabilities()<br/>live feature-detect"]
-    CI["matrix:ci<br/>Playwright + CDP virtual authenticator<br/>Chromium + Edge → ci.&lt;date&gt;.json"]
+    CI["matrix:ci<br/>Playwright + CDP virtual authenticator<br/>Chromium (Edge best-effort) → ci.&lt;date&gt;.json"]
     BUILD["matrix:build<br/>merge + tier-tag → matrix.&lt;date&gt;.json"]
-    SITE["VitePress site<br/>dated · diffable · 'your device' panel"]
+    SITE["Astro Starlight site<br/>dated · diffable · 'your device' panel"]
     BCD --> BUILD
     LIVE --> CI
     CI --> BUILD
@@ -64,6 +64,6 @@ harness lands.
 | `detectCapabilities()`     | S06       | `apps/matrix/src/featureDetect.ts`                                        |
 | `matrix:ci` (CDP CI)       | S07       | `apps/matrix/ci/run-matrix-ci.ts` → `data/ci.*.json` + GH `matrix-ci` job |
 | `matrix:build` (merge)     | S09       | `apps/matrix/scripts/build-matrix.ts` → `data/matrix.*.json`              |
-| VitePress site             | S09       | `apps/matrix/site/**` (`pnpm -F matrix build`)                            |
+| Astro Starlight site             | S09       | `apps/matrix/site/**` (`pnpm -F matrix build`)                            |
 | Tier-2 fleet + coverage    | S08       | `docs/matrix/automation-coverage.md` + `src/tiers.ts`                     |
 | _WebDriver Firefox/Safari_ | _planned_ | _feasible per S08; harness not yet wired (dashed)_                        |
