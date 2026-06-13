@@ -8,6 +8,8 @@
     "matrix:pull": "tsx scripts/pull-bcd.ts",
     "matrix:ci": "tsx ci/run-matrix-ci.ts",
     "matrix:build": "tsx scripts/build-matrix.ts",
+    "matrix:diff": "tsx scripts/diff-matrix.ts",
+    "matrix:refresh": "pnpm matrix:pull && pnpm matrix:build && pnpm matrix:diff",
     "build": "astro build",
     "dev": "astro dev",
     "preview": "astro preview",

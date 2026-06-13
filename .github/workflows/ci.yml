@@ -93,20 +93,71 @@ jobs:
           path: apps/matrix/data/ci.*.json
           if-no-files-found: error
 
-  # Consumes the REAL virtual-authenticator results (S07). The full dated/diffable
-  # site publish lands in S09 (YK-435).
-  matrix-publish:
-    needs: [lint, typecheck, test, build, matrix-ci]
+  # S09 (YK-435) — the living mechanism. Re-pull BCD, merge the fresh
+  # virtual-authenticator results (matrix-ci), regenerate the dated snapshot +
+  # diff, and COMMIT IT BACK as a PR — so the matrix accrues real dated history
+  # instead of one frozen snapshot. Runs on the weekly cron + pushes to main.
+  matrix-refresh:
+    needs: [matrix-ci]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Pull the fresh virtual-authenticator results from matrix-ci
+        uses: actions/download-artifact@v4
         with:
           name: matrix-ci-data
           path: apps/matrix/data
-      - name: Summarize the real CI matrix data it now consumes
-        run: |
-          file=$(ls apps/matrix/data/ci.*.json | tail -1)
-          echo "Consuming real virtual-authenticator results from $file"
-          node -e "const s=require(process.argv[1]); const v=s.gridResults.filter(g=>g.verified).length; console.log('verified '+v+'/'+s.gridResults.length+' cells across '+s.browsers.filter(b=>b.available).map(b=>b.name+' '+b.version).join(', '));" "$PWD/$file"
+      - name: Refresh dated snapshot + diff (pull → build → diff)
+        run: pnpm --filter @stellar-passkey/matrix matrix:refresh
+      - name: Open a PR with the refreshed snapshot (only if something changed)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(matrix): living-matrix weekly refresh — dated snapshot + diff (YK-435)"
+          title: "chore(matrix): living-matrix weekly refresh"
+          body: "Automated re-verification. See `apps/matrix/site/matrix-diff.md` for what changed between the two latest dated snapshots."
+          branch: matrix/auto-refresh
+          add-paths: |
+            apps/matrix/data/*.json
+            apps/matrix/site/matrix-table.md
+            apps/matrix/site/matrix-diff.md
+
+  # S09 (YK-435) — auto-publish the dated site to GitHub Pages on every push to main.
+  # (Requires Pages → "GitHub Actions" enabled in repo settings.)
+  deploy-matrix:
+    needs: [lint, typecheck, test, build]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build SDK core (the typedoc API reference reads it)
+        run: pnpm --filter @stellar-passkey/core build
+      - name: Build the matrix / docs site
+        run: pnpm --filter @stellar-passkey/matrix build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/matrix/site/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4

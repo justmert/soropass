@@ -13,10 +13,15 @@ describe('verification tiers (S08)', () => {
     }
   });
 
-  it('desktop Chromium/Edge are Tier-1 automated and wired', () => {
+  it('Chromium desktop is Tier-1 automated and wired; Edge is automatable but not yet captured in CI', () => {
     expect(tierFor('Chrome', 'desktop').tier).toBe('tier-1-automated');
     expect(tierFor('Chrome', 'desktop').wired).toBe(true);
-    expect(tierFor('Edge', 'Windows').tier).toBe('tier-1-automated');
+    // Edge is Chromium/Blink (automatable via the same path) but msedge is
+    // best-effort in CI and absent from the committed run — so it must NOT
+    // render as a verified Tier-1 cell.
+    expect(tierFor('Edge', 'Windows').automatable).toBe(true);
+    expect(tierFor('Edge', 'Windows').wired).toBe(false);
+    expect(tierFor('Edge', 'Windows').tier).toBe('tier-2-manual');
   });
 
   it('Firefox/Safari desktop are Tier-2 now but flagged automatable', () => {

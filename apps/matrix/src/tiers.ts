@@ -29,10 +29,11 @@ const DESKTOP_TIERS: Record<string, VerificationTier> = {
     wired: true,
   },
   Edge: {
-    tier: 'tier-1-automated',
-    method: 'CDP virtual authenticator (Playwright, S07)',
+    tier: 'tier-2-manual',
+    method: 'Chromium/Blink — the Chrome CDP virtual-authenticator path applies (Playwright, S07)',
     automatable: true,
-    wired: true,
+    wired: false,
+    note: 'Edge shares Chrome’s Blink+CDP engine, so the Tier-1 harness applies — but msedge is best-effort in CI and was not captured in the committed run; treated as not-yet-machine-verified until a run with Edge present lands.',
   },
   Firefox: {
     tier: 'tier-2-manual',
