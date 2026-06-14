@@ -1,0 +1,13 @@
+{
+  "name": "@stellar-passkey/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Mintlify developer docs — Stellar passkey SDK + stellar-wallets-kit integration.",
+  "scripts": {
+    "dev": "mint dev",
+    "check": "mint broken-links"
+  },
+  "devDependencies": {
+    "mint": "^4.2.49"
+  }
+}

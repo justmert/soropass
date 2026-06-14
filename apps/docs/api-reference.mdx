@@ -1,0 +1,117 @@
+---
+title: API reference
+description: The functions, options, adapters, and errors in @stellar-passkey/core.
+---
+
+A small, focused surface. Import from subpaths for the best tree-shaking
+(`@stellar-passkey/core/create`, `/connect`, `/recover`, `/sign`, `/types`).
+
+## createPasskey
+
+Register an ES256 passkey, extract its public key, and deploy a smart account.
+
+```ts
+import { createPasskey } from '@stellar-passkey/core/create';
+const account = await createPasskey(options);
+```
+
+<ParamField path="rpId" type="string" required>Your site's Relying-Party ID (registrable domain).</ParamField>
+<ParamField path="rpName" type="string" required>Human-readable app name shown in the passkey sheet.</ParamField>
+<ParamField path="userName" type="string" required>A label for the credential.</ParamField>
+<ParamField path="deployer" type="AccountDeployer" required>`{ deploy({ publicKey, credentialId }) => Promise<{ contractId }> }` — your factory.</ParamField>
+<ParamField path="userActivation" type="UserActivation">Pass `navigator.userActivation` to enforce the Safari user-gesture rule.</ParamField>
+
+<ResponseField name="returns" type="PasskeyCredential">`{ contractId, credentialId, publicKey }` — the smart-account address, the passkey id, and the 65-byte SEC-1 public key.</ResponseField>
+
+## connect
+
+Silently resolve the stored passkey's account address.
+
+```ts
+import { connect } from '@stellar-passkey/core/connect';
+const session = await connect({ rpId, indexer }); // { contractId, credentialId } | null
+```
+
+Returns `null` if there's no stored credential — call `recover()` or `createPasskey()`.
+
+## recover
+
+Discover every account a passkey controls (works on a new device, no stored state).
+
+```ts
+import { recover } from '@stellar-passkey/core/recover';
+const accounts = await recover({ rpId, indexer }); // RecoverResult[] = [{ contractId, credentialId }]
+```
+
+## signTransaction / signAuthEntry
+
+Sign the Soroban authorization in a prepared transaction (or a single entry). The
+signature is automatically low-S-normalized — the form Stellar's on-chain verifier
+requires.
+
+```ts
+import { signTransaction, signAuthEntry } from '@stellar-passkey/core/sign';
+
+const signedTxXdr = await signTransaction(preparedTxXdr, { networkPassphrase, sign });
+const signedEntry = await signAuthEntry(entryXdr, { networkPassphrase, sign });
+```
+
+<ParamField path="sign" type="WebAuthnSigner" required>A function that turns a challenge into a WebAuthn assertion — usually `browserPasskeySigner(...)`.</ParamField>
+
+## browserPasskeySigner
+
+Wraps `navigator.credentials.get` into the `sign` function above.
+
+```ts
+import { browserPasskeySigner } from '@stellar-passkey/core/sign';
+
+const sign = browserPasskeySigner({
+  rpId,
+  allowCredentials: [credentialId], // omit for a discoverable prompt
+});
+```
+
+## Adapters
+
+Submission and indexing are pluggable; the defaults need only an RPC URL.
+
+```ts
+import {
+  directSubmission, // soroban-rpc (default)
+  launchtubeSubmission, // Launchtube relay
+  openzeppelinRelayerSubmission, // OZ Relayer
+  eventsIndexer, // soroban-rpc getEvents (default)
+  mercuryIndexer, // Mercury
+  defaultAdapters, // the zero-infra pair
+} from '@stellar-passkey/core';
+```
+
+All submitters implement `SubmissionAdapter { send(xdr): Promise<SubmitResult> }`
+and all indexers implement `IndexerAdapter { resolveByCredential(id): Promise<{ contractId }[]> }`.
+
+## PasskeyModule
+
+The Stellar Wallets Kit adapter — see the [integration guide](/wallets-kit).
+
+```ts
+import { PasskeyModule } from '@stellar-passkey/wallets-kit-module';
+```
+
+## Errors
+
+Everything thrown is a `KitError` with a `code` from this set:
+
+| Code | Meaning |
+| --- | --- |
+| `USER_CANCELLED` | The passkey prompt was dismissed. |
+| `UNSUPPORTED_AUTHENTICATOR` | No usable passkey on this device/browser. |
+| `ES256_NOT_SUPPORTED` | The device made a non-secp256r1 key (Stellar can't verify it). |
+| `INVALID_PUBLIC_KEY` | The passkey's key couldn't be read. |
+| `INVALID_SIGNATURE_DER` | The signature was malformed. |
+| `RP_ID_MISMATCH` / `ORIGIN_MISMATCH` / `CHALLENGE_MISMATCH` | The assertion didn't match the request. |
+| `CONTRACT_AUTH_FAILED` | The on-chain account rejected the authorization. |
+| `NETWORK_ERROR` | The network/RPC was unreachable. |
+
+```ts
+import { isKitError, KIT_ERROR_CODES } from '@stellar-passkey/core/types';
+```

@@ -1,0 +1,69 @@
+---
+title: "Stellar passkey wallets"
+description: "Sign in to a Stellar smart account with Face ID, Touch ID, or a security key — no seed phrase."
+---
+
+A **passkey** is the credential your device already uses for Face ID, Touch ID,
+Windows Hello, or a hardware security key. Instead of a 24-word seed phrase, the
+private key is generated and stored by the device's secure hardware and never
+leaves it — the user just confirms with a fingerprint or face scan.
+
+This SDK lets a **Stellar smart account** (a Soroban contract account) be
+controlled by a passkey, and ships as a drop-in module for
+[Stellar Wallets Kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit).
+
+<CardGroup cols={2}>
+  <Card title="Create" icon="user-plus">
+    A new passkey becomes a smart-account address (a `C…` contract address).
+  </Card>
+  <Card title="Sign" icon="signature">
+    Approve a transaction with a fingerprint; the SDK builds the on-chain authorization.
+  </Card>
+  <Card title="Recover" icon="rotate">
+    Return on a new device and find the accounts a passkey controls — no seed phrase.
+  </Card>
+  <Card title="Drop-in for wallets" icon="wallet">
+    Works like any other wallet option inside Stellar Wallets Kit.
+  </Card>
+</CardGroup>
+
+## Why passkeys
+
+- **Nothing to lose or phish.** There is no seed phrase; the key lives in the
+  device's secure enclave.
+- **Familiar UX.** Users already know Face ID / Touch ID / Windows Hello.
+- **Synced and recoverable.** Platform passkeys sync via iCloud Keychain and
+  Google Password Manager, so the account follows the user across their devices.
+- **Verified on-chain.** Soroban smart accounts check the passkey's secp256r1
+  signature directly in the contract — no trusted server in the loop.
+
+## How it works
+
+<Steps>
+  <Step title="The passkey signs">
+    The browser's WebAuthn API produces a secp256r1 signature using the device key.
+  </Step>
+  <Step title="The SDK assembles the authorization">
+    It normalizes the signature and builds the Soroban authorization the contract expects.
+  </Step>
+  <Step title="The smart account verifies it on-chain">
+    The contract's `__check_auth` runs `secp256r1_verify` — the passkey is the account's signer.
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Install and sign your first transaction.
+  </Card>
+  <Card title="Use with Stellar Wallets Kit" icon="puzzle-piece" href="/wallets-kit">
+    Add passkey sign-in to a wallet in a few lines.
+  </Card>
+  <Card title="Browser compatibility" icon="table-cells" href="/compatibility">
+    Which browsers and platforms support passkeys.
+  </Card>
+  <Card title="Security & recovery" icon="shield-check" href="/security">
+    How keys are protected and accounts recovered.
+  </Card>
+</CardGroup>
