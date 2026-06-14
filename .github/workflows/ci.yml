@@ -124,40 +124,12 @@ jobs:
         with:
           commit-message: "chore(matrix): living-matrix weekly refresh — dated snapshot + diff (YK-435)"
           title: "chore(matrix): living-matrix weekly refresh"
-          body: "Automated re-verification. See `apps/matrix/site/matrix-diff.md` for what changed between the two latest dated snapshots."
+          body: "Automated re-verification. See the latest `apps/matrix/data/matrix-diff.*.json` for what changed between the two latest dated snapshots."
           branch: matrix/auto-refresh
           add-paths: |
             apps/matrix/data/*.json
-            apps/matrix/site/matrix-table.md
-            apps/matrix/site/matrix-diff.md
 
-  # S09 (YK-435) — auto-publish the dated site to GitHub Pages on every push to main.
-  # (Requires Pages → "GitHub Actions" enabled in repo settings.)
-  deploy-matrix:
-    needs: [lint, typecheck, test, build]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Build SDK core (the typedoc API reference reads it)
-        run: pnpm --filter @stellar-passkey/core build
-      - name: Build the matrix / docs site
-        run: pnpm --filter @stellar-passkey/matrix build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/matrix/site/dist
-      - id: deploy
-        uses: actions/deploy-pages@v4
+  # NOTE: the docs front-end is the Mintlify site (apps/docs), hosted by Mintlify
+  # (connected repo), so there is no Astro/Pages deploy job here. The matrix data
+  # (apps/matrix/data/*.json) is committed back by matrix-refresh above and the
+  # Mintlify compatibility explorer fetches it.

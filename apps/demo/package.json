@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^2.3.0",
     "@stellar-passkey/core": "workspace:^",
     "@stellar-passkey/ui": "workspace:^"
   },

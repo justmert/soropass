@@ -29,6 +29,12 @@ references/
 **/test-results/
 **/playwright-report/
 **/.playwright/
-# Astro / Starlight (build cache + generated typedoc API reference)
-**/.astro/
-apps/matrix/site/content/docs/api/
+# Matrix pipeline: human-readable rendered tables (generated from data/*.json)
+apps/matrix/rendered/
+# Competitor RFP proposals + cloned competitor repos (local intel — never commit)
+passkey-competitor-1.md
+passkey-competitor-2.md
+/sealpass/
+/jes-labs/
+**/stellar-passkeyui/
+competitor-*/

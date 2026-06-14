@@ -36,7 +36,7 @@ there for moving rows from Tier-2 → Tier-1.
   published surface (matrix/demo/ci-tools are `ignore`d).
 - **Conventional Commits** + the five CI gates gate every change.
 - Community matrix cells and fixes have a contribution path —
-  [`apps/matrix/site/content/docs/contributing.md`](../../apps/matrix/site/content/docs/contributing.md).
+  open a PR adding or correcting cells in [`apps/matrix/data`](../../apps/matrix/data) (the sourced matrix snapshots).
 
 ## Post-award commitment
 

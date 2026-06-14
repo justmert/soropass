@@ -21,7 +21,7 @@ import { tierFor } from '../src/tiers';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(here, '..', 'data');
-const siteDir = join(here, '..', 'site');
+const renderedDir = join(here, '..', 'rendered');
 const builtAt = process.env.MATRIX_PULL_DATE ?? new Date().toISOString().slice(0, 10);
 
 function latestFile(prefix: string): string | null {
@@ -151,9 +151,9 @@ for (const feature of features) {
   }
 }
 
-mkdirSync(siteDir, { recursive: true });
-writeFileSync(join(siteDir, 'matrix-table.md'), md);
+mkdirSync(renderedDir, { recursive: true });
+writeFileSync(join(renderedDir, 'matrix-table.md'), md);
 
 console.log(
-  `matrix:build → ${file}: ${String(mergedCells.length)} cells from bcd=${bcdFile ?? '–'} ci=${ciFile ?? '–'}; rendered site/matrix-table.md`,
+  `matrix:build → ${file}: ${String(mergedCells.length)} cells from bcd=${bcdFile ?? '–'} ci=${ciFile ?? '–'}; wrote rendered/matrix-table.md`,
 );
