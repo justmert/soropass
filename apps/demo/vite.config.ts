@@ -5,5 +5,12 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   server: { port: 4321, strictPort: true },
   preview: { port: 4321, strictPort: true },
-  build: { target: 'es2022' },
+  build: {
+    target: 'es2022',
+    rollupOptions: {
+      // Two entries: the full gallery demo (index.html) and the docs embed
+      // target (embed.html) the Mintlify docs iframe for live previews.
+      input: { main: 'index.html', embed: 'embed.html' },
+    },
+  },
 });

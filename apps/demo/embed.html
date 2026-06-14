@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stellar Passkey UI — embed</title>
+    <!--
+      Single-screen embed target for the docs (Mintlify iframes this). Transparent
+      background so it blends into the host page's theme. Driven by URL params +
+      postMessage — see src/embed.ts.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+      }
+      body {
+        padding: 16px;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .pk-embed-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .pk-embed-tile {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .pk-embed-tile__label {
+        font: 12px/1.4 ui-monospace, 'SF Mono', monospace;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="/src/embed.ts"></script>
+  </body>
+</html>
