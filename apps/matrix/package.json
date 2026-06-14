@@ -9,7 +9,9 @@
     "matrix:ci": "tsx ci/run-matrix-ci.ts",
     "matrix:build": "tsx scripts/build-matrix.ts",
     "matrix:diff": "tsx scripts/diff-matrix.ts",
-    "matrix:refresh": "pnpm matrix:pull && pnpm matrix:build && pnpm matrix:diff",
+    "matrix:refresh": "pnpm matrix:pull && pnpm matrix:build && pnpm matrix:diff && pnpm docs:export",
+    "docs:export": "tsx scripts/export-matrix.ts",
+    "docs:sizes": "tsx scripts/bundle-sizes.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -21,6 +23,7 @@
     "@mdn/browser-compat-data": "^8.0.0",
     "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.1",
     "tsx": "^4.22.3",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",

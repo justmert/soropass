@@ -1,0 +1,20 @@
+{
+  "pointers": {
+    "matrixLatest": "matrix-latest.json",
+    "bcdLatest": "latest.json"
+  },
+  "latest": {
+    "matrix": "matrix.2026-06-13.json",
+    "diff": "matrix-diff.2026-05-29..2026-06-13.json",
+    "ci": "ci.2026-05-29.json",
+    "bcd": "bcd.2026-06-13.json"
+  },
+  "files": [
+    "matrix-latest.json",
+    "latest.json",
+    "matrix.2026-06-13.json",
+    "matrix-diff.2026-05-29..2026-06-13.json",
+    "ci.2026-05-29.json",
+    "bcd.2026-06-13.json"
+  ]
+}

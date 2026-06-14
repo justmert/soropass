@@ -1,0 +1,48 @@
+{
+  "measuredAt": "2026-06-14",
+  "note": "minified + gzip, @stellar/* and @noble/* externalized (peer deps)",
+  "entries": [
+    {
+      "subpath": "@stellar-passkey/core",
+      "rawBytes": 16860,
+      "gzipBytes": 5905,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/create",
+      "rawBytes": 7982,
+      "gzipBytes": 3122,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/connect",
+      "rawBytes": 2903,
+      "gzipBytes": 1356,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/sign",
+      "rawBytes": 10136,
+      "gzipBytes": 3809,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/recover",
+      "rawBytes": 2763,
+      "gzipBytes": 1333,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/types",
+      "rawBytes": 624,
+      "gzipBytes": 445,
+      "devOnly": false
+    },
+    {
+      "subpath": "@stellar-passkey/core/testing",
+      "rawBytes": 13913,
+      "gzipBytes": 5146,
+      "devOnly": true
+    }
+  ]
+}
