@@ -129,7 +129,7 @@ jobs:
           add-paths: |
             apps/matrix/data/*.json
 
-  # NOTE: the docs front-end is the Mintlify site (apps/docs), hosted by Mintlify
-  # (connected repo), so there is no Astro/Pages deploy job here. The matrix data
-  # (apps/matrix/data/*.json) is committed back by matrix-refresh above and the
-  # Mintlify compatibility explorer fetches it.
+  # NOTE: there is no docs deploy job here — the docs front-end is a separate
+  # designed site, pushed independently. The matrix data (apps/matrix/data/*.json)
+  # is committed back by matrix-refresh above; the docs site fetches the exported
+  # JSON (run `pnpm --filter @stellar-passkey/matrix docs:export` into its /public).

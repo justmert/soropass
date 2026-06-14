@@ -1,5 +1,5 @@
 /**
- * Copy the latest matrix data snapshots to `apps/docs/public/matrix/` so the
+ * Copy the latest matrix data snapshots to the docs site's `/public/matrix/` so the
  * Mintlify compatibility explorer can `fetch` them. Mintlify can't import the Zod
  * schema or read repo files, but fetching flat JSON from its own /public is
  * allowed — this is what turns the static table into a live, sourced, dated,
@@ -13,7 +13,10 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(here, '..', 'data');
-const outDir = join(here, '..', '..', '..', 'apps', 'docs', 'public', 'matrix');
+// Output base is site-agnostic: the docs site sets DOCS_PUBLIC_DIR to its own
+// /public at build; default is apps/matrix/public (gitignored, regenerable).
+const publicDir = process.env.DOCS_PUBLIC_DIR ?? join(here, '..', 'public');
+const outDir = join(publicDir, 'matrix');
 
 function latest(prefix: string): string | null {
   const files = readdirSync(dataDir)

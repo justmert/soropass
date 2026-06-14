@@ -11,8 +11,7 @@ invariants and the build plan.
 | `packages/core` | `@stellar-passkey/core`     | Minimal, headless, **ES256-only** passkey SDK.                  |
 | `packages/ui`   | `@stellar-passkey/ui`       | Headless-first UI primitives; styling is optional/token-driven. |
 | `apps/matrix`   | `@stellar-passkey/matrix`   | Living compatibility-matrix **data pipeline** (MDN BCD + virtual-authenticator CI) + typedoc API generation. |
-| `apps/docs`     | `@stellar-passkey/docs`     | Mintlify developer docs + wallet-team integration guide.        |
-| `apps/demo`     | `@stellar-passkey/demo`     | Reference demo of the create / sign / recover flows.            |
+| `apps/demo`     | `@stellar-passkey/demo`     | Reference demo of the create / sign / recover flows + the `/embed` live-preview target the docs site iframes. |
 | `tools/ci`      | `@stellar-passkey/ci-tools` | Virtual-authenticator harness + matrix builder.                 |
 | `contracts/`    | —                           | Reference Soroban smart-account contracts (OZ-compatible).      |
 

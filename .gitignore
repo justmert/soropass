@@ -31,6 +31,8 @@ references/
 **/.playwright/
 # Matrix pipeline: human-readable rendered tables (generated from data/*.json)
 apps/matrix/rendered/
+# Generated docs data (bundle sizes + matrix JSON the docs site fetches)
+apps/matrix/public/
 # Design / planning docs — local only, never committed (only outcomes ship)
 docs/design/
 # Competitor RFP proposals + cloned competitor repos (local intel — never commit)

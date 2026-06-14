@@ -17,7 +17,10 @@ import * as esbuild from 'esbuild';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
 const coreDist = join(repo, 'packages', 'core', 'dist');
-const outFile = join(repo, 'apps', 'docs', 'public', 'bundle-sizes.json');
+// Output base is site-agnostic: the docs site sets DOCS_PUBLIC_DIR to its own
+// /public at build; default is apps/matrix/public (gitignored, regenerable).
+const publicDir = process.env.DOCS_PUBLIC_DIR ?? join(repo, 'apps', 'matrix', 'public');
+const outFile = join(publicDir, 'bundle-sizes.json');
 
 const ENTRIES: { subpath: string; file: string; devOnly?: boolean }[] = [
   { subpath: '@stellar-passkey/core', file: 'index.js' },
