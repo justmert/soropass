@@ -5,7 +5,7 @@
  * (the documented "connector" addition) without duplicating flow logic.
  */
 import type { RecoverFlow, RecoverFlowState } from '../headless';
-import type { RecoverResult } from '@stellar-passkey/core/recover';
+import type { RecoverResult } from '@soropass/core/recover';
 import { h, icon, identicon, truncMiddle, type Child } from './dom';
 import {
   button,

@@ -1,5 +1,13 @@
-import { rpc } from '@stellar/stellar-sdk';
+import { rpc, scValToNative } from '@stellar/stellar-sdk';
 import type { IndexerAdapter, ResolvedAccount } from './types';
+
+function decodeNative(scv: unknown): unknown {
+  try {
+    return scValToNative(scv as never);
+  } catch {
+    return undefined;
+  }
+}
 
 export interface EventsIndexerOptions {
   rpcUrl: string;
@@ -10,19 +18,39 @@ export interface EventsIndexerOptions {
   allowHttp?: boolean;
   /**
    * Map a factory event → resolved account when it concerns `credentialId`.
-   * The default is best-effort (scans the event XDR for the credentialId and
-   * returns the emitting contract); the exact factory event schema is wired in
-   * S17 against the deployed contract.
+   * Defaults to the deployed `AccountFactory` schema (see contracts/account-factory):
+   * topics `[symbol "deployed", bytes credentialId]`, value = the deployed C-address.
+   * Override only for a different factory event shape.
    */
   matchEvent?: (event: rpc.Api.EventResponse, credentialId: string) => ResolvedAccount | null;
 }
 
 const LEDGERS_PER_DAY = 17_280; // ~5s ledgers
 
+/**
+ * Parse the `AccountFactory.deploy` event `('deployed', credentialId) -> address`:
+ * confirm the second topic (credential-id bytes, utf-8) equals `credentialId` and
+ * resolve to the deployed account address carried in the event value. Falls back
+ * to a raw-XDR scan if the topics aren't in the expected shape.
+ */
 function defaultMatch(event: rpc.Api.EventResponse, credentialId: string): ResolvedAccount | null {
   try {
-    const haystack = [event.value, ...event.topic].map((v) => v.toXDR('base64')).join('|');
+    const topics = event.topic ?? [];
+    if (topics.length >= 2) {
+      const tag = decodeNative(topics[0]);
+      const credRaw = decodeNative(topics[1]);
+      const cred = credRaw instanceof Uint8Array ? new TextDecoder().decode(credRaw) : String(credRaw ?? '');
+      if (tag === 'deployed' && cred === credentialId) {
+        const addr = decodeNative(event.value);
+        if (typeof addr === 'string' && addr.startsWith('C')) return { contractId: addr };
+      }
+    }
+    // Fallback: scan the raw XDR for the credential id; prefer the deployed
+    // address in the value, else the emitting contract.
+    const haystack = [event.value, ...topics].map((v) => v.toXDR('base64')).join('|');
     if (!haystack.includes(credentialId)) return null;
+    const addr = decodeNative(event.value);
+    if (typeof addr === 'string' && addr.startsWith('C')) return { contractId: addr };
     return event.contractId ? { contractId: event.contractId.toString() } : null;
   } catch {
     return null;

@@ -4,7 +4,7 @@
  * the details originate inside it.
  */
 import type { SignFlow, SignFlowState } from '../headless';
-import type { SubmitResult } from '@stellar-passkey/core/types';
+import type { SubmitResult } from '@soropass/core/types';
 import { h, icon } from './dom';
 import {
   button,

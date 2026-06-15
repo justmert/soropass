@@ -1,0 +1,147 @@
+---
+title: "recover"
+description: "The discoverable, new-device / lost-localStorage path — find every smart account a resident passkey controls."
+---
+
+`recover` is the path for a new device or lost local storage. It performs a
+**discoverable** WebAuthn assertion — the OS lets the user pick any resident
+passkey, with no `allowCredentials` — then resolves every smart account that
+credential controls through your indexer.
+
+```ts
+import { recover } from '@stellar-passkey/core/recover';
+```
+
+Because a single credential can control multiple accounts, `recover` returns an
+**array**.
+
+## Usage
+
+<CodeGroup>
+
+```ts Standalone
+import { recover } from '@stellar-passkey/core/recover';
+import { eventsIndexer } from '@stellar-passkey/core';
+
+const indexer = eventsIndexer({
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  factoryContractId: 'C…FACTORY',
+});
+
+const accounts = await recover({
+  rpId: 'wallet.example.com',
+  indexer,
+  userActivation: navigator.userActivation, // Safari gesture rule
+});
+
+// 0 results → offer createPasskey(); 1 → use it; many → let the user choose.
+for (const { contractId, credentialId } of accounts) {
+  console.log(contractId, credentialId);
+}
+```
+
+```ts Via the headless flow
+import { createRecoverFlow } from '@stellar-passkey/ui/headless';
+import { recover } from '@stellar-passkey/core/recover';
+
+const flow = createRecoverFlow({
+  recover: () => recover({ rpId, indexer }), // RecoverResult[]
+  userActivation: navigator.userActivation,
+});
+// Drives idle → discovering → resolved/none/error; see the Recover component.
+```
+
+</CodeGroup>
+
+<Warning>
+**Call `recover` from a click/tap handler.** Like `create`, the discoverable
+`get()` requires a transient user activation on Safari/WebKit. Pass
+`navigator.userActivation`; otherwise it fails with `USER_CANCELLED`.
+</Warning>
+
+## Parameters
+
+`recover(options: RecoverOptions)`
+
+<ParamField body="rpId" type="string" required>
+  Your registrable domain. Only passkeys scoped to this RP are offered.
+</ParamField>
+
+<ParamField body="indexer" type="IndexerAdapter" required>
+  Resolves the chosen credential id → the smart accounts it controls. See
+  [Adapters](/sdk/adapters).
+</ParamField>
+
+<ParamField body="webauthn" type="WebAuthnClient">
+  Defaults to `browserWebAuthnClient()`.
+</ParamField>
+
+<ParamField body="challenge" type="Uint8Array">
+  Assertion challenge. Defaults to 32 random bytes (recovery is a liveness/
+  discovery step; the on-chain challenge binding happens later at sign time).
+</ParamField>
+
+<ParamField body="userActivation" type="{ isActive: boolean }">
+  Pass `navigator.userActivation` to enforce the Safari gesture rule.
+</ParamField>
+
+## Returns
+
+`Promise<RecoverResult[]>` — one entry per smart account the credential controls.
+
+<ResponseField name="contractId" type="string">
+  The Soroban smart-account `C…` address.
+</ResponseField>
+
+<ResponseField name="credentialId" type="string">
+  base64url credential id of the passkey the user selected. Persist it (e.g. via
+  `connect`'s storage) so future sessions reconnect silently.
+</ResponseField>
+
+## Handling the result
+
+<Steps>
+  <Step title="0 accounts → none">
+    The selected passkey controls no account on this network. Offer
+    [`createPasskey`](/sdk/create) to deploy one.
+  </Step>
+  <Step title="1 account → continue">
+    Use it directly — proceed to connect/sign.
+  </Step>
+  <Step title="Many accounts → choose">
+    Present the list and let the user pick. The styled
+    [Recover screen](/components/recover) renders this as an accessible listbox.
+  </Step>
+</Steps>
+
+## Recovery is only as good as the second signer
+
+<Tip>
+Recovery finds accounts a passkey already controls — it does **not** re-mint a
+lost key. Recommend a **multi-signer smart account**: register a second signer
+(a second passkey on another device/domain, an Ed25519 backup, or an OZ policy
+signer) so a single lost device is never a single point of failure. The smart
+account supports multiple signers; this is a property of the contract, not the
+SDK. See [Security → Recovery](/security).
+</Tip>
+
+## Errors
+
+| Code | When |
+| --- | --- |
+| `USER_CANCELLED` | OS sheet dismissed, or called outside a user activation. |
+| `UNSUPPORTED_AUTHENTICATOR` | No WebAuthn available, or a malformed assertion response. |
+| `NETWORK_ERROR` | The indexer could not reach the RPC / service. |
+
+See [Errors](/sdk/errors) for the full taxonomy.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Sign" icon="pen" href="/sdk/sign">
+    Reconnect and sign with a recovered account.
+  </Card>
+  <Card title="Security" icon="shield" href="/security">
+    The recovery threat model and multi-signer guidance.
+  </Card>
+</CardGroup>

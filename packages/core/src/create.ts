@@ -1,5 +1,5 @@
 /**
- * `@stellar-passkey/core/create` — the `createPasskey` ceremony plus the
+ * `@soropass/core/create` — the `createPasskey` ceremony plus the
  * registration-side primitives (ES256-only options, SEC-1 pubkey extraction).
  */
 export { createPasskey } from './ceremonies/create';

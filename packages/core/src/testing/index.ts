@@ -1,5 +1,5 @@
 /**
- * `@stellar-passkey/core/testing` — deterministic mock mode for downstream
+ * `@soropass/core/testing` — deterministic mock mode for downstream
  * adopters + tests (S15). Kept in a separate entry so none of it lands in
  * production bundles.
  */

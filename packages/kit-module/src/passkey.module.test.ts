@@ -9,8 +9,8 @@ import {
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
-import { referenceCheckAuth } from '@stellar-passkey/core';
-import { createInMemoryBackend, mockAuthenticator } from '@stellar-passkey/core/testing';
+import { referenceCheckAuth } from '@soropass/core';
+import { createInMemoryBackend, mockAuthenticator } from '@soropass/core/testing';
 import { PASSKEY_ID, PasskeyModule } from './index';
 import type { ModuleInterface } from './kitTypes';
 

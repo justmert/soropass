@@ -433,3 +433,33 @@
 /* RTL: everything uses logical properties, so this Just Works. Provided as a
    hook for the prototype to flip direction. */
 .pk[dir="rtl"] { direction: rtl; }
+
+/* ---- Connect entry chooser (choice rows) ------------------------------- */
+.pk-head--center { text-align: center; align-items: center; }
+.pk-head--center .pk-head__text { align-items: center; }
+.pk-choices { display: flex; flex-direction: column; gap: var(--pk-space-3); }
+.pk-choice {
+  appearance: none; cursor: pointer; text-align: start;
+  display: flex; align-items: center; gap: var(--pk-space-3);
+  padding: 14px;
+  background: var(--pk-color-surface);
+  border: 1px solid var(--pk-color-border-strong);
+  border-radius: var(--pk-radius-md);
+  font-family: inherit;
+  transition: border-color var(--pk-duration-fast) var(--pk-ease),
+              background var(--pk-duration-fast) var(--pk-ease),
+              transform var(--pk-duration-fast) var(--pk-ease);
+}
+.pk-choice:hover { border-color: var(--pk-color-brand); background: var(--pk-color-brand-soft); }
+.pk-choice:active { transform: translateY(1px); }
+.pk-choice__icon {
+  width: 44px; height: 44px; flex: none; border-radius: var(--pk-radius-md);
+  display: grid; place-items: center;
+  background: var(--pk-color-surface-sunken); color: var(--pk-color-text-muted);
+}
+.pk-choice__icon--brand { background: var(--pk-color-brand-soft); color: var(--pk-color-brand); }
+.pk-choice__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pk-choice__title { font-size: var(--pk-text-base); font-weight: var(--pk-weight-semibold); color: var(--pk-color-text); }
+.pk-choice__sub { font-size: var(--pk-text-sm); color: var(--pk-color-text-muted); }
+.pk-choice__chev { color: var(--pk-color-text-faint); flex: none; }
+.pk-choice:hover .pk-choice__chev { color: var(--pk-color-brand); }

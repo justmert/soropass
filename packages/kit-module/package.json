@@ -1,8 +1,8 @@
 {
-  "name": "@stellar-passkey/wallets-kit-module",
+  "name": "@soropass/wallets-kit-module",
   "version": "0.0.0",
   "private": true,
-  "description": "PasskeyModule for @creit.tech/stellar-wallets-kit — a thin adapter over @stellar-passkey/core. Staged here; upstreamed via PR (S27), not published as a parallel package.",
+  "description": "PasskeyModule for @creit.tech/stellar-wallets-kit — a thin adapter over @soropass/core. Staged here; upstreamed via PR (S27), not published as a parallel package.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -30,7 +30,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@stellar-passkey/core": "workspace:^"
+    "@soropass/core": "workspace:^"
   },
   "devDependencies": {
     "@stellar/stellar-sdk": "^15.1.0",

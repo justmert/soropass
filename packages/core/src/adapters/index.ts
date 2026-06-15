@@ -1,5 +1,5 @@
 // Adapter implementations (the interfaces themselves are exported from
-// `@stellar-passkey/core/types`).
+// `@soropass/core/types`).
 export { directSubmission } from './direct';
 export type { DirectSubmissionOptions } from './direct';
 export { launchtubeSubmission } from './launchtube';
@@ -12,3 +12,5 @@ export { mercuryIndexer } from './mercury';
 export type { MercuryIndexerOptions } from './mercury';
 export { defaultAdapters } from './defaults';
 export type { DefaultAdapterOptions } from './defaults';
+export { factoryDeployer } from './factory';
+export type { FactoryDeployerOptions } from './factory';

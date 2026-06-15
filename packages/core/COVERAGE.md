@@ -1,6 +1,6 @@
-# `@stellar-passkey/core` — test coverage
+# `@soropass/core` — test coverage
 
-Regenerate: `pnpm --filter @stellar-passkey/core test:coverage` (vitest + v8).
+Regenerate: `pnpm --filter @soropass/core test:coverage` (vitest + v8).
 
 Latest run — **65 unit tests**:
 

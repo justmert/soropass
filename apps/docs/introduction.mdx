@@ -1,0 +1,125 @@
+---
+title: "Introduction"
+description: "A minimal, headless ES256-only passkey SDK plus drop-in create/sign/recover UI for Stellar Soroban smart accounts — adopted into @creit.tech/stellar-wallets-kit as a PasskeyModule."
+---
+
+**@stellar-passkey** lets a user create a Stellar smart account, sign Soroban
+transactions, and recover on a new device using a **passkey** — Face ID, Touch
+ID, Windows Hello, or a hardware key — with no seed phrase and no browser
+extension. It is built for wallet and dApp engineers who want WebAuthn-backed
+[secp256r1](https://soroban.stellar.org/docs) smart accounts without
+re-implementing the WebAuthn ceremony, the ECDSA edge cases, or the Soroban
+authorization-entry plumbing.
+
+<Note>
+  These docs are **static** — screenshots, code, and prop tables. The SDK runs
+  in your app, not in this site. To see the components in motion, use the live
+  demo linked from the project's landing page.
+</Note>
+
+## The layers
+
+The project ships as three small, independent packages. You can adopt one, two,
+or all three.
+
+<CardGroup cols={3}>
+  <Card title="SDK — @stellar-passkey/core" icon="cube">
+    The headless engine: WebAuthn create/connect/sign/recover ceremonies,
+    DER→low-S signature handling, Soroban auth-entry assembly, and pluggable
+    submission + indexer adapters. ~5.9 KB gzip, tree-shakeable.
+  </Card>
+  <Card title="UI — @stellar-passkey/ui" icon="window">
+    Headless flows (logic + a11y + i18n, no styles) and an optional, token-themed
+    drop-in set of styled `create` / `sign` / `recover` screens. Vanilla DOM,
+    framework-agnostic.
+  </Card>
+  <Card title="Kit module — PasskeyModule" icon="plug">
+    A thin `ModuleInterface` adapter that plugs the SDK into
+    `@creit.tech/stellar-wallets-kit` so users can pick **Passkey** in the kit's
+    own wallet-picker, alongside Freighter, xBull, and the rest.
+  </Card>
+</CardGroup>
+
+The SDK is the foundation; the UI is optional sugar built on top of it; and the
+kit module is how a passkey wallet shows up next to every other Stellar wallet a
+dApp already supports.
+
+## Who it is for
+
+- **Wallet teams** embedding a passkey-backed smart account as a first-class
+  wallet option.
+- **dApp engineers** who want their existing `stellar-wallets-kit` integration
+  to gain a passkey wallet with zero new sign-in code — signing flows through
+  the kit's `signTransaction` like any other module.
+- **Integrators** who want the headless ceremonies only, and bring their own UI.
+
+## Design invariants
+
+These are non-negotiable and hold across every package. They exist because
+Soroban's on-chain `secp256r1_verify` is strict and unforgiving.
+
+<AccordionGroup>
+  <Accordion title="ES256-only — alg -7, hard-fail on anything else" icon="key">
+    The create ceremony advertises **only** `pubKeyCredParams: [{ type:
+    'public-key', alg: -7 }]`. A non-ES256 credential (e.g. RS256) throws
+    `KitError('ES256_NOT_SUPPORTED')` at create time — Soroban verifies only
+    secp256r1, so a key it cannot check would yield an unusable account.
+  </Accordion>
+  <Accordion title="Always low-S normalized" icon="signature">
+    ~50% of Apple Touch ID / Face ID assertions are **high-S**, and Soroban's
+    `secp256r1_verify` does **not** enforce low-S. The SDK always converts to
+    canonical low-S (`S ≤ n/2`) before any signature reaches a contract.
+  </Accordion>
+  <Accordion title="Headless-first, tokens-only theming" icon="palette">
+    The default UI export is **headless** — pure state machines plus
+    accessibility prop-getters. The styled layer is optional and re-themed by
+    overriding CSS custom properties, never by editing components. Light is the
+    default; dark and teal are token overrides of the same component set.
+  </Accordion>
+  <Accordion title="Pluggable adapters with zero-infra defaults" icon="layer-group">
+    Transaction submission and account lookup go through `SubmissionAdapter` and
+    `IndexerAdapter` interfaces. The default stack is **direct soroban-rpc**
+    submission plus an **on-chain events** indexer — no relayer, no API key.
+    Launchtube, OpenZeppelin Relayer, and Mercury are one-line swaps.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  `@stellar/stellar-sdk` is a **peer dependency** (`>=12`) and is never bundled
+  into the SDK. Install it alongside `@stellar-passkey/core`.
+</Warning>
+
+## Proven on testnet
+
+The authorization entries this SDK assembles are not just modeled — they have
+been accepted by a deployed Soroban `__check_auth` on **testnet** (tx
+`f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418`), and a
+wrong key is correctly rejected by the on-chain `secp256r1_verify` trap. See
+[Security](/security) for the full on-chain verification path and threat model.
+
+<Note>
+  This is a working, source-verified codebase with a proven on-chain
+  round-trip. It has **not** had a formal security audit — treat the threat
+  model as a design document, not an audit report.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install, register the `PasskeyModule` in the kit, and run create → sign →
+    recover in a few minutes.
+  </Card>
+  <Card title="SDK overview" icon="cube" href="/sdk/overview">
+    The mental model, the subpath export map, and how the ceremonies fit
+    together.
+  </Card>
+  <Card title="Components" icon="window" href="/components/overview">
+    The headless flows and the token-themed drop-in screens, shown in light,
+    dark, and teal.
+  </Card>
+  <Card title="Stellar Wallets Kit" icon="plug" href="/wallets-kit">
+    Register `PasskeyModule` so users pick **Passkey** in the kit's wallet
+    modal.
+  </Card>
+</CardGroup>

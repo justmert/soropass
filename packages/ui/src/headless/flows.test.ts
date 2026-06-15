@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { KitError } from '@stellar-passkey/core/types';
-import type { PasskeyCredential, SubmitResult } from '@stellar-passkey/core/types';
-import type { RecoverResult } from '@stellar-passkey/core/recover';
+import { KitError } from '@soropass/core/types';
+import type { PasskeyCredential, SubmitResult } from '@soropass/core/types';
+import type { RecoverResult } from '@soropass/core/recover';
 import { createCreatePasskeyFlow } from './createFlow';
 import { createSignFlow } from './signFlow';
 import { createRecoverFlow } from './recoverFlow';

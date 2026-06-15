@@ -5,9 +5,9 @@
  * → the design key + copy, so the styled layer never duplicates flow logic and
  * the design's error table stays the single source of copy.
  */
-import type { KitErrorCode } from '@stellar-passkey/core/types';
+import type { KitErrorCode } from '@soropass/core/types';
 
-export type Screen = 'create' | 'sign' | 'recover';
+export type Screen = 'create' | 'sign' | 'recover' | 'addDevice';
 
 export type DesignErrorKey =
   | 'create:cancelled'
@@ -23,7 +23,11 @@ export type DesignErrorKey =
   | 'sign:signature'
   | 'recover:cancelled'
   | 'recover:unsupported'
-  | 'recover:network';
+  | 'recover:network'
+  | 'addDevice:cancelled'
+  | 'addDevice:unsupported'
+  | 'addDevice:binding'
+  | 'addDevice:network';
 
 export interface ErrorCopy {
   title: string;
@@ -110,6 +114,27 @@ export const ERROR_COPY: Record<DesignErrorKey, ErrorCopy> = {
     message: 'We couldn’t reach the network. Check your connection and try again.',
     action: 'Retry',
   },
+  'addDevice:cancelled': {
+    title: 'Cancelled',
+    message: 'You closed the passkey prompt before the backup was added. You can try again.',
+    action: 'Try again',
+  },
+  'addDevice:unsupported': {
+    title: 'Device not supported',
+    message:
+      'This device or passkey can’t be added as a signer. Try another device or security key.',
+    action: 'Try again',
+  },
+  'addDevice:binding': {
+    title: 'Couldn’t add the signer',
+    message: 'We couldn’t add this passkey to your account on-chain. Please try again.',
+    action: 'Try again',
+  },
+  'addDevice:network': {
+    title: 'Connection problem',
+    message: 'We couldn’t reach the network. Check your connection and try again.',
+    action: 'Retry',
+  },
 };
 
 // Per-screen map from a KitErrorCode to the design's error key. Unlisted codes
@@ -144,16 +169,27 @@ const RECOVER_MAP: Partial<Record<KitErrorCode, DesignErrorKey>> = {
   NETWORK_ERROR: 'recover:network',
 };
 
+const ADDDEVICE_MAP: Partial<Record<KitErrorCode, DesignErrorKey>> = {
+  USER_CANCELLED: 'addDevice:cancelled',
+  UNSUPPORTED_AUTHENTICATOR: 'addDevice:unsupported',
+  ES256_NOT_SUPPORTED: 'addDevice:unsupported',
+  INVALID_PUBLIC_KEY: 'addDevice:unsupported',
+  CONTRACT_AUTH_FAILED: 'addDevice:binding',
+  NETWORK_ERROR: 'addDevice:network',
+};
+
 const MAPS: Record<Screen, Partial<Record<KitErrorCode, DesignErrorKey>>> = {
   create: CREATE_MAP,
   sign: SIGN_MAP,
   recover: RECOVER_MAP,
+  addDevice: ADDDEVICE_MAP,
 };
 
 const FALLBACK: Record<Screen, DesignErrorKey> = {
   create: 'create:unsupported',
   sign: 'sign:unsupported',
   recover: 'recover:unsupported',
+  addDevice: 'addDevice:unsupported',
 };
 
 /** Resolve the design error key for a screen + headless error code. */

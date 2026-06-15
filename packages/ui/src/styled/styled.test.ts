@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { KitError, KIT_ERROR_CODES, type KitErrorCode } from '@stellar-passkey/core/types';
-import type { RecoverResult } from '@stellar-passkey/core/recover';
+import { KitError, KIT_ERROR_CODES, type KitErrorCode } from '@soropass/core/types';
+import type { RecoverResult } from '@soropass/core/recover';
 import { createCreatePasskeyFlow, createSignFlow, createRecoverFlow } from '../headless';
 import {
   createView,

@@ -1,8 +1,8 @@
 /**
- * `@stellar-passkey/core` — minimal, headless, ES256-only passkey SDK.
+ * `@soropass/core` — minimal, headless, ES256-only passkey SDK.
  *
  * The umbrella entry re-exports the subpath modules. Prefer importing from the
- * subpaths (`@stellar-passkey/core/sign`, `/create`, `/types`, …) for the best
+ * subpaths (`@soropass/core/sign`, `/create`, `/types`, …) for the best
  * tree-shaking; this package is `sideEffects: false`.
  */
 export * from './types';

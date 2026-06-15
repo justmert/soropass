@@ -1,0 +1,235 @@
+---
+title: "Sign & connect"
+description: "Reconnect a stored passkey and sign Soroban authorization entries with browserPasskeySigner — challenge-bound, always low-S."
+---
+
+This page covers the signing path: `connect` (silent reconnect from a stored
+credential), `signTransaction` / `signAuthEntry` (Soroban auth-entry assembly),
+and `browserPasskeySigner` (the one-line bridge from
+`navigator.credentials.get` to the signer the SDK expects).
+
+```ts
+import { connect } from '@stellar-passkey/core/connect';
+import { signTransaction, signAuthEntry, browserPasskeySigner } from '@stellar-passkey/core/sign';
+```
+
+## How signing works
+
+1. `signTransaction` walks every `InvokeHostFunction` operation in a v1 envelope
+   and, for each **address-credential** Soroban auth entry, computes the auth
+   **preimage** — `SHA256(XDR(HashIdPreimage::SorobanAuthorization{ networkId, nonce, signatureExpirationLedger, invocation }))`
+   where `networkId = SHA256(networkPassphrase)`.
+2. That preimage (base64url, 43 chars) becomes the **WebAuthn challenge**,
+   binding the assertion to the exact transaction.
+3. Your `WebAuthnSigner` returns the assertion (`authenticatorData`,
+   `clientDataJSON`, DER signature, `credentialId`).
+4. The SDK converts DER → 64-byte compact and **low-S normalizes**, then
+   assembles the `Secp256r1Signature` struct into the entry.
+5. On-chain `__check_auth` reconstructs
+   `SHA256(authenticatorData ‖ SHA256(clientDataJSON))`, runs `secp256r1_verify`
+   against the stored public key, and checks the embedded challenge matches.
+
+## connect
+
+`connect` silently reconnects using the credential id stored at create time. It
+returns the smart-account C-address, or `null` if there is no stored credential
+(the caller should [`recover`](/sdk/recover)) or no account resolves.
+
+```ts
+import { connect } from '@stellar-passkey/core/connect';
+import { eventsIndexer } from '@stellar-passkey/core';
+
+const indexer = eventsIndexer({
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  factoryContractId: 'C…FACTORY',
+});
+
+const session = await connect({ rpId: 'wallet.example.com', indexer });
+if (!session) {
+  // No stored credential, or no resolvable account → fall back to recover().
+} else {
+  console.log(session.contractId, session.credentialId);
+}
+```
+
+<ParamField body="rpId" type="string" required>
+  Your registrable domain.
+</ParamField>
+<ParamField body="indexer" type="IndexerAdapter" required>
+  Resolves the credential id → smart-account address. See [Adapters](/sdk/adapters).
+</ParamField>
+<ParamField body="webauthn" type="WebAuthnClient">
+  Defaults to `browserWebAuthnClient()`.
+</ParamField>
+<ParamField body="storage" type="CredentialStorage">
+  Where the credential id was persisted. Defaults to `defaultCredentialStorage()`.
+</ParamField>
+<ParamField body="silentMediationSupported" type="boolean">
+  Override the `isConditionalMediationAvailable()` probe that decides whether to
+  run a `mediation: 'silent'` liveness check. Resolution always goes through the
+  indexer, so `connect` degrades gracefully where silent mediation is
+  unsupported.
+</ParamField>
+
+Returns `Promise<ConnectResult | null>`:
+
+<ResponseField name="contractId" type="string">
+  The Soroban smart-account `C…` address.
+</ResponseField>
+<ResponseField name="credentialId" type="string">
+  base64url credential id — pass it as `allowCredentials` to the signer.
+</ResponseField>
+
+## signTransaction & signAuthEntry
+
+Both take and return **base64 XDR**.
+
+- `signTransaction(txXdr, options)` signs **every** address-credential Soroban
+  auth entry across the `InvokeHostFunction` operations of a v1
+  (`envelopeTypeTx`) envelope and returns the signed envelope. It throws if the
+  input is not a v1 envelope.
+- `signAuthEntry(entryXdr, options)` does the same for a single bare
+  `SorobanAuthorizationEntry`.
+
+```ts
+import { signTransaction, browserPasskeySigner } from '@stellar-passkey/core/sign';
+import { Networks } from '@stellar/stellar-sdk';
+
+const sign = browserPasskeySigner({
+  rpId: 'wallet.example.com',
+  allowCredentials: [session.credentialId], // from create()/connect()
+});
+
+// Signs all address-credential auth entries; low-S normalization is automatic.
+const signedAuthXdr = await signTransaction(preparedTxXdr, {
+  networkPassphrase: Networks.TESTNET,
+  sign,
+});
+
+// Or sign a single bare auth entry:
+// const signedEntry = await signAuthEntry(entryXdr, { networkPassphrase, sign });
+```
+
+### SorobanSignOptions
+
+<ParamField body="networkPassphrase" type="string" required>
+  The network passphrase (e.g. `Networks.TESTNET`). Used to derive `networkId`
+  in the auth preimage — it binds the signature to a specific network.
+</ParamField>
+<ParamField body="sign" type="WebAuthnSigner" required>
+  A function that produces a WebAuthn assertion over a base64url challenge.
+  Build one with `browserPasskeySigner`, or supply your own.
+</ParamField>
+
+### Returns
+
+<ResponseField name="signedXdr" type="string">
+  `signTransaction` returns the signed envelope as base64 XDR;
+  `signAuthEntry` returns the signed `SorobanAuthorizationEntry` as base64 XDR.
+  Sign the envelope's source/fees and submit it via a
+  [`SubmissionAdapter`](/sdk/adapters).
+</ResponseField>
+
+<Warning>
+**`simulateTransaction` under-budgets `__check_auth`.** Simulation does not
+execute `secp256r1_verify`, so it under-estimates the instruction count and
+resource fee for the auth check. Inflate the Soroban instruction budget +
+resource fee before submitting, or use a managed submitter that does this for
+you. A correctly-signed transaction will otherwise be rejected for insufficient
+resources.
+</Warning>
+
+<Note>
+**Wire-shape is contract-specific.** The SDK assembles the single-signer
+`Secp256r1Signature` struct `{ authenticator_data, client_data_json, signature }`
+(a canonically-sorted ScMap, `signature` is the 64-byte low-S compact form).
+Multi-signer wallets (OZ / kalepail) key signatures by signer id in a Map — that
+is a small per-contract wrapper around the same struct.
+</Note>
+
+## browserPasskeySigner
+
+The one-line bridge: it decodes the base64url challenge to bytes, runs
+`navigator.credentials.get`, and returns the assertion fields. Low-S
+normalization happens downstream in `signTransaction` / `signAuthEntry` — nothing
+here weakens it.
+
+```ts
+import { browserPasskeySigner } from '@stellar-passkey/core/sign';
+
+const sign = browserPasskeySigner({
+  rpId: 'wallet.example.com',
+  allowCredentials: [credentialId], // omit for a discoverable prompt
+});
+```
+
+<ParamField body="rpId" type="string" required>
+  Your registrable domain.
+</ParamField>
+<ParamField body="allowCredentials" type="string[]">
+  base64url credential ids. Pass the id from `create`/`connect` so the OS offers
+  the right passkey. Omit (or empty) for a discoverable prompt over any resident
+  passkey.
+</ParamField>
+<ParamField body="userVerification" type="'discouraged' | 'preferred' | 'required'" default="preferred">
+  Forwarded to `navigator.credentials.get`.
+</ParamField>
+<ParamField body="webauthn" type="WebAuthnClient">
+  Inject a custom client (tests / non-browser). Defaults to `browserWebAuthnClient()`.
+</ParamField>
+
+### The WebAuthnSigner contract
+
+If you supply your own signer instead of `browserPasskeySigner`, implement:
+
+```ts
+type WebAuthnSigner = (challenge: string) => Promise<AssertionResult> | AssertionResult;
+
+interface AssertionResult {
+  authenticatorData: Uint8Array;
+  clientDataJSON: Uint8Array;
+  /** DER (≤72B) or already-compact (64B). The SDK normalizes to 64-byte low-S. */
+  signature: Uint8Array;
+  /** rawId → the SignerKey. */
+  credentialId: Uint8Array;
+}
+```
+
+The `challenge` argument is the base64url Soroban auth preimage. Decode it to
+raw bytes before passing it to `navigator.credentials.get`.
+
+## Low-S, automatic and idempotent
+
+Low-S is enforced by the signing path, not the signer — so you cannot
+accidentally bypass it. Internally, `signTransaction` runs
+`derToCompactLowS(der) = normalizeLowS(derToCompact(der))` on any non-64-byte
+signature. The primitives are exported from `@stellar-passkey/core/sign` if you
+need them directly:
+
+```ts
+import { derToCompact, normalizeLowS, isLowS, derToCompactLowS } from '@stellar-passkey/core/sign';
+```
+
+## Errors
+
+| Code | When |
+| --- | --- |
+| `USER_CANCELLED` | OS passkey sheet dismissed during the assertion. |
+| `INVALID_SIGNATURE_DER` | DER > 72 bytes, unparseable, or a compact signature that is not 64 bytes. |
+| `CHALLENGE_MISMATCH` | The assertion's challenge does not match the auth preimage. |
+| `RP_ID_MISMATCH` / `ORIGIN_MISMATCH` | `authenticatorData` rpIdHash / clientDataJSON origin not allowed. |
+| `CONTRACT_AUTH_FAILED` | The auth entry has no address credentials to sign. |
+| `UNSUPPORTED_AUTHENTICATOR` | No WebAuthn available, or malformed authenticator response. |
+
+See [Errors](/sdk/errors) for the complete taxonomy.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Recover" icon="rotate" href="/sdk/recover">
+    The discoverable new-device path.
+  </Card>
+  <Card title="Adapters" icon="plug" href="/sdk/adapters">
+    Submit the signed XDR and resolve accounts.
+  </Card>
+</CardGroup>

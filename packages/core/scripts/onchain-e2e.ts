@@ -1,7 +1,7 @@
 /**
  * LIVE on-chain proof (real Stellar testnet — NOT a mock).
  *
- * Proves that an auth entry assembled + signed by `@stellar-passkey/core`
+ * Proves that an auth entry assembled + signed by `@soropass/core`
  * (`signTransaction` → low-S compact secp256r1 + `Secp256r1Signature` ScVal +
  * challenge bound to the Soroban auth preimage) actually passes the deployed
  * `__check_auth` of a real custom-account contract on testnet.
@@ -13,7 +13,7 @@
  * to soroban-testnet. The passkey key is the fixed seed the contract was
  * deployed with (0x07*32); the negative run uses 0x09*32.
  *
- * Run: CONTRACT_ID=… SOURCE_SECRET=… pnpm --filter @stellar-passkey/core exec tsx scripts/onchain-e2e.ts
+ * Run: CONTRACT_ID=… SOURCE_SECRET=… pnpm --filter @soropass/core exec tsx scripts/onchain-e2e.ts
  */
 import { rpc, Contract, Keypair, Networks, TransactionBuilder, xdr } from '@stellar/stellar-sdk';
 import { p256 } from '@noble/curves/nist';

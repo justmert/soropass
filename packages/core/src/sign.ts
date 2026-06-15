@@ -1,5 +1,5 @@
 /**
- * `@stellar-passkey/core/sign` — assertion-side primitives: DER→compact,
+ * `@soropass/core/sign` — assertion-side primitives: DER→compact,
  * payload reconstruction, clientDataJSON/authData parsing and verification.
  * Soroban auth-entry assembly lands in S11 (YK-437).
  */

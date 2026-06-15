@@ -8,7 +8,7 @@ import {
   normalizeLowS,
   signAuthEntry as coreSignAuthEntry,
   signTransaction as coreSignTransaction,
-} from '@stellar-passkey/core';
+} from '@soropass/core';
 import type {
   AccountDeployer,
   CredentialStorage,
@@ -16,7 +16,7 @@ import type {
   PasskeyCredential,
   WebAuthnClient,
   WebAuthnSigner,
-} from '@stellar-passkey/core';
+} from '@soropass/core';
 import { ModuleType, type ModuleInterface } from './kitTypes';
 
 export const PASSKEY_ID = 'passkey';
@@ -42,7 +42,7 @@ type SignOpts = { networkPassphrase?: string; address?: string; path?: string };
 
 /**
  * `PasskeyModule` for `@creit.tech/stellar-wallets-kit` v2.2.0 — a thin adapter
- * that wires the kit's `ModuleInterface` onto `@stellar-passkey/core` ceremonies
+ * that wires the kit's `ModuleInterface` onto `@soropass/core` ceremonies
  * (S11/S13). No crypto/logic is duplicated here. Drop-in for the kit's
  * `src/sdk/modules/` (upstream PR, S27).
  */

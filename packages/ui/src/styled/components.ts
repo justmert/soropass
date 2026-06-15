@@ -5,7 +5,7 @@
  */
 import { h, icon, identicon, truncMiddle, type Child, type IconName } from './dom';
 import { errorCopyFor, errorKeyFor, type Screen } from './errors';
-import type { KitErrorCode } from '@stellar-passkey/core/types';
+import type { KitErrorCode } from '@soropass/core/types';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 

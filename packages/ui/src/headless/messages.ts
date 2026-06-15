@@ -1,4 +1,4 @@
-import { KIT_ERROR_CODES, type KitErrorCode } from '@stellar-passkey/core/types';
+import { KIT_ERROR_CODES, type KitErrorCode } from '@soropass/core/types';
 
 export type Translate = (key: string) => string;
 

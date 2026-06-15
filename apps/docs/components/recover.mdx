@@ -1,0 +1,175 @@
+---
+title: "Recover screen"
+description: "Drop-in recovery screen: discover the smart accounts a passkey controls on a new device, with a fully keyboard-accessible account listbox."
+---
+
+The Recover screen is the lost-localStorage / new-device path: the user confirms with a
+discoverable passkey, and the screen lists every smart account that passkey controls. It's
+bound to a headless `RecoverFlow`, and the account list is a **real listbox** with full
+keyboard support.
+
+```ts
+import { createRecoverFlow } from '@stellar-passkey/ui/headless';
+import { mountRecoverScreen } from '@stellar-passkey/ui/styled';
+import '@stellar-passkey/ui/styled.css';
+```
+
+## Preview
+
+<Frame caption="Recover rows (bottom): idle · discovering · resolved · selected · none · error">
+  <Tabs>
+    <Tab title="Light">
+      <img src="/images/states-light.png" alt="Recover screen states — light theme" />
+    </Tab>
+    <Tab title="Dark">
+      <img src="/images/states-dark.png" alt="Recover screen states — dark theme" />
+    </Tab>
+    <Tab title="Teal">
+      <img src="/images/states-teal.png" alt="Recover screen states — teal skin" />
+    </Tab>
+  </Tabs>
+</Frame>
+
+## States
+
+`RecoverFlowState` is a six-variant union — the only screen with six states, because a single
+passkey can control zero, one, or many accounts.
+
+| State | What the user sees | Busy look |
+| --- | --- | --- |
+| `idle` | Header + a **Recover** button | — |
+| `discovering` | Idle content dimmed behind the **calm opaque OS-sheet panel** + pulsing glyph, no spinner | OS sheet |
+| `resolved` | A title (`"N accounts found"` or `"Account found"`) + the **account listbox** + **Continue** (disabled until a row is selected) | — |
+| `selected` | The same listbox with one row highlighted (`aria-selected`, brand highlight, check icon) + **Continue** enabled | — |
+| `none` | A muted glyph, "No accounts found", and **Create a new passkey instead** / **Try a different passkey** | — |
+| `error` | The single error layout — title + assertive message + **Try again** / **Retry** | — |
+
+<Note>
+  Empty discovery (0 accounts) goes to `none`, not `resolved`. The styled layer caches the
+  resolved account list so the `selected` state (which carries only the chosen account) still
+  renders the full highlighted list.
+</Note>
+
+## Usage
+
+```ts
+import { recover } from '@stellar-passkey/core/recover';
+
+const flow = createRecoverFlow({
+  recover: () => recover({ rpId: 'wallet.example.com', indexer }), // → RecoverResult[]
+});
+
+const handle = mountRecoverScreen(document.getElementById('root')!, {
+  flow,
+  accountMeta: (_account, i) => `Recovered account ${i + 1}`,
+  onContinue: (account) => connect(account.contractId),
+  onCreateNew: () => router.push('/create'),
+});
+// later: handle.unmount();
+```
+
+<Note>
+  `recover` returns an **array** — one credential can control multiple accounts. The screen
+  handles 0 (`none`), 1 (`"Account found"`), and many (`"N accounts found"`) automatically.
+</Note>
+
+### Via the kit
+
+Through `@creit.tech/stellar-wallets-kit`, the recover ceremony still runs on the SDK; the
+screen wraps it the same way:
+
+```ts
+const flow = createRecoverFlow({
+  recover: () => recover({ rpId, indexer }),
+});
+mountRecoverScreen(root, { flow, onContinue: (a) => kit.setWallet(/* select the account */) });
+```
+
+See [Wallets Kit integration](/wallets-kit).
+
+## Props — `RecoverScreenOptions`
+
+<ParamField path="flow" type="RecoverFlow" required>
+  The headless flow from `createRecoverFlow({ recover })`.
+</ParamField>
+
+<ParamField path="copy" type="Partial<RecoverCopy>">
+  Override any of the 16 copy fields; defaults are `DEFAULT_RECOVER_COPY`.
+</ParamField>
+
+<ParamField path="accountMeta" type="(account: RecoverResult, index: number) => string">
+  Renders the meta line under each account row. Defaults to `"Stellar smart account"`.
+</ParamField>
+
+<ParamField path="onContinue" type="(account: RecoverResult) => void">
+  Called from **Continue** with the selected account (`{ contractId, credentialId }`).
+</ParamField>
+
+<ParamField path="onCreateNew" type="() => void">
+  Called from "Create a new passkey instead" in the `none` state — host navigates to Create.
+</ParamField>
+
+### Returns
+
+<ResponseField name="ScreenHandle" type="{ unmount(): void }">
+  Unsubscribes from the flow and clears the root.
+</ResponseField>
+
+## Copy & i18n
+
+<Accordion title="RecoverCopy fields & defaults">
+  | Field | Default |
+  | --- | --- |
+  | `idleTitle` | "Find your account" |
+  | `idleSubtitle` | "Use your passkey to find the accounts it controls — no seed phrase needed." |
+  | `recoverLabel` | "Recover" |
+  | `discoveringTitle` | "Looking for your accounts" |
+  | `discoveringHint` | "Confirm with your passkey so we can find the accounts it controls." |
+  | `manyTitle` | `(count) => \`${count} accounts found\`` — **a function** |
+  | `manySubtitle` | "Choose the account you'd like to use." |
+  | `singleTitle` | "Account found" |
+  | `singleSubtitle` | "This passkey controls the account below." |
+  | `continueLabel` | "Continue" |
+  | `listAriaLabel` | "Accounts for this passkey" |
+  | `noneTitle` | "No accounts found" |
+  | `noneMessage` | "This passkey isn't linked to any accounts yet…" |
+  | `createNewLabel` | "Create a new passkey instead" |
+  | `tryDifferentLabel` | "Try a different passkey" |
+
+  ```ts
+  import { DEFAULT_RECOVER_COPY } from '@stellar-passkey/ui/styled';
+
+  // manyTitle is a function so the count can be interpolated/localized:
+  mountRecoverScreen(root, {
+    flow,
+    copy: { manyTitle: (n) => `Found ${n} wallets` },
+  });
+  ```
+</Accordion>
+
+## Accessibility — the account listbox
+
+The recover list is a genuine `<ul role="listbox">` with `<li role="option">` rows. The
+headless layer ships the roles + selection; the styled layer adds roving focus and the full
+keyboard pattern.
+
+| Key | Action |
+| --- | --- |
+| `ArrowDown` / `ArrowUp` | Move the active option (wraps at the ends) |
+| `Home` / `End` | Jump to first / last option |
+| `Enter` / `Space` | Commit the active option as the selection |
+| Click | Same as Enter on that row |
+
+- **Roving tabindex** — only the active row has `tabIndex=0`; the rest are `-1`. Arrow keys
+  move focus locally without a re-render.
+- **Selection** — the selected row gets `aria-selected="true"` + a brand highlight + a check
+  icon.
+- **Focus on `resolved`** — focus lands on the **first account row** (`[data-pk-focus]`). On
+  `none` / `error`, focus lands on the message paragraph. Roving focus inside the listbox is
+  **not** disturbed by re-renders — only by a status change.
+- **Each row** shows an identicon + middle-truncated address + the `accountMeta` line.
+
+<Card title="Error layout" icon="triangle-exclamation" href="/components/primitives">
+  For Recover, `NETWORK_ERROR` → "Connection problem" (Retry), `USER_CANCELLED` → "Recovery
+  cancelled", everything else falls back to "Device not supported".
+</Card>

@@ -1,5 +1,5 @@
 {
-  "name": "@stellar-passkey/core",
+  "name": "@soropass/core",
   "version": "0.0.0",
   "description": "Minimal, headless, ES256-only passkey SDK for Stellar smart accounts.",
   "license": "Apache-2.0",

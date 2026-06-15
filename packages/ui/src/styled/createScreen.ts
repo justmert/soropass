@@ -3,7 +3,7 @@
  * logic is duplicated here. All copy is overridable for i18n.
  */
 import type { CreateFlow, CreateFlowState } from '../headless';
-import type { PasskeyCredential } from '@stellar-passkey/core/types';
+import type { PasskeyCredential } from '@soropass/core/types';
 import { h, icon, type Child } from './dom';
 import {
   addressChip,

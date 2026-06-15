@@ -1,0 +1,185 @@
+---
+title: "Create screen"
+description: "Drop-in create-passkey screen: register an ES256 passkey and deploy a Stellar smart account, with five built-in states."
+---
+
+The Create screen walks a user from "no wallet" to a deployed smart account: tap **Create
+passkey**, confirm with Face ID / fingerprint / security key, watch the account deploy, then
+continue. It's bound to a headless `CreateFlow` — no flow logic is duplicated in the view.
+
+```ts
+import { createCreatePasskeyFlow } from '@stellar-passkey/ui/headless';
+import { mountCreateScreen } from '@stellar-passkey/ui/styled';
+import '@stellar-passkey/ui/styled.css';
+```
+
+## Preview
+
+<Frame caption="Create row (top): idle · prompting · deploying · success · error">
+  <Tabs>
+    <Tab title="Light">
+      <img src="/images/states-light.png" alt="Create screen states — light theme" />
+    </Tab>
+    <Tab title="Dark">
+      <img src="/images/states-dark.png" alt="Create screen states — dark theme" />
+    </Tab>
+    <Tab title="Teal">
+      <img src="/images/states-teal.png" alt="Create screen states — teal skin" />
+    </Tab>
+  </Tabs>
+</Frame>
+
+## States
+
+`CreateFlowState` is a five-variant discriminated union; the rendered card exposes the
+current variant as `data-pk-state` for tests/automation.
+
+| State | What the user sees | Busy look |
+| --- | --- | --- |
+| `idle` | Title, subtitle, **Create passkey** button + "What's a passkey?" link | — |
+| `prompting` | Idle content dimmed behind a **calm opaque panel** with a pulsing passkey glyph; a 12px OS-sheet hint bar peeks from the bottom. **No spinner** (the OS sheet is on top). | OS sheet |
+| `deploying` | A branded **spinner + indeterminate progress bar** ("Setting up your account…") | We're working |
+| `success` | A success glyph, the new account's `addressChip` (identicon + copy), and a **Continue** button | — |
+| `error` | The single error layout — title + assertive message + **Try again** | — |
+
+<Note>
+  `prompting` and `deploying` are intentionally different. `prompting` means the native OS
+  passkey sheet is open, so the card stays calm and spinner-free; `deploying` is our own
+  on-chain work, so it gets the branded spinner + progress bar.
+</Note>
+
+## Usage
+
+Wire a headless flow whose `create` callback calls your `createPasskey` ceremony, then mount.
+Call `report.deploying()` the moment the on-chain deploy phase begins so the screen advances
+from `prompting` to `deploying`.
+
+```ts
+import { createPasskey } from '@stellar-passkey/core/create';
+
+const flow = createCreatePasskeyFlow({
+  // Enforce the Safari/WebKit user-gesture rule — the trigger click satisfies it.
+  userActivation: navigator.userActivation,
+  create: async (input, report) => {
+    const credential = await createPasskey({
+      rpId: 'wallet.example.com',
+      rpName: 'Example Wallet',
+      userName: input.userName ?? 'user',
+      deployer, // contract-specific AccountDeployer
+    });
+    report.deploying(); // (or call inside createPasskey when deploy starts)
+    return credential; // { contractId, credentialId, publicKey }
+  },
+});
+
+const handle = mountCreateScreen(document.getElementById('root')!, {
+  flow,
+  input: { userName: 'alice' },
+  onContinue: (credential) => router.push(`/account/${credential.contractId}`),
+  onHelp: () => openHelpModal(),
+});
+// later: handle.unmount();
+```
+
+<Warning>
+  Always trigger the flow from a real click. The styled button's click **is** the user
+  gesture WebAuthn requires; never auto-start the flow from a mount or effect, or Safari
+  will silently reject the ceremony (surfaced as `USER_CANCELLED`).
+</Warning>
+
+### Via the kit
+
+When you adopt the `PasskeyModule` into `@creit.tech/stellar-wallets-kit`, account creation
+runs through the module's `createAccount()` helper. The styled Create screen stays the same —
+just point its `create` callback at the module instead of calling `createPasskey` directly:
+
+```ts
+const flow = createCreatePasskeyFlow({
+  userActivation: navigator.userActivation,
+  create: async (input, report) => {
+    report.deploying();
+    return passkeyModule.createAccount(input.userName); // → PasskeyCredential
+  },
+});
+mountCreateScreen(root, { flow, onContinue });
+```
+
+See [Wallets Kit integration](/wallets-kit) for the full registration flow.
+
+## Props — `CreateScreenOptions`
+
+<ParamField path="flow" type="CreateFlow" required>
+  The headless flow from `createCreatePasskeyFlow`. The screen subscribes to it and rebuilds
+  the card on every state change.
+</ParamField>
+
+<ParamField path="copy" type="Partial<CreateCopy>">
+  Override any of the 12 copy strings for i18n. Unset fields fall back to `DEFAULT_CREATE_COPY`.
+</ParamField>
+
+<ParamField path="input" type="{ userName?: string }">
+  Args forwarded to `flow.start()` (e.g. a `userName` for the credential).
+</ParamField>
+
+<ParamField path="onContinue" type="(credential: PasskeyCredential) => void">
+  Called from the **Continue** button in the `success` state. `credential` is
+  `{ contractId, credentialId, publicKey }`.
+</ParamField>
+
+<ParamField path="onHelp" type="() => void">
+  Called from the "What's a passkey?" link in the `idle` state.
+</ParamField>
+
+### Returns
+
+<ResponseField name="ScreenHandle" type="{ unmount(): void }">
+  Call `unmount()` to unsubscribe from the flow and clear the root element.
+</ResponseField>
+
+## Copy & i18n
+
+All copy is overridable via `Partial<CreateCopy>`; defaults are exported as
+`DEFAULT_CREATE_COPY`.
+
+<Accordion title="CreateCopy fields & defaults">
+  | Field | Default |
+  | --- | --- |
+  | `idleTitle` | "Create your wallet" |
+  | `idleSubtitle` | "A passkey — your Face ID, fingerprint, or security key — replaces your seed phrase. Nothing to write down." |
+  | `createLabel` | "Create passkey" |
+  | `helpLabel` | "What's a passkey?" |
+  | `promptingTitle` | "Waiting for your passkey" |
+  | `promptingHint` | "Use Face ID, your fingerprint, or your security key to continue." |
+  | `deployingTitle` | "Setting up your account…" |
+  | `deployingHint` | "We're deploying your smart account on-chain. This usually takes a few seconds." |
+  | `successTitle` | "Wallet ready" |
+  | `successMessage` | "Your account is set up and ready to use." |
+  | `addressLabel` | "Your account" |
+  | `continueLabel` | "Continue" |
+
+  ```ts
+  import { DEFAULT_CREATE_COPY } from '@stellar-passkey/ui/styled';
+
+  mountCreateScreen(root, {
+    flow,
+    copy: { idleTitle: 'Set up your wallet', createLabel: 'Get started' },
+  });
+  ```
+</Accordion>
+
+## Accessibility
+
+- **Gesture-gated trigger** — the **Create passkey** button is a real `<button>`; its click
+  is the WebAuthn user gesture.
+- **Live regions** — the `prompting`/`deploying` hint is a polite `role="status"` live
+  region; the `error` message is an assertive `role="alert"`.
+- **Focus** — on `success` and `error`, focus moves to the status/message paragraph
+  (`[data-pk-focus]`, `tabIndex=-1`, `{ preventScroll: true }`) so screen readers announce
+  the outcome. Focus only moves when the **status changes**, not on every re-render.
+- **Touch target** — the primary button is ≥48px tall.
+
+<Card title="Error layout" icon="triangle-exclamation" href="/components/primitives">
+  The `error` state uses the single shared error layout — copy swaps by `(screen, KitErrorCode)`.
+  For Create, `ES256_NOT_SUPPORTED` → "Passkey not supported", `USER_CANCELLED` → "Setup
+  cancelled", `NETWORK_ERROR` → "Connection problem" (with a **Retry** button).
+</Card>

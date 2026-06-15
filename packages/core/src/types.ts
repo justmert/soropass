@@ -1,5 +1,5 @@
 /**
- * `@stellar-passkey/core/types` — the shared type surface + error taxonomy.
+ * `@soropass/core/types` — the shared type surface + error taxonomy.
  */
 export { KitError, isKitError, KIT_ERROR_CODES } from './errors';
 export type { KitErrorCode } from './errors';

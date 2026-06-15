@@ -1,5 +1,5 @@
-import { assertUserActivation } from '@stellar-passkey/core/create';
-import { isKitError, type KitErrorCode, type PasskeyCredential } from '@stellar-passkey/core/types';
+import { assertUserActivation } from '@soropass/core/create';
+import { isKitError, type KitErrorCode, type PasskeyCredential } from '@soropass/core/types';
 import { createStore, type ReadableStore } from './store';
 import { defaultTranslate, errorKey, type Translate } from './messages';
 import type { StatusProps, TriggerProps } from './a11y';
