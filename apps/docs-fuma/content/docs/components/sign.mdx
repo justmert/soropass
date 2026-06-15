@@ -1,0 +1,151 @@
+---
+title: Sign
+icon: PenLine
+description: Approve a specific transaction with a passkey — a host-supplied summary card and a single biometric prompt across five states.
+---
+
+Approve a specific transaction with the passkey. The summary is supplied by the host app — amount, destination, and a function name — and stays legible as it moves into the OS-sheet wait.
+
+## Overview
+
+Five states. The transaction summary card is a pure prop — the component never reads tx details from inside itself, so any wallet can drive it.
+
+<Callout type="info">
+The trigger click is the WebAuthn gesture. `prompting` dims the summary behind a calm opaque scrim (no spinner); `submitting` shows a spinner + progress because we're working.
+</Callout>
+
+## Use cases
+
+- **Approving a payment or swap** — The host app builds a transaction and hands Sign the amount, destination, and action. The user reviews the summary and approves with one biometric prompt.
+- **Confirming a contract call in a dApp** — Show exactly what a user is authorizing — the function name renders as a tag — before the passkey signs the SorobanAuthorizationEntry.
+- **Drop-in replacement for a sign modal** — Wired through the kit, Sign becomes the approval surface for any transaction your wallet already routes through `signTransaction`.
+
+## Features
+
+<Cards>
+  <Card title="Host-supplied summary" href="#props">Amount, destination, and action are pure props — the component never reads tx details from inside itself, so any wallet can drive it.</Card>
+  <Card title="Summary stays legible">The transaction card remains visible as it dims behind the calm OS-sheet scrim, so users always see what they're approving.</Card>
+  <Card title="Explorer link on done">Success shows the transaction hash as a copyable row with a one-tap link to the block explorer.</Card>
+  <Card title="One error layout" href="#states">Verification, signature, and network failures all render through the single error view, copy swapped by KitError code.</Card>
+  <Card title="Clear submit state">A spinner + indeterminate progress while the signed transaction is submitted to the network.</Card>
+  <Card title="Accessible by default" href="#accessibility">Polite / assertive live regions, focus management on terminal states, full keyboard order, RTL and reduced-motion.</Card>
+</Cards>
+
+## Preview & code
+
+<Preview screen="sign" />
+
+<Tabs items={['Standalone', 'Via Wallets Kit']}>
+  <Tab value="Standalone">
+```ts
+mountSignScreen(root, { flow, tx, onDone });
+```
+  </Tab>
+  <Tab value="Via Wallets Kit">
+```ts
+const res = await StellarWalletsKit.signTransaction(txXdr, { networkPassphrase });
+```
+  </Tab>
+</Tabs>
+
+## Installation
+
+```bash
+pnpm add @soropass/ui @soropass/core
+```
+
+## Usage
+
+Pass the host-built transaction summary and handle the result. `handle.unmount()` tears it down.
+
+```ts
+import { mountSignScreen } from '@soropass/ui/styled';
+
+const handle = mountSignScreen(document.querySelector('#approve'), {
+  flow,
+  tx: {
+    amountValue: '250.00 USDC',
+    amountFiat: '≈ $250.00',
+    destination: order.recipient,
+    action: 'transfer',
+  },
+  onDone(result) {
+    toast(`Sent · ${result.hash}`);
+    handle.unmount();
+  },
+  onCancel() { handle.unmount(); },
+});
+```
+
+## States
+
+The component renders five states: `idle`, `prompting`, `submitting`, `done`, and `error`. The error view swaps copy by KitError code:
+
+| Error code | KitError |
+| --- | --- |
+| `sign:cancelled` | `USER_CANCELLED` |
+| `sign:unsupported` | `UNSUPPORTED_AUTHENTICATOR` |
+| `sign:verify` | `CHALLENGE_MISMATCH` |
+| `sign:network` | `NETWORK_ERROR` |
+| `sign:signature` | `INVALID_SIGNATURE_DER` |
+
+<Preview screen="sign" />
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `flow` *(required)* | `SignFlow` | — | Headless sign controller. |
+| `tx` *(required)* | `TxSummaryData` | — | Host-supplied summary (see below). |
+| `copy` | `Partial<SignCopy>` | `DEFAULT_SIGN_COPY` | i18n / brand voice. |
+| `onCancel` | `() => void` | `undefined` | Secondary action on idle. |
+| `onDone` | `(r: SubmitResult) => void` | `undefined` | Fires on the done screen. |
+| `onExplorer` | `(hash: string) => void` | `undefined` | Explorer link click. |
+
+### TxSummaryData
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `amountValue` | `string` | e.g. "250.00 USDC" (host-formatted). |
+| `amountFiat` | `string?` | Optional secondary line. |
+| `destination` | `string` | Address; middle-truncated in the UI. |
+| `action` | `string` | Function / action name (rendered as a tag). |
+
+### Copy (i18n)
+
+| Key | Default string |
+| --- | --- |
+| `idleTitle` | Approve transaction |
+| `signLabel` | Sign |
+| `submittingTitle` | Submitting transaction… |
+| `doneTitle` | Transaction sent |
+
+## Accessibility
+
+<Cards>
+  <Card title="Announced status">Polite role=status for prompting / submitting; assertive role=alert for the error view.</Card>
+  <Card title="Focus management">Focus moves to the status paragraph on done / error (tabIndex=-1, preventScroll).</Card>
+  <Card title="Keyboard & focus ring">Cancel / Sign form a logical Tab order, each with a visible focus ring.</Card>
+  <Card title="RTL & reduced-motion">Mirrors via CSS logical properties; a reduced-motion variant freezes pulses and spins.</Card>
+</Cards>
+
+## Theming hooks
+
+| Area | Tokens |
+| --- | --- |
+| summary | `--pk-color-surface-sunken`, `--pk-radius-md`, `--pk-space-*` |
+| WaitOverlay | `--pk-scrim`, `--pk-busy-opacity`, `--pk-pulse-duration` |
+| submitting | `--pk-spinner-*`, `--pk-progress-*` |
+| done | `--pk-color-success` / `-soft` |
+
+## In Stellar Wallets Kit
+
+```ts
+// Sign seam → SignFlow
+const res = await StellarWalletsKit.signTransaction(txXdr, { networkPassphrase });
+```
+
+<Cards>
+  <Card title="Create" href="/docs/components/create" />
+  <Card title="Recover" href="/docs/components/recover" />
+</Cards>

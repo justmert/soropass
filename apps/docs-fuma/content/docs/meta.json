@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "index",
+    "quickstart",
+    "components",
+    "sdk",
+    "compatibility",
+    "how-it-works",
+    "security",
+    "examples"
+  ]
+}

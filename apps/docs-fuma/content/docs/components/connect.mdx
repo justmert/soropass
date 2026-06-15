@@ -1,0 +1,118 @@
+---
+title: Connect & Add device
+icon: Link2
+description: A connect chooser, a backup-passkey add-signer flow, and a funding state that complete the SoroPass passkey journey, all shipping in @soropass/ui.
+---
+
+Three small additions that complete the passkey journey — a connect chooser, a backup-signer flow, and a funding state — all shipping in `@soropass/ui`, built from the existing primitives and token set. The previews below are the real components.
+
+<Callout type="info">
+Architecture: the kit can't host custom module pages, so **connect rides the kit's own modal** and these are drop-in components the wallet mounts around it.
+</Callout>
+
+## Connect — entry chooser
+
+One tiny surface that forks **"Create a new passkey wallet"** vs **"Use an existing passkey."** The glue that makes create + recover usable from a single entry point — "use existing" hands off to the kit's own modal.
+
+**Use cases**
+
+- **The wallet's front door** — Show one screen on launch: returning users tap 'use existing' and recover; new users tap 'create' and onboard. No guesswork about which flow to render.
+- **A dApp connect button** — Behind a single 'Connect' action, let users either bring an existing passkey account or spin up a new one without leaving your flow.
+
+### States
+
+<Preview screen="connect" />
+
+A single `idle` state with two choices that route out — deliberately minimal, no flow state.
+
+### Props — `ConnectScreenOptions`
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `onCreate` | `() => void` | Opens the Create flow. |
+| `onUseExisting` | `() => void` | Hands off to the kit modal (getAddress → discoverable credential). |
+| `onHelp` | `() => void` | "What's a passkey?" link. |
+| `copy` | `Partial<ConnectCopy>` | Override any string for i18n. |
+
+```ts
+import { mountConnectScreen, mountCreateScreen } from '@soropass/ui/styled';
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
+
+mountConnectScreen(root, {
+  onCreate: () => mountCreateScreen(root, { flow }),
+  onUseExisting: () => StellarWalletsKit.authModal(),
+});
+```
+
+## Add backup passkey
+
+Register a **new passkey as an additional signer** on an existing smart account — "add this device" / "set up a backup key." Our recover only _discovers_ accounts; this _enrolls_ a new credential, completing the lost-device story. Mounted from the wallet's account / settings surface, not the connect modal.
+
+**Use cases**
+
+- **Set up a backup before you need it** — From account settings, a user enrolls a second passkey — a hardware key or another device — so losing one device never means losing the account.
+- **Add a new phone** — On a freshly set-up device, enroll its platform passkey as an additional signer on the existing account in one biometric prompt.
+
+<Callout type="warn">
+An add-signer path is also an account-takeover path if misused — the UI says so on the idle state. Surface the trade-off; don't hide it.
+</Callout>
+
+### States
+
+This screen moves through `idle → prompting → binding → success | error`. It reuses `waitOverlay` (calm OS-sheet wait) · `workBlock` (on-chain binding) · `resultLayout` · the single `errorView` — the same building blocks as create / sign / recover.
+
+### Props — `AddDeviceScreenOptions`
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `flow` (required) | `AddDeviceFlow` | From createAddDeviceFlow — drives idle → prompting → binding → success | error. |
+| `onDone` | `() => void` | Fires on the success screen (shows the new signer). |
+| `onCancel` | `() => void` | Secondary action on idle. |
+| `copy` | `Partial<AddDeviceCopy>` | i18n / brand voice. |
+
+<Tabs items={['Standalone', 'Via Wallets Kit']}>
+<Tab value="Standalone">
+
+```ts
+import { createAddDeviceFlow } from '@soropass/ui/headless';
+import { mountAddDeviceScreen } from '@soropass/ui/styled';
+import { createPasskey } from '@soropass/core/create';
+import { signTransaction } from '@soropass/core/sign';
+
+const flow = createAddDeviceFlow({
+  userActivation: navigator.userActivation,
+  async addDevice(report) {
+    const backup = await createPasskey({ rpId, rpName, userName: 'Backup device', deployer });
+    report.binding();                                  // on-chain add-signer phase
+    const xdr = buildAddSignerTx(account.contractId, backup.publicKey);
+    await submission.send(await signTransaction(xdr, { networkPassphrase, sign }));
+    return { signer: backup.credentialId };
+  },
+});
+mountAddDeviceScreen(root, { flow });
+```
+
+</Tab>
+<Tab value="Via Wallets Kit">
+
+```ts
+// The current passkey signs the add-signer tx through the kit:
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
+
+const { signedTxXdr } = await StellarWalletsKit.signTransaction(addSignerXdr, { networkPassphrase });
+await submission.send(signedTxXdr);
+```
+
+</Tab>
+</Tabs>
+
+## Funding / sponsor
+
+A freshly created smart account holds 0 XLM; without this affordance the flow silently hangs — the most common first-run failure. So funding is an **additive state inside the existing Create screen** — a sub-state of `deploying`, plus an insufficient-balance error branch. No new screen.
+
+Backed by the pluggable submission / sponsor adapter (friendbot or a sponsor). The error branch gives a clear next step.
+
+<Cards>
+  <Card title="Recover" href="/docs/components/recover" />
+  <Card title="Primitives" href="/docs/components/primitives" />
+</Cards>

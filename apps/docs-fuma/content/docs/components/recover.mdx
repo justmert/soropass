@@ -1,0 +1,140 @@
+---
+title: Recover
+icon: RotateCcw
+description: Headless-first recover screen that discovers the Stellar smart accounts a passkey controls on a new device — no seed phrase, with a full APG listbox keyboard pattern.
+---
+
+Return on a new device and find the accounts a passkey controls — no seed phrase. A proper listbox with a full keyboard pattern, handling the one-account and many-accounts cases.
+
+## Overview
+
+Six states. The resolved list is a real `role="listbox"` with roving focus. This is **discover-only** — to enroll a new credential, see [Add backup passkey](/docs/components/connect).
+
+<Callout type="info">
+`discovering` shows the calm OS-sheet wait. On `resolved`, focus lands on the first account row.
+</Callout>
+
+## Use cases
+
+- **Signing in on a new device** — A returning user installs your wallet on a new phone. Recover finds the smart accounts their passkey already controls — no seed phrase, no manual import.
+- **Restoring after cleared storage** — Local data is gone but the passkey lives in the platform keychain. Recover re-discovers the user's accounts from the credential alone.
+- **Choosing between multiple accounts** — When one passkey controls several accounts, the resolved listbox lets the user pick the right one with a full keyboard pattern.
+
+## Features
+
+- **Real listbox semantics** — `role=listbox` with roving focus — Up/Down wrap, Home/End jump, Enter/Space select. Built to the APG pattern, not a styled div.
+- **1 and many, gracefully** — A single account skips straight to selected; multiple accounts render a scannable, selectable list.
+- **Self-describing rows** — Each row pairs a deterministic identicon with a middle-truncated address and an optional meta line you supply.
+- **Helpful empty state** — When nothing is found, the none state routes the user to create a brand-new passkey instead.
+- **Calm OS-sheet wait** — `discovering` shows the opaque scrim + pulsing glyph while the native sheet resolves the credential.
+- **One error layout** — Cancelled, unsupported, and network failures share the single error view, copy swapped by KitError code.
+
+## Preview & code
+
+<Preview screen="recover" />
+
+<Tabs items={['Standalone', 'Via Wallets Kit']}>
+<Tab value="Standalone">
+
+```ts
+mountRecoverScreen(root, { flow, onContinue });
+```
+
+</Tab>
+<Tab value="Via Wallets Kit">
+
+```ts
+const accounts = await recover({ rpId, indexer });
+```
+
+</Tab>
+</Tabs>
+
+## Installation
+
+```bash
+pnpm add @soropass/ui @soropass/core
+```
+
+## Usage
+
+Mount on the new device's sign-in surface; supply a per-row meta line and handle the chosen account.
+
+```ts
+import { mountRecoverScreen } from '@soropass/ui/styled';
+
+const handle = mountRecoverScreen(document.querySelector('#signin'), {
+  flow,
+  accountMeta: (account) => `Last used ${account.lastUsed}`,
+  onContinue(account) {
+    session.use(account.address);
+    handle.unmount();
+  },
+  onCreateNew() { router.push('/create'); },
+});
+```
+
+## States
+
+The screen exposes six states: `idle`, `discovering`, `resolved`, `selected`, `none`, and `error`.
+
+<Preview screen="recover" />
+
+<Callout type="info">
+**none** is the empty state — "No accounts found" + a "Create a new passkey instead" call-to-action.
+</Callout>
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| flow `REQ` | `RecoverFlow` | — | Headless discovery controller. |
+| copy | `Partial<RecoverCopy>` | `DEFAULT_RECOVER_COPY` | i18n / brand voice. |
+| accountMeta | `(a, i) => string` | `undefined` | Secondary line per row. |
+| onContinue | `(a: Account) => void` | `undefined` | Selected account confirmed. |
+| onCreateNew | `() => void` | `undefined` | Empty-state CTA. |
+
+### Copy (i18n)
+
+| Key | Default string |
+| --- | --- |
+| idleTitle | Find your account |
+| recoverLabel | Recover |
+| manyTitle(count) | \{count} accounts found — a function |
+| noneTitle | No accounts found |
+
+## Accessibility
+
+The resolved list is an APG-pattern listbox.
+
+| Key | Action |
+| --- | --- |
+| ↑ / ↓ | Move active option (wraps) |
+| Home / End | First / last option |
+| Enter / Space | Choose the active option |
+| Tab | Roving tabindex — only the active row is in the tab order |
+
+- aria-selected + check on the chosen row; visible focus ring on the active row.
+- On resolved, focus lands on the first account; on error, the status paragraph.
+- RTL via logical properties; reduced-motion variant included.
+
+## Theming hooks
+
+| Area | Tokens |
+| --- | --- |
+| listbox row | `--pk-color-surface, --pk-color-border, --pk-radius-md` |
+| selected row | `--pk-color-brand, --pk-color-brand-soft` |
+| focus ring | `--pk-focus-color / -width / -offset / -halo` |
+| discovering | `--pk-scrim, --pk-busy-opacity` |
+
+## In Stellar Wallets Kit
+
+```ts
+// Recover seam → RecoverFlow
+const accounts = await recover({ rpId, indexer });
+```
+
+<Cards>
+  <Card title="Sign" href="/docs/components/sign" />
+  <Card title="New components" href="/docs/components/connect" />
+</Cards>

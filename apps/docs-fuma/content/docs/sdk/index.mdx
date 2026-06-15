@@ -1,0 +1,93 @@
+---
+title: SDK
+icon: Package
+description: A minimal, headless, ES256-only passkey SDK for Stellar smart accounts.
+---
+
+A minimal, headless, ES256-only passkey SDK for Stellar smart accounts.
+
+## Strengths
+
+| Metric | What it means | Detail |
+| --- | --- | --- |
+| **~1.85 KB** | Tiny core | gzip; subpaths from 0.2 KB |
+| **ES256-only** | Hard-fail | non-P256 rejected at creation |
+| **Low-S** | Always | normalized before any contract |
+| **10 codes** | Typed errors | frozen, exhaustive |
+
+## Subpaths & import map
+
+Each subpath is independently importable — tree-shaking is the headline. `@stellar/stellar-sdk` is a peer dep, never bundled.
+
+| Subpath | What it gives | Bundle |
+| --- | --- | --- |
+| `.` | Public surface | 5.6 KB · **~1.85 KB gz** |
+| `/create` | `createPasskey`, `assertES256` | ~476 B |
+| `/connect` | `connect()` | ~208 B |
+| `/recover` | `recover()` | ~238 B |
+| `/sign` | `signTransaction`, `normalizeLowS` | 605 B · **~349 B gz** |
+| `/types` | `KitError`, guards | 235 B · **~182 B gz** |
+| `/testing` | `mockAuthenticator` (dev-only) | 7.5 KB |
+
+<Callout type="tip">
+The heavy crypto (noble) is shared and pulled only when `/sign` or `/create` is imported.
+</Callout>
+
+## API reference
+
+Each area has its own page — signatures, options, returns, and a runnable example, generated from the real types.
+
+<Cards>
+  <Card title="Create" href="/docs/sdk/create">createPasskey, AccountDeployer, COSE → SEC-1 key helpers</Card>
+  <Card title="Sign" href="/docs/sdk/sign">signTransaction, signAuthEntry, browserPasskeySigner, low-S</Card>
+  <Card title="Recover & Connect" href="/docs/sdk/recover">recover → RecoverResult[], connect → ConnectResult | null</Card>
+  <Card title="Adapters" href="/docs/sdk/adapters">direct · launchtube · oz-relayer · events · mercury</Card>
+  <Card title="KitError taxonomy" href="/docs/sdk/errors">10 frozen codes → cause → UI copy → recovery</Card>
+</Cards>
+
+## Try it — low-S round-trip
+
+A real, runnable computation against the secp256r1 order n. Edit S or reflect it; watch `isLowS` flip and `normalizeLowS` bring it back.
+
+The runner reflects a signature scalar `S` across the secp256r1 order `n`. When `forceHighS` is set via `mockAuthenticator`, `isLowS()` returns `false`, and `normalizeLowS()` brings it back to the low half by computing `n − S`:
+
+```ts
+// secp256r1 order
+const N = BigInt('0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551');
+const HALF = N >> 1n;
+
+function isLowS(S: bigint): boolean {
+  return S <= HALF && S > 0n;
+}
+
+function normalizeLowS(S: bigint): bigint {
+  return S > HALF ? N - S : S;
+}
+```
+
+`forceHighS` via `mockAuthenticator` → `isLowS() === false` → `normalizeLowS()` reflects `S → n − S`, after which `isLowS(normalized) === true`.
+
+## Try it — feed it a bad input
+
+Each failure throws a real, code-grounded `KitError`, and the SDK renders the actual `errorView`. One taxonomy → one layout.
+
+| Bad input | KitError code / cause | Where it's enforced |
+| --- | --- | --- |
+| RS256 / non-P256 key | `ES256_NOT_SUPPORTED` | `ceremonies/create.ts` asserts `alg === −7` |
+| Malformed / >72-byte DER | `INVALID_SIGNATURE_DER` | `webauthn/signature.ts` `derToCompact` |
+| High-S signature (forceHighS) | `isLowS() === false` | `normalizeLowS` reflects to `n − S` |
+| Unreadable COSE key | `INVALID_PUBLIC_KEY` | `coseKeyToSec1` throws |
+| Origin / challenge mismatch | `ORIGIN_MISMATCH` / `CHALLENGE_MISMATCH` | `verifyClientDataJSON` |
+
+A raw `KitError` looks like:
+
+```json
+{
+  "code": "ES256_NOT_SUPPORTED",
+  "cause": "ceremonies/create.ts asserts alg === −7"
+}
+```
+
+<Callout type="info">
+One frozen 10-code taxonomy → one error layout, copy swapped by code. See [the full taxonomy](/docs/sdk/errors).
+</Callout>

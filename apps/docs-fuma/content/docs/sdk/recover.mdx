@@ -1,0 +1,154 @@
+---
+title: recover & connect
+icon: RotateCcw
+description: Bring a returning SoroPass user back to their Stellar smart account — silent connect() on a known device, discoverable recover() for new devices.
+---
+
+Two ways to bring a returning user back to their smart account. `connect()` is the silent happy path on a known device; `recover()` is the new-device / cleared-storage path. Both map a passkey credential to its C-address through an `IndexerAdapter`.
+
+## Overview
+
+The two functions ship from dedicated subpaths so a wallet only pulls in what it uses:
+
+```ts
+import { connect } from '@soropass/core/connect';
+import { recover } from '@soropass/core/recover';
+```
+
+<Callout type="info">Try `connect()` first. When it returns `null` there is no stored credential or no account — fall through to `recover()`, which performs a discoverable get and resolves every account controlled by the credential.</Callout>
+
+<Callout type="info">`@stellar/stellar-sdk` is a peer dependency — it is never bundled into `@soropass/core`. The account resolution that turns a credential into a C-address is delegated entirely to your `IndexerAdapter`.</Callout>
+
+## Highlights
+
+<Cards>
+  <Card title="Silent reconnect" href="/docs/sdk/recover#connect">connect() does a best-effort mediation:'silent' liveness check where conditional mediation is available, and resolves the C-address regardless.</Card>
+  <Card title="Discoverable recovery" href="/docs/sdk/recover#recover">recover() runs a get() with no allowCredentials, so the authenticator picks the credential — the lost-localStorage / new-device path.</Card>
+  <Card title="One and many accounts" href="/docs/sdk/recover#recover">recover() returns a RecoverResult[]: a single credential can control several smart accounts, all resolved through the indexer.</Card>
+  <Card title="Degrades gracefully" href="/docs/sdk/recover#connect">Where silent mediation is unsupported, connect() still resolves the account via the IndexerAdapter — no hard dependency on the probe.</Card>
+</Cards>
+
+## connect()
+
+Silent reconnect using the stored credential id. Where conditional mediation is available, does a best-effort `mediation:'silent'` liveness check; the C-address is resolved via the `IndexerAdapter` regardless, so `connect` degrades gracefully where silent mediation is unsupported. Returns `null` when there is no stored credential (the caller should recover) or no account.
+
+```ts
+connect(options: ConnectOptions): Promise<ConnectResult | null>
+```
+
+### ConnectOptions
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `rpId` **(required)** | `string` | Relying Party ID for the WebAuthn ceremony. |
+| `indexer` **(required)** | `IndexerAdapter` | Resolves the credential to its C-address(es). |
+| `webauthn` | `WebAuthnClient` | Optional WebAuthn client override (defaults to the platform `navigator.credentials`). |
+| `storage` | `CredentialStorage` | Where the stored credential id is read from. |
+| `silentMediationSupported` | `boolean` | Override the `isConditionalMediationAvailable` probe. |
+
+### ConnectResult
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `contractId` | `string` | The resolved smart-account C-address. |
+| `credentialId` | `string` | The passkey credential id that controls it. |
+
+**Returns** — `Promise<ConnectResult | null>`. `null` means no stored credential or no account; the caller should fall through to `recover()`.
+
+### Usage
+
+```ts
+import { connect } from '@soropass/core/connect';
+
+const session = await connect({
+  rpId: 'wallet.example.com',
+  indexer,
+  storage,
+});
+
+if (session) {
+  // known device — silent reconnect succeeded
+  use(session.contractId, session.credentialId);
+} else {
+  // no stored credential or no account — fall through to recover()
+}
+```
+
+## recover()
+
+The lost-localStorage / new-device path. Performs a discoverable-credential `get()` (no `allowCredentials`), then resolves every smart account controlled by that credential via the `IndexerAdapter`.
+
+```ts
+recover(options: RecoverOptions): Promise<RecoverResult[]>
+```
+
+### RecoverOptions
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `rpId` **(required)** | `string` | Relying Party ID for the WebAuthn ceremony. |
+| `indexer` **(required)** | `IndexerAdapter` | Resolves the recovered credential to its C-address(es). |
+| `webauthn` | `WebAuthnClient` | Optional WebAuthn client override (defaults to the platform `navigator.credentials`). |
+| `challenge` | `Uint8Array` | Optional challenge bytes for the `get()` ceremony. |
+| `userActivation` | `{ isActive: boolean }` | Caller-supplied user-gesture state for the WebAuthn call. |
+
+### RecoverResult
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `contractId` | `string` | A smart-account C-address controlled by the credential. |
+| `credentialId` | `string` | The discoverable passkey credential id that was used. |
+
+**Returns** — `Promise<RecoverResult[]>`. One credential can control several accounts; `recover()` handles both 1 and many — present a picker when the array has more than one entry.
+
+### Usage
+
+```ts
+import { recover } from '@soropass/core/recover';
+
+const accounts = await recover({
+  rpId: 'wallet.example.com',
+  indexer,
+  userActivation: { isActive: true },
+});
+
+if (accounts.length === 1) {
+  open(accounts[0].contractId);
+} else if (accounts.length > 1) {
+  // one credential, several smart accounts — let the user choose
+  showPicker(accounts);
+}
+```
+
+## IndexerAdapter
+
+Both functions take an `IndexerAdapter` to map a credential to its C-address(es). It exposes a single method, `resolveByCredential`, which returns the accounts a credential controls. See [Adapters](/docs/sdk/adapters) for the bundled `events` indexer and how to write your own.
+
+```ts
+interface IndexerAdapter {
+  resolveByCredential(credentialId: string): Promise<ResolvedAccount[]>;
+}
+
+// ResolvedAccount = { contractId: string }
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `resolveByCredential` | `(credentialId: string) => Promise<ResolvedAccount[]>` | Returns every account whose signer is the given credential. |
+
+## Connect-then-recover
+
+`connect()` is the happy path on a known device — a `null` result falls through to `recover()`, the new-device / cleared-storage path. This is the idiomatic startup sequence:
+
+```ts
+import { connect } from '@soropass/core/connect';
+import { recover } from '@soropass/core/recover';
+
+async function restore(rpId, indexer, storage) {
+  const session = await connect({ rpId, indexer, storage });
+  if (session) return [session];
+
+  // null -> no stored credential / no account: recover
+  return recover({ rpId, indexer, userActivation: { isActive: true } });
+}
+```

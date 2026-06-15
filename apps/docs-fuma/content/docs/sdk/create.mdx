@@ -1,0 +1,208 @@
+---
+title: createPasskey
+icon: KeyRound
+description: Register an ES256-only passkey, extract its SEC-1 public key, deploy a smart account, and persist the credential via the @soropass/core/create subpath.
+---
+
+The `@soropass/core/create` subpath: register an ES256-only passkey, extract its SEC-1 public key, deploy a smart account through your factory, and persist the credential id. ES256 is enforced at the source — anything else hard-fails.
+
+## Overview
+
+Import only what you need from the `/create` subpath. `createPasskey` is the one call most apps need; the rest are the building blocks it composes, exported for advanced flows and testing.
+
+```ts
+import {
+  createPasskey,
+  assertES256,
+  buildCreateOptions,
+  browserWebAuthnClient,
+  defaultCredentialStorage,
+  coseKeyToSec1,
+} from '@soropass/core/create';
+```
+
+<Callout type="warn">
+  **ES256-only invariant.** `pubKeyCredParams` is exactly `[{ type: 'public-key', alg: -7 }]`. Any other algorithm (RS256, EdDSA, …) throws `KitError('ES256_NOT_SUPPORTED')` — Soroban verifies only secp256r1.
+</Callout>
+
+<Callout type="info">
+  `@stellar/stellar-sdk` is a peer dependency and is **never** bundled into the SDK output. The contract-specific work lives behind the `AccountDeployer` you supply.
+</Callout>
+
+## Highlights
+
+<Cards>
+  <Card title="ES256 at the source" href="#options" />
+  <Card title="SEC-1 extraction" href="#keys" />
+  <Card title="Safari gesture rule" href="#assertuseractivation" />
+  <Card title="Factory deploy" href="#deployer" />
+  <Card title="Pluggable clients" href="#clients" />
+  <Card title="Credential persisted" href="#clients" />
+</Cards>
+
+- **ES256 at the source** — `buildCreateOptions` emits `pubKeyCredParams [{ type: 'public-key', alg: -7 }]` only; `assertES256` throws unless `alg === -7`.
+- **SEC-1 extraction** — the CBOR COSE EC2 key is decoded to a 65-byte SEC-1 `0x04‖X‖Y` point; non-P-256 keys (RS256) hard-fail.
+- **Safari gesture rule** — `assertUserActivation` enforces the WebKit active-user-gesture requirement; the create-button click is the gesture.
+- **Factory deploy** — your `AccountDeployer` deploys the smart account for the new passkey and returns its `contractId`.
+- **Pluggable clients** — `browserWebAuthnClient` and `defaultCredentialStorage` are defaults; pass your own `WebAuthnClient` / `CredentialStorage`.
+- **Credential persisted** — the credential id is stored so `connect()` can find the account later, with an in-memory fallback for Node / SSR.
+
+## createPasskey()
+
+Register an ES256-only passkey, extract its SEC-1 public key (RS256 hard-fails), deploy a smart account via the factory, persist the credential id, and return the account.
+
+```ts
+createPasskey(options: CreatePasskeyOptions): Promise<PasskeyCredential>
+```
+
+### CreatePasskeyOptions
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `rpId` *(required)* | `string` | Your site's registrable domain. |
+| `rpName` *(required)* | `string` | Human-readable relying-party name shown in the OS sheet. |
+| `userName` *(required)* | `string` | Account name presented to the user during registration. |
+| `deployer` *(required)* | `AccountDeployer` | Deploys the smart account for the new passkey (contract-specific). |
+| `webauthn` | `WebAuthnClient` | WebAuthn client; defaults to `browserWebAuthnClient()`. |
+| `storage` | `CredentialStorage` | Where the credential id is persisted; defaults to `defaultCredentialStorage()`. |
+| `userId` | `Uint8Array` | Optional user handle bytes; generated if omitted. |
+| `challenge` | `Uint8Array` | Optional registration challenge; generated if omitted. |
+| `residentKey` | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.residentKey` hint. |
+| `userVerification` | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.userVerification` hint. |
+| `userActivation` | `{ isActive: boolean }` | Pass `navigator.userActivation` to enforce the Safari gesture rule. |
+
+### Returns — PasskeyCredential
+
+**Returns** `Promise<PasskeyCredential>` — the deployed account and its passkey.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `contractId` | `string` | C-address of the deployed smart account. |
+| `credentialId` | `string` | WebAuthn credential id, persisted via storage for later `connect()`. |
+| `publicKey` | `Uint8Array` | 65-byte SEC-1 secp256r1 public key (`0x04‖X‖Y`). |
+
+```ts title="register.ts"
+import { createPasskey } from '@soropass/core/create';
+
+const account = await createPasskey({
+  rpId: 'app.example.com',
+  rpName: 'Example',
+  userName: 'alice@example.com',
+  deployer,                         // your AccountDeployer
+  residentKey: 'required',
+  userVerification: 'preferred',
+  userActivation: navigator.userActivation, // Safari gesture rule
+});
+
+console.log(account.contractId);    // C... smart-account address
+console.log(account.credentialId);  // persisted for connect()
+console.log(account.publicKey.length); // 65 (SEC-1)
+```
+
+<Callout type="tip">
+  The create button click **is** the WebAuthn user gesture — call `createPasskey` directly from the click handler so the registration ceremony is allowed to prompt.
+</Callout>
+
+## AccountDeployer
+
+The contract-specific seam. `createPasskey` hands your deployer the extracted SEC-1 public key and credential id, and expects the deployed smart-account address back. Keeps the SDK free of any contract coupling.
+
+```ts
+interface AccountDeployer {
+  deploy(input: {
+    publicKey: Uint8Array;
+    credentialId: string;
+  }): Promise<{ contractId: string; txHash?: string }>;
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `input.publicKey` | `Uint8Array` | 65-byte SEC-1 public key of the new passkey. |
+| `input.credentialId` | `string` | WebAuthn credential id to bind to the account. |
+| `→ contractId` | `string` | C-address of the deployed smart account. |
+| `→ txHash` | `string?` | Optional deploy transaction hash. |
+
+## Assertions & options
+
+The guards and option-builder that enforce the invariants. `createPasskey` calls these internally; they're exported so you can assert at your own boundaries.
+
+### assertES256()
+
+Throws `ES256_NOT_SUPPORTED` unless `alg === -7`.
+
+```ts
+assertES256(alg: number): void
+```
+
+### assertUserActivation()
+
+Throws `USER_CANCELLED` if not an active user gesture (Safari / WebKit rule).
+
+```ts
+assertUserActivation(activation?: { isActive: boolean }): void
+```
+
+```ts title="guards.ts"
+import { assertES256, assertUserActivation } from '@soropass/core/create';
+
+button.addEventListener('click', () => {
+  assertUserActivation(navigator.userActivation); // throws USER_CANCELLED otherwise
+  assertES256(-7);                                // ok; -257 (RS256) throws
+});
+```
+
+### buildCreateOptions()
+
+Builds a `PublicKeyCredentialCreationOptions` with `pubKeyCredParams` `[{ type: 'public-key', alg: -7 }]` only.
+
+```ts
+buildCreateOptions(/* ... */): PublicKeyCredentialCreationOptions
+```
+
+## Clients & storage
+
+Default, swappable adapters for the WebAuthn ceremony and credential persistence. Override either via `CreatePasskeyOptions.webauthn` / `.storage`.
+
+| Function | Returns | Description |
+| --- | --- | --- |
+| `browserWebAuthnClient()` | `WebAuthnClient` | `navigator.credentials`-backed client (the default). |
+| `defaultCredentialStorage()` | `CredentialStorage` | `localStorage` with an in-memory fallback (Node / SSR). |
+
+```ts
+browserWebAuthnClient(): WebAuthnClient
+defaultCredentialStorage(): CredentialStorage
+```
+
+<Callout type="info">
+  In Node / SSR there is no `localStorage`; `defaultCredentialStorage()` falls back to an in-memory store so the SDK stays import-safe outside the browser.
+</Callout>
+
+## Public-key extraction
+
+The path from a WebAuthn attestation to the 65-byte SEC-1 point the contract verifies. Each step is exported so you can extract from whichever shape you hold.
+
+| Function | Returns | Description |
+| --- | --- | --- |
+| `coseKeyToSec1(coseKey)` | `Uint8Array` | CBOR COSE EC2 → 65-byte SEC-1 `0x04‖X‖Y`; enforces P-256, else throws `ES256_NOT_SUPPORTED`. |
+| `extractPublicKeyFromAuthData(authData)` | `Uint8Array` | Pulls the COSE key out of `authenticatorData` and returns the SEC-1 point. |
+| `extractPublicKeyFromAttestationObject(attestationObject)` | `Uint8Array` | Decodes the `attestationObject` and returns the SEC-1 point. |
+
+```ts
+coseKeyToSec1(coseKey: Uint8Array): Uint8Array
+extractPublicKeyFromAuthData(authData: Uint8Array): Uint8Array
+extractPublicKeyFromAttestationObject(attestationObject: Uint8Array): Uint8Array
+```
+
+```ts title="extract.ts"
+import {
+  extractPublicKeyFromAttestationObject,
+} from '@soropass/core/create';
+
+// 65-byte SEC-1 point: 0x04 ‖ X ‖ Y — non-P-256 keys throw ES256_NOT_SUPPORTED
+const publicKey = extractPublicKeyFromAttestationObject(attestationObject);
+```
+
+<Callout type="tip">
+  Need the full error taxonomy? See the [KitError taxonomy](/docs/sdk/errors) for every code these functions can throw.
+</Callout>

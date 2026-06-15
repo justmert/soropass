@@ -1,0 +1,132 @@
+---
+title: How it works
+icon: Workflow
+description: How a passkey signs a Stellar transaction and a smart account verifies it on-chain — ES256-only, always low-S, no seed phrase or trusted backend.
+---
+
+A passkey signs your transaction; a Stellar smart account verifies it on-chain — no seed phrase, no server, no trusted backend.
+
+- ES256-only, hardened
+- Always low-S normalized
+- Proven on testnet
+
+## Master flow
+
+```
+Device · Secure Enclave → Browser · navigator.credentials → @soropass/core → Stellar network → WebauthnAccount.__check_auth → host secp256r1_verify
+```
+
+Three artifacts travel the wire: the assertion `{ authenticatorData, clientDataJSON, signature(DER) }`, the 43-char base64url challenge, and the `Secp256r1Signature` ScVal.
+
+## Stage 1 — WebAuthn ceremony
+
+| Artifact | What it is |
+| --- | --- |
+| `authenticatorData` | rpIdHash + flags + counter |
+| `clientDataJSON` | type, challenge, origin |
+| `signature (DER)` | secp256r1 signature over authData ‖ SHA256(cdj) |
+
+```
+payload = SHA256( authData ‖ SHA256(clientDataJSON) )
+```
+
+<Callout type="info">
+The `challenge` in clientDataJSON binds the signature to one specific request — the root of phishing resistance.
+</Callout>
+
+## Stage 2 — ES256-only + always low-S
+
+We request `{ alg: -7 }` only; anything else hard-fails on both request and response side. Then every signature is normalized to low-S: if S is in the upper half of the curve order, reflect it to n−S.
+
+```
+0 ───────────────[ accepted: 0 … n/2 ]───────────────│ n/2 │───────────[ rejected: n/2 … n ]───────────── n
+                                                                              S  ──reflect──▶  n−S
+```
+
+<Callout type="tip">
+The host `secp256r1_verify` doesn't enforce low-S, so we do it once, client-side — malleability closed before a signature ever reaches a contract.
+</Callout>
+
+## Stage 3 — challenge binding
+
+```
+SorobanAuthorizationEntry → HashIdPreimage::SorobanAuthorization {
+  networkId = SHA256(passphrase), nonce, signatureExpirationLedger, invocation
+} → XDR → SHA256 → base64url = 43-char challenge
+```
+
+<Callout type="info">
+A captured signature cannot be replayed for a different transaction, nonce, or network.
+</Callout>
+
+## Stage 4 — the Soroban wire shape
+
+<Tabs items={['TypeScript (assembles)', 'Rust (consumes)']}>
+<Tab value="TypeScript (assembles)">
+
+```ts
+const sig = buildSignatureScVal({ authenticator_data, client_data_json, signature }); // keys alphabetical, signature 64-byte low-S
+```
+
+</Tab>
+<Tab value="Rust (consumes)">
+
+```rust
+pub struct Secp256r1Signature {
+  pub authenticator_data: Bytes,
+  pub client_data_json: Bytes,
+  pub signature: BytesN<64>,
+}
+```
+
+</Tab>
+</Tabs>
+
+## Stage 5 — __check_auth + secp256r1_verify
+
+<Steps>
+<Step>
+**Challenge binding**
+
+`clientDataJSON.challenge == base64url(signature_payload)`, else `ChallengeMismatch`.
+</Step>
+<Step>
+**Reconstruct the message**
+
+`authenticator_data ‖ SHA256(client_data_json)`.
+</Step>
+<Step>
+**Verify**
+
+`secp256r1_verify(public_key, SHA256(message), signature)` — traps on invalid.
+</Step>
+</Steps>
+
+```
+payload = SHA256( authData ‖ SHA256(clientDataJSON) )
+```
+
+The same digest is computed in the browser (Stage 1) and re-derived on-chain (Stage 5) — that's the whole trust model.
+
+## On-chain proof — positive and negative
+
+<Cards>
+<Card title="✓ Correct key → SUCCESS" href="https://stellar.expert/explorer/testnet/tx/f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418">
+tx `f256288c…` — verified on testnet. View on stellar.expert →
+</Card>
+<Card title="✕ Wrong key → TRAPS">
+On-chain failure, explorer-linked. Not a mock — a live testnet round-trip you can re-run.
+</Card>
+</Cards>
+
+<Callout type="warn">
+Simulation under-budgets CPU because it skips `secp256r1_verify` — inflate the instruction budget before submit. Real tx hashes come from `scripts/onchain-e2e.ts`, never fabricated.
+</Callout>
+
+## The living-matrix pipeline
+
+```
+BCD ingest → typed snapshot → CI grid → dated snapshot → diff → commit
+```
+
+BCD ingest → typed snapshot → virtual-authenticator CI grid → dated MergedMatrixSnapshot (provenance / tier / lastVerified) → diff vs previous → commit back. [See the matrix →](/docs/compatibility)

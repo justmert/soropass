@@ -1,0 +1,248 @@
+---
+title: Adapters
+icon: Cable
+description: Two small pluggable seams for submission and indexing, with a zero-infra default of direct submission plus an on-chain events indexer.
+---
+
+Two pluggable seams, both small interfaces. The zero-infra default is direct submission + an events indexer; nothing else is required. Swapping either is a one-line config change — no hard coupling to any relayer or indexer.
+
+## Overview
+
+A submission adapter takes a signed transaction XDR to the network; an indexer adapter maps a passkey credential back to its C-address. `@soropass/core` ships both seams from the package root and never bundles `@stellar/stellar-sdk` — it stays a peer dependency.
+
+<Cards>
+  <Card title="Zero-infra default" href="#defaultadapters">
+    directSubmission + eventsIndexer need only an RPC URL and a factoryContractId — no relayer, no indexer service, no account.
+  </Card>
+  <Card title="One-line swap" href="#submission-adapters">
+    Every submission factory returns SubmissionAdapter and every indexer factory returns IndexerAdapter, so the call site never changes.
+  </Card>
+  <Card title="No hard coupling" href="#invariant-4--pluggable-zero-infra-by-default">
+    Launchtube, OZ Relayer, and Mercury are optional adapters behind the same interfaces — the SDK never requires any of them.
+  </Card>
+</Cards>
+
+## Interfaces
+
+Both seams are deliberately small. Implement these two interfaces and any backend slots in.
+
+### SubmissionAdapter
+
+Sends a signed transaction XDR and resolves to a `SubmitResult`.
+
+```ts
+interface SubmissionAdapter {
+  send(signedTxXdr: string): Promise<SubmitResult>;
+}
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `signedTxXdr` | `string` | The fully signed transaction, base64 XDR. |
+
+**Returns** `Promise<SubmitResult>` — the outcome of submission (see below).
+
+### SubmitResult
+
+```ts
+interface SubmitResult {
+  status: 'SUCCESS' | 'PENDING' | 'FAILED';
+  hash: string;
+  returnValue?: unknown;     // decoded contract return value on success
+  errorResultXdr?: string;   // base64 XDR of the failure result when failed
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | `'SUCCESS' \| 'PENDING' \| 'FAILED'` | Terminal or in-flight state of the submission. |
+| `hash` | `string` | Transaction hash. |
+| `returnValue` | `unknown?` | Decoded contract return value on success (implementation-defined). |
+| `errorResultXdr` | `string?` | Base64 XDR of the failure result, present when status is 'FAILED'. |
+
+### IndexerAdapter
+
+Resolves the smart-account C-address(es) controlled by a passkey credential.
+
+```ts
+interface IndexerAdapter {
+  resolveByCredential(credentialId: string): Promise<ResolvedAccount[]>;
+}
+
+// ResolvedAccount = { contractId: string }
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `credentialId` | `string` | The passkey credential id to resolve. |
+
+**Returns** `Promise<ResolvedAccount[]>` where `ResolvedAccount = { contractId: string }`.
+
+## Submission adapters
+
+All three return `SubmissionAdapter`, so swapping one for another is a one-line config change.
+
+### directSubmission
+
+Zero-infra default; sends straight to soroban-rpc.
+
+```ts
+directSubmission(options: DirectSubmissionOptions): SubmissionAdapter
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `DirectSubmissionOptions` | Direct soroban-rpc submission options (rpcUrl + networkPassphrase). |
+
+**Returns** `SubmissionAdapter` that sends straight to soroban-rpc.
+
+```ts
+import { directSubmission } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
+
+const submission = directSubmission({
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  networkPassphrase: Networks.TESTNET,
+});
+const res = await submission.send(signedTxXdr);
+if (res.status === 'SUCCESS') console.log(res.hash);
+if (res.status === 'FAILED') console.error(res.errorResultXdr);
+```
+
+### launchtubeSubmission
+
+Legacy relay (Launchtube) — modeled as one optional adapter.
+
+```ts
+launchtubeSubmission(options: LaunchtubeSubmissionOptions): SubmissionAdapter
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `LaunchtubeSubmissionOptions` | Launchtube relay options. |
+
+**Returns** `SubmissionAdapter` backed by the Launchtube relay.
+
+```ts
+import { launchtubeSubmission } from '@soropass/core';
+
+const submission = launchtubeSubmission({ /* LaunchtubeSubmissionOptions */ });
+const res = await submission.send(signedTxXdr);
+```
+
+### openzeppelinRelayerSubmission
+
+OZ Relayer / Defender — the post-Launchtube direction.
+
+```ts
+openzeppelinRelayerSubmission(options: OpenZeppelinRelayerOptions): SubmissionAdapter
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `OpenZeppelinRelayerOptions` | OZ Relayer / Defender options. |
+
+**Returns** `SubmissionAdapter` backed by the OZ Relayer / Defender.
+
+```ts
+import { openzeppelinRelayerSubmission } from '@soropass/core';
+
+const submission = openzeppelinRelayerSubmission({ /* OpenZeppelinRelayerOptions */ });
+const res = await submission.send(signedTxXdr);
+```
+
+## Indexer adapters
+
+Both return `IndexerAdapter` and map a credential to its C-address.
+
+### eventsIndexer
+
+Zero-infra default; reads on-chain contract events (just an RPC URL + factory contract id).
+
+```ts
+eventsIndexer(options: EventsIndexerOptions): IndexerAdapter
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `EventsIndexerOptions` | On-chain events options (an RPC URL + factoryContractId). |
+
+**Returns** `IndexerAdapter` that reads on-chain contract events.
+
+```ts
+import { eventsIndexer } from '@soropass/core';
+
+const indexer = eventsIndexer({
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  factoryContractId: 'C...FACTORY',
+});
+const accounts = await indexer.resolveByCredential(credentialId);
+console.log(accounts.map((a) => a.contractId));
+```
+
+### mercuryIndexer
+
+Optional Mercury index; the SDK never requires Mercury.
+
+```ts
+mercuryIndexer(options: MercuryIndexerOptions): IndexerAdapter
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `MercuryIndexerOptions` | Mercury index options (optional). |
+
+**Returns** `IndexerAdapter` backed by a Mercury index.
+
+<Callout type="info">
+Mercury is strictly optional. The default `eventsIndexer` covers credential → C-address resolution with no external index service.
+</Callout>
+
+```ts
+import { mercuryIndexer } from '@soropass/core';
+
+const indexer = mercuryIndexer({ /* MercuryIndexerOptions */ });
+const accounts = await indexer.resolveByCredential(credentialId);
+```
+
+## defaultAdapters
+
+The zero-infra default stack: direct + events. Returns both seams pre-wired.
+
+```ts
+defaultAdapters(options: DefaultAdapterOptions): { submission: SubmissionAdapter; indexer: IndexerAdapter }
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `options` | `DefaultAdapterOptions` | Options for the default direct + events stack (rpcUrl + networkPassphrase + factoryContractId). |
+
+**Returns** `{ submission: SubmissionAdapter; indexer: IndexerAdapter }` — the zero-infra default stack (direct submission + events indexer).
+
+```ts
+import { defaultAdapters } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
+
+const { submission, indexer } = defaultAdapters({
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  networkPassphrase: Networks.TESTNET,
+  factoryContractId: 'C...FACTORY',
+});
+
+// later
+const accounts = await indexer.resolveByCredential(credentialId);
+const res = await submission.send(signedTxXdr);
+```
+
+## Invariant #4 — pluggable, zero-infra by default
+
+<Callout type="info">
+Pluggable adapters for submission + indexer; the default is zero-infra (direct + events). No hard coupling to any relayer or indexer.
+</Callout>
+
+Because every factory returns the same interface, you can start on the zero-infra default and move to Launchtube, the OZ Relayer, or Mercury later without touching call sites. `@stellar/stellar-sdk` remains a peer dependency and is never bundled into `@soropass/core`.
+
+<Cards>
+  <Card title="Recover & Connect" href="/docs/sdk/recover" />
+  <Card title="KitError taxonomy" href="/docs/sdk/errors" />
+</Cards>

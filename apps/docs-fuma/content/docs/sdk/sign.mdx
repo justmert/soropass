@@ -1,0 +1,234 @@
+---
+title: signTransaction
+icon: PenLine
+description: Sign Soroban transactions and authorization entries with a passkey — WebAuthn assertion, low-S normalization, and contract-verifiable signature assembly.
+---
+
+Turn a Soroban transaction or a single authorization entry into a passkey-signed envelope. The `@soropass/core/sign` subpath obtains a WebAuthn assertion, low-S-normalizes it, and assembles the contract signature your `__check_auth` re-derives. `@stellar/stellar-sdk` is a peer dependency — it is never bundled into the SDK output.
+
+<Cards>
+  <Card title="Address-credential auth" href="#signtransaction">
+    Signs every address-credential Soroban auth entry carried by the InvokeHostFunction operations of a transaction.
+  </Card>
+  <Card title="Always low-S" href="#low-s-normalization">
+    Every assertion is low-S-normalized downstream — Soroban's secp256r1_verify does not enforce it, so the SDK must.
+  </Card>
+  <Card title="Pluggable signer" href="#browserpasskeysigner">
+    browserPasskeySigner adapts navigator.credentials.get; inject a custom WebAuthnClient for tests or non-browser hosts.
+  </Card>
+</Cards>
+
+## signTransaction
+
+Sign every address-credential Soroban auth entry carried by the `InvokeHostFunction` operations of a transaction (base64 XDR envelope). Returns the signed envelope XDR.
+
+```ts
+signTransaction(txXdr: string, options: SorobanSignOptions): Promise<string>
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `txXdr` | `string` | Base64 XDR transaction envelope to sign. |
+| `options` | `SorobanSignOptions` | Network passphrase + WebAuthn signer (see below). |
+
+**Returns** `Promise<string>` — the signed envelope as base64 XDR.
+
+```ts title="sign-tx.ts"
+import { signTransaction, browserPasskeySigner } from '@soropass/core/sign';
+
+const sign = browserPasskeySigner({ rpId, allowCredentials: [credentialId] });
+const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign });
+```
+
+## signAuthEntry
+
+Obtain a WebAuthn assertion, low-S-normalize, and assemble the contract signature. Returns the signed entry as base64 XDR.
+
+```ts
+signAuthEntry(entryXdr: string, options: SorobanSignOptions): Promise<string>
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `entryXdr` | `string` | Base64 XDR of a single SorobanAuthorizationEntry. |
+| `options` | `SorobanSignOptions` | Network passphrase + WebAuthn signer (see below). |
+
+**Returns** `Promise<string>` — the signed entry as base64 XDR.
+
+```ts title="sign-entry.ts"
+import { signAuthEntry, browserPasskeySigner } from '@soropass/core/sign';
+
+const sign = browserPasskeySigner({ rpId, allowCredentials: [credentialId] });
+const signedEntry = await signAuthEntry(entryXdr, { networkPassphrase, sign });
+```
+
+### SorobanSignOptions
+
+The options object shared by `signTransaction` and `signAuthEntry`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `networkPassphrase` | `string` | Network passphrase bound into the auth challenge (networkId = SHA256(networkPassphrase)). |
+| `sign` | `WebAuthnSigner` | The signer that produces the assertion — usually browserPasskeySigner(...). |
+
+## browserPasskeySigner
+
+Adapt `navigator.credentials.get` into the `WebAuthnSigner` that `signTransaction` / `signAuthEntry` expect. Hands the signer a base64url challenge (the Soroban auth preimage), decodes it, runs the assertion, returns the fields the auth assembler needs. The DER signature is low-S normalized downstream.
+
+```ts
+browserPasskeySigner(options: BrowserPasskeySignerOptions): WebAuthnSigner
+```
+
+**Returns** `WebAuthnSigner` — pass it as `options.sign` to the sign functions above.
+
+### BrowserPasskeySignerOptions
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `rpId` | `string` | Relying Party ID (registrable domain). |
+| `allowCredentials?` | `string[]` | base64url credential ids; omit for a discoverable prompt. |
+| `userVerification?` | `'discouraged' \| 'preferred' \| 'required'` | WebAuthn user-verification requirement. |
+| `webauthn?` | `WebAuthnClient` | Inject a custom client (tests / non-browser). |
+
+<Callout type="tip">
+Omit `allowCredentials` to drive a discoverable (resident-key) prompt where the authenticator surfaces the credential itself.
+</Callout>
+
+```ts title="signer.ts"
+import { browserPasskeySigner, signTransaction } from '@soropass/core/sign';
+
+const sign = browserPasskeySigner({
+  rpId: 'app.example.com',
+  allowCredentials: [credentialId], // omit for a discoverable prompt
+  userVerification: 'required',
+});
+
+const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign });
+```
+
+## Low-S normalization
+
+Invariant #2. Roughly 50% of Apple Touch ID / Face ID assertions come back high-S, and Soroban's `secp256r1_verify` does **not** enforce low-S — so the SDK must emit low-S before any contract sees the signature.
+
+<Callout type="warn">
+A high-S signature is malleable: the same message has two valid encodings. Always normalize to canonical low-S (S ≤ n/2) client-side.
+</Callout>
+
+### isLowS
+
+True if a 64-byte compact signature is canonical low-S (`S ≤ n/2`).
+
+```ts
+isLowS(compactSignature: Uint8Array): boolean
+```
+
+### normalizeLowS
+
+If `S > n/2`, replace S with `n − S`. Idempotent.
+
+```ts
+normalizeLowS(compactSignature: Uint8Array): Uint8Array
+```
+
+### derToCompact
+
+ASN.1 DER → 64-byte raw `R‖S` (noble parser). Does **not** enforce low-S.
+
+```ts
+derToCompact(der: Uint8Array): Uint8Array
+```
+
+### derToCompactLowS
+
+DER → 64-byte canonical low-S compact (what the ceremony uses).
+
+```ts
+derToCompactLowS(der: Uint8Array): Uint8Array
+```
+
+```ts title="low-s.ts"
+import { derToCompactLowS, isLowS, normalizeLowS } from '@soropass/core/sign';
+
+// DER from the authenticator → canonical 64-byte low-S compact
+const compact = derToCompactLowS(assertion.signatureDer);
+
+isLowS(compact); // true — ready for the contract
+normalizeLowS(compact); // idempotent: returns compact unchanged
+```
+
+## Soroban auth
+
+The primitives that derive the challenge the authenticator signs and assemble the assertion back into a `SorobanAuthorizationEntry` the contract can verify.
+
+### reconstructSignedPayload
+
+`SHA256(authData ‖ SHA256(clientDataJSON))` — the 32-byte payload `__check_auth` re-derives.
+
+```ts
+reconstructSignedPayload({ authenticatorData, clientDataJSON }): Uint8Array
+```
+
+### authEntryChallenge
+
+base64url challenge (43 chars) the authenticator signs.
+
+```ts
+authEntryChallenge(entry, networkPassphrase): string
+```
+
+### authEntryChallengeBytes
+
+`SHA256(XDR(HashIdPreimage::SorobanAuthorization{...}))`; `networkId = SHA256(networkPassphrase)`.
+
+```ts
+authEntryChallengeBytes(entry, networkPassphrase): Uint8Array
+```
+
+### applyAssertionToEntry
+
+Sets the entry signature to `ScVal::Map { authenticator_data, client_data_json, signature: BytesN<64> }` (alphabetical keys). The signature MUST already be 64-byte low-S.
+
+```ts
+applyAssertionToEntry(entry, assertion): SorobanAuthorizationEntry
+```
+
+<Callout type="warn">
+The `signature` passed to `applyAssertionToEntry` must already be the 64-byte low-S compact form. Use `derToCompactLowS` first.
+</Callout>
+
+```ts title="soroban-auth.ts"
+import {
+  authEntryChallenge,
+  reconstructSignedPayload,
+  applyAssertionToEntry,
+} from '@soropass/core/sign';
+
+// 1. the base64url challenge the authenticator signs
+const challenge = authEntryChallenge(entry, networkPassphrase);
+
+// 2. after the assertion, the 32-byte payload __check_auth re-derives
+const payload = reconstructSignedPayload({
+  authenticatorData,
+  clientDataJSON,
+});
+
+// 3. signature must already be 64-byte low-S
+const signed = applyAssertionToEntry(entry, {
+  authenticatorData,
+  clientDataJSON,
+  signature, // BytesN<64>, low-S
+});
+```
+
+## Production note
+
+<Callout type="warn">
+`simulateTransaction` does not run `secp256r1_verify`, so it under-budgets `__check_auth`. Raise the instruction budget + resource fee before submit, or use a managed submitter.
+</Callout>
+
+For the matching error codes raised by these functions — including `INVALID_SIGNATURE_DER` and challenge/origin mismatches — see [the KitError taxonomy](/docs/sdk/errors).
+
+<Cards>
+  <Card title="Create" href="/docs/sdk/create" />
+  <Card title="Recover & Connect" href="/docs/sdk/recover" />
+</Cards>

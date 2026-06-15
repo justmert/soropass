@@ -1,0 +1,80 @@
+---
+title: Introduction
+icon: BookOpen
+description: A minimal passkey SDK plus drop-in create / sign / recover components for Stellar smart accounts, adopted into stellar-wallets-kit.
+---
+
+A minimal passkey SDK plus drop-in **create / sign / recover** components for Stellar smart accounts — adopted into **stellar-wallets-kit**. Wallet teams ship passkeys without hand-rolling WebAuthn, on-chain signing, or compatibility logic. It is a **layer, not a wallet** — no accounts to manage, no balances of our own.
+
+<Callout type="info" title="Proven, not promised">
+The secp256r1 `__check_auth` path is **verified on testnet**, not modeled — a real passkey signature authorizes a smart-account call, and a wrong-key signature is rejected on-chain. See the deployed [webauthn-account contract](https://stellar.expert/explorer/testnet/contract/CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2) on Stellar Expert.
+</Callout>
+
+## Two ways to adopt
+
+<Cards>
+  <Card icon={<Boxes />} title="Through Stellar Wallets Kit" href="/docs/quickstart">
+    Register a `PasskeyModule` and passkeys appear in the standard wallet picker — call `authModal()` / `getAddress()` / `signTransaction()`, the kit API you already use. No passkey-specific code on your side.
+  </Card>
+  <Card icon={<KeyRound />} title="Headless / direct" href="/docs/sdk">
+    Import `@soropass/core` directly — `createPasskey`, `signTransaction`, `recover`, `connect`, with pluggable submission + indexer adapters. Drive the headless UI yourself, or skip the UI entirely.
+  </Card>
+</Cards>
+
+## What's in the box
+
+<Cards>
+  <Card icon={<Rocket />} title="Quickstart" href="/docs/quickstart">
+    Add passkey sign-in in under 15 minutes.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Components" href="/docs/components">
+    Create / sign / recover screens, every state, drop-in.
+  </Card>
+  <Card icon={<MonitorSmartphone />} title="Compatibility" href="/docs/compatibility">
+    The living matrix — what works, what breaks, fallbacks.
+  </Card>
+  <Card icon={<Package />} title="SDK reference" href="/docs/sdk">
+    Tiny surface, typed errors, pluggable adapters.
+  </Card>
+  <Card icon={<Workflow />} title="How it works" href="/docs/how-it-works">
+    WebAuthn → low-S → Soroban `__check_auth`.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/security">
+    Trust boundaries, replay, RP-ID, recovery.
+  </Card>
+</Cards>
+
+## Where it fits
+
+| Layer | Who | What |
+| --- | --- | --- |
+| Your product | Your wallet / dApp | your UI + design system |
+| **SoroPass** | `@soropass` | SDK + UI + PasskeyModule |
+| Kit | `stellar-wallets-kit` | the wallet kit you already use |
+| On-chain | Soroban smart account | native secp256r1 verify |
+
+You own your product and design system; SoroPass is the passkey layer in between, built on already-deployed, audited smart-account contracts. We don't reinvent the contract layer.
+
+## Minimal surface
+
+- **ES256-only** — `pubKeyCredParams` pinned to alg −7; anything else throws `ES256_NOT_SUPPORTED`. Soroban verifies secp256r1.
+- **Always low-S** — signatures are low-S normalized client-side, so the ~50% of Apple passkeys that emit high-S still verify on-chain.
+- **~2 runtime deps** — a tiny core (noble p256 + hashes); no heavy frameworks.
+- **`@stellar/stellar-sdk` is a peer** — declared as a peer dependency, never bundled into the SDK output.
+- **Tree-shakeable subpaths** — import only what you use: `@soropass/core/create`, `/sign`, `/recover`, `/connect`.
+
+## Try it in 20 seconds
+
+Mock mode — zero network, no authenticator, runs in CI. The same facade swaps to `mode: 'real'` for production.
+
+```ts title="demo.ts"
+import { createPasskeyKit } from '@soropass/core/testing';
+
+const kit = createPasskeyKit({ mode: 'mock', rpId: 'localhost' });
+
+const cred = await kit.createPasskey({ userName: 'alice' });
+console.log(cred.contractId); // C-address of the new smart account
+
+const signed = await kit.signAuthEntry(entryXdr);
+const accounts = await kit.recover();
+```

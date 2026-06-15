@@ -1,0 +1,201 @@
+---
+title: Create
+icon: UserPlus
+description: A drop-in, token-driven screen that creates a brand-new Stellar smart-account wallet from a passkey.
+---
+
+A drop-in screen that creates a brand-new Stellar smart-account wallet from a passkey. Five states, token-driven, framework-agnostic — wired directly through your SDK flow or through Stellar Wallets Kit.
+
+## Overview
+
+Create wraps the first of the three passkey moments. The button press _is_ the WebAuthn user gesture, so the OS biometric sheet opens straight from `onCreate` — then the smart account deploys on-chain while the screen shows calm progress. Everything renders from the shared `tokens.css`: restyle by overriding tokens, never by editing the component.
+
+<Callout type="info">
+  **Logic stays headless.** This is the visual + interaction layer. You pass it a `flow` object (created / deployed / error events) from the SDK or the kit; it never touches the network itself.
+</Callout>
+
+## Use cases
+
+- **First-run onboarding for a new wallet** — A user opens your wallet with no account. Create deploys a smart account from a single Face ID / Touch ID prompt — no seed phrase to write down or lose.
+- **"Sign up with passkey" in a dApp** — Drop Create into a dApp's connect flow so first-time users get a self-custodial Stellar account in one tap, then continue straight into your app.
+- **Adding passkey as an option in an existing wallet** — Register the PasskeyModule and Create becomes the "new passkey wallet" path inside Stellar Wallets Kit's picker, alongside your existing wallets.
+
+## Features
+
+- **Calm OS-sheet waiting** — While the native passkey sheet is up, the card dims to an opaque scrim with a gently pulsing glyph — never a spinner competing with the OS.
+- **On-chain deploy progress** — A clear "Setting up your account…" work state with an indeterminate progress bar while the smart account deploys.
+- **Copyable C-address** — Success shows a middle-truncated contract address with a deterministic identicon and one-tap copy.
+- **One error layout** — Every failure renders through a single error view; copy swaps by KitError code, always with a Try again action.
+- **Accessible by default** — Polite / assertive live regions, focus management on terminal states, full keyboard support, RTL and reduced-motion.
+- **Token-only theming** — Light and dark from one token set, plus i18n via an overridable copy object. No forking to restyle.
+
+## Preview & code
+
+The real component — step through each state, or flip to the mount code (standalone or via the kit).
+
+<Preview screen="create" />
+
+<Tabs items={['Standalone (vanilla DOM)', 'Via Stellar Wallets Kit']}>
+  <Tab value="Standalone (vanilla DOM)">
+```ts
+import { mountCreateScreen } from '@soropass/ui/styled';
+import '@soropass/ui/styled.css';
+
+const handle = mountCreateScreen(root, {
+  flow,
+  onContinue(credential) { /* getAddress() */ },
+});
+```
+  </Tab>
+  <Tab value="Via Stellar Wallets Kit">
+```ts
+const passkey = new PasskeyModule({ rpId, rpName, networkPassphrase, indexer, deployer });
+StellarWalletsKit.init({ network: Networks.TESTNET, modules: [passkey] });
+await StellarWalletsKit.authModal();
+const addr = await StellarWalletsKit.getAddress();
+```
+  </Tab>
+</Tabs>
+
+## Installation
+
+<Tabs items={['pnpm', 'npm', 'yarn']}>
+  <Tab value="pnpm">
+```bash
+pnpm add @soropass/ui @soropass/core
+```
+  </Tab>
+  <Tab value="npm">
+```bash
+npm i @soropass/ui @soropass/core
+```
+  </Tab>
+  <Tab value="yarn">
+```bash
+yarn add @soropass/ui @soropass/core
+```
+  </Tab>
+</Tabs>
+
+Import the stylesheet once at your app root:
+
+```ts
+import '@soropass/ui/styled.css';
+```
+
+<Callout type="tip">
+  The package depends only on `@soropass/core`. `@stellar/stellar-sdk` is a peer dependency, never bundled.
+</Callout>
+
+## Usage
+
+The smallest correct mount. `handle.unmount()` tears it down.
+
+```ts
+import { mountCreateScreen } from '@soropass/ui/styled';
+
+const handle = mountCreateScreen(root, {
+  flow,
+  onContinue(credential) {
+    console.log(credential.contractId);
+  },
+});
+```
+
+A fuller example — create, then route into your app once the account is live:
+
+```ts
+import { createCreatePasskeyFlow } from '@soropass/ui/headless';
+import { mountCreateScreen } from '@soropass/ui/styled';
+
+const flow = createCreatePasskeyFlow({ create: runCeremony });
+
+const handle = mountCreateScreen(document.querySelector('#auth'), {
+  flow,
+  copy: { idleTitle: 'Create your Acme wallet' },
+  onContinue(credential) {
+    router.push('/home');          // account is live on-chain
+    handle.unmount();
+  },
+});
+```
+
+## States
+
+Five states. The error state cycles the frozen 10-code KitError taxonomy through one layout.
+
+<Preview screen="create" />
+
+<Callout type="info">
+  **Two busy looks.** `prompting` shows a calm opaque scrim + pulsing glyph (no spinner) while the OS sheet is up; `deploying` shows a spinner + progress because the SDK is working. `success` uses the result layout; `error` the single error view.
+</Callout>
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `flow` **REQ** | `CreateFlow` | — | Headless flow controller from the SDK / kit. Drives state transitions. |
+| `copy` | `Partial<CreateCopy>` | `DEFAULT_CREATE_COPY` | Override any UI string for i18n / brand voice. |
+| `input` | `{ userName? }` | `undefined` | Optional hint passed to the passkey ceremony. |
+| `onContinue` | `(c: PasskeyCredential) => void` | `undefined` | Fires on the success screen's Continue button. |
+| `onHelp` | `() => void` | `undefined` | Fires on the "What's a passkey?" link. |
+
+### Events
+
+| Callback | When it fires | Payload |
+| --- | --- | --- |
+| `onContinue` | User confirms on the success state | `PasskeyCredential` |
+| `onHelp` | User taps the help link on idle | `void` |
+
+### Copy (i18n)
+
+Every key of `CreateCopy` with its default. Pass a partial `copy` to override.
+
+| Key | Default string |
+| --- | --- |
+| `idleTitle` | Create your wallet |
+| `idleSubtitle` | A passkey — your Face ID, fingerprint, or security key — replaces your seed phrase. |
+| `createLabel` | Create passkey |
+| `promptingTitle` | Waiting for your passkey |
+| `deployingTitle` | Setting up your account… |
+| `successTitle` | Wallet ready |
+
+## Accessibility
+
+- **Announced status** — Polite `role=status` for prompting / deploying; assertive `role=alert` for the error view.
+- **Focus management** — On terminal states (success / error) focus moves to the status paragraph (`tabIndex=-1`, `preventScroll`).
+- **Keyboard & focus ring** — A visible focus ring on every interactive element; full Tab / Shift+Tab order.
+- **RTL & reduced-motion** — Mirrors via CSS logical properties (`dir="rtl"`); a reduced-motion variant freezes pulses and spins.
+
+## Theming
+
+The token groups this screen reads. A CI token gate guarantees the CSS references only `var()` tokens.
+
+| Area | Tokens |
+| --- | --- |
+| idle | `--pk-color-brand / -soft / -on-brand`, `--pk-radius-lg/md`, `--pk-space-*` |
+| waiting (OS sheet) | `--pk-scrim`, `--pk-busy-opacity`, `--pk-z-toast`, `--pk-pulse-duration` |
+| deploying | `--pk-spinner-*`, `--pk-progress-*` |
+| error | `--pk-color-error / -soft` |
+
+## In Stellar Wallets Kit
+
+Register `PasskeyModule` and the styled Create screen renders inside the kit's wallet picker like any other wallet.
+
+```ts
+const passkey = new PasskeyModule({ rpId, rpName, networkPassphrase, indexer, deployer });
+StellarWalletsKit.init({ network: Networks.TESTNET, modules: [passkey] });
+
+// Create seam → CreateFlow (createAccount is on the module)
+await passkey.createAccount('alice');
+const address = await StellarWalletsKit.getAddress(); // C-address → AddressChip
+```
+
+<Callout type="tip">
+  `PasskeyModule.isAvailable()` resolves `isUVPAA` within a 500ms budget to show or hide passkey in the picker.
+</Callout>
+
+<Cards>
+  <Card title="Overview" href="/docs/components/overview" />
+  <Card title="Sign" href="/docs/components/sign" />
+</Cards>

@@ -1,0 +1,69 @@
+---
+title: Components
+icon: LayoutGrid
+description: Drop-in, token-driven create, sign, and recover screens for Stellar smart-account passkeys, wired through Stellar Wallets Kit.
+---
+
+Drop-in, token-driven create / sign / recover screens for Stellar smart-account passkeys — framework-agnostic vanilla DOM today, wired through Stellar Wallets Kit.
+
+## Screens
+
+<Cards>
+  <Card title="Create · 5 states" href="/docs/components/create">
+    New wallet from a passkey; deploys a smart account.
+  </Card>
+  <Card title="Sign · 5 states" href="/docs/components/sign">
+    Approve a host-supplied transaction with the passkey.
+  </Card>
+  <Card title="Recover · 6 states" href="/docs/components/recover">
+    Find the accounts a passkey controls on a new device.
+  </Card>
+</Cards>
+
+## Also included
+
+<Cards>
+  <Card title="Connect · chooser" href="/docs/components/connect">
+    One entry point that forks create-vs-recover.
+  </Card>
+  <Card title="Add backup passkey · 5 states" href="/docs/components/connect">
+    Enroll a new passkey as an additional signer.
+  </Card>
+  <Card title="Funding · in Create" href="/docs/components/connect">
+    Sponsor a zero-balance new account.
+  </Card>
+</Cards>
+
+## Primitives
+
+The building blocks the screens compose from — all token-driven.
+
+<Cards>
+  <Card title="Card" href="/docs/components/primitives">
+    Shell · max-width 384px · is-waiting
+  </Card>
+  <Card title="Button" href="/docs/components/primitives">
+    primary / secondary / ghost
+  </Card>
+  <Card title="AddressChip" href="/docs/components/primitives">
+    identicon + truncate + copy
+  </Card>
+  <Card title="TxSummary" href="/docs/components/primitives">
+    host-supplied amount / dest / action
+  </Card>
+  <Card title="RecoverList" href="/docs/components/primitives">
+    listbox + roving focus
+  </Card>
+  <Card title="WaitOverlay / WorkBlock" href="/docs/components/primitives">
+    the two busy looks
+  </Card>
+</Cards>
+
+## What's included
+
+- **Three core screens** — Create, Sign, and Recover — sixteen states in total, every one designed, accessible, and themeable.
+- **Complete primitive set** — Card, Button, AddressChip, Identicon, TxSummary, the listbox, and both busy overlays — all token-driven.
+- **One token system** — Light and dark from a single set of OKLCH custom properties, plus RTL and a reduced-motion variant.
+- **Typed error layout** — A single error view wired to the frozen 10-code KitError taxonomy, with friendly copy per code.
+- **Stellar Wallets Kit module** — A PasskeyModule that registers passkey as a first-class option in the kit's wallet picker.
+- **Headless or styled** — Use the styled screens, or drive your own UI from the headless flow controllers — your call.

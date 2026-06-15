@@ -1,0 +1,5 @@
+{
+  "title": "Components",
+  "icon": "Boxes",
+  "pages": ["index", "create", "sign", "recover", "connect", "primitives", "theming"]
+}

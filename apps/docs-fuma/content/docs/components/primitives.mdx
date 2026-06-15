@@ -1,0 +1,63 @@
+---
+title: Primitives
+icon: Box
+description: The token-driven building blocks the create, sign, and recover screens compose from — each individually usable.
+---
+
+The building blocks the three screens compose from — every one token-driven and individually usable.
+
+## Live primitives
+
+The styled layer ships a small set of primitives. Each is driven entirely by design tokens (`--pk-*`) and can be used on its own.
+
+<Preview screen="primitives" />
+
+- **Button** — tokens: `--pk-color-brand`, `--pk-radius-md`. Variants: `primary`, `secondary`.
+- **Spinner** — tokens: `--pk-spinner-*`.
+- **AddressChip** — tokens: `--pk-color-surface-sunken`. Renders a labeled, copyable account address.
+- **Identicon** — OKLCH color derived from an FNV-1a hash of the seed.
+- **StatusLine · polite** — `role="status"`, `aria-live` (e.g. "Setting up your account…").
+- **StatusLine · error** — `role="alert"`, assertive (e.g. "Couldn't reach the network.").
+
+## Icon set
+
+Thin line (1.75px stroke), `currentColor`, 24px grid. Chevron / arrowLeft are defined-but-unused, available for nav.
+
+| Icon | Name |
+| --- | --- |
+| Passkey | `passkey` |
+| Key | `key` |
+| Shield | `shield` |
+| Copy | `copy` |
+| Check | `check` |
+| Check circle | `checkcircle` |
+| Alert | `alert` |
+| External | `external` |
+| Refresh | `refresh` |
+| Plus | `plus` |
+| Chevron | `chevron` |
+| Help | `help` |
+| Arrow left | `arrowleft` |
+
+## Signatures
+
+| Primitive | Signature / notes |
+| --- | --- |
+| Card | max-width 384px · `.is-waiting` · dir |
+| Button | variant: primary \| secondary \| ghost · busy · 48px min |
+| AddressChip | `{ address, label, showIdenticon }` · copy-with-feedback |
+| Identicon | `{ seed, size }` · deterministic 5×5 symmetric |
+| TxSummary | host-supplied `{ amountValue, amountFiat?, destination, action }` |
+| RecoverList | listbox · roving focus · Up/Down/Home/End |
+| WaitOverlay | calm OS-sheet look + `.pk-ossheet` peek bar · NO spinner |
+| WorkBlock | spinner + indeterminate progress |
+| errorView | single layout, copy by KitError code |
+
+<Callout type="info">
+Promote-to-standalone candidates (AccountChip, Skeleton, Empty / Success / Error) carry **ROADMAP** badges.
+</Callout>
+
+<Cards>
+  <Card title="Create" href="/docs/components/create" />
+  <Card title="SDK reference" href="/docs/sdk/overview" />
+</Cards>

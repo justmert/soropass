@@ -1,0 +1,96 @@
+---
+title: Examples
+icon: FlaskConical
+description: SoroPass create, sign, and recover components across desktop web, mobile-web, and cross-device passkey surfaces.
+---
+
+The same create / sign / recover components across desktop, mobile-web, and the desktop-initiates-on-phone case — shown live where we can, and as honest guidance where the platform takes over.
+
+<Callout type="info">
+**Live today:** desktop web + mobile-web (real vanilla-DOM mount, mock mode, zero network). **Guidance + roadmap:** native bottom-sheet container + cross-device caBLE/QR. Real ceremonies and on-chain proof live on the Security & How-it-works pages — embeds run in mock mode because browsers restrict WebAuthn inside cross-origin iframes.
+</Callout>
+
+## Surfaces
+
+| Surface | Status |
+| --- | --- |
+| Web (desktop) | LIVE |
+| Mobile-web | LIVE |
+| Cross-device | GUIDANCE |
+
+## Web (desktop)
+
+<Preview screen="sign" />
+
+<Tabs items={['Standalone', 'Via Wallets Kit', 'React (coming)']}>
+<Tab value="Standalone">
+
+```ts
+mountSignScreen(root, { flow, tx });
+```
+
+</Tab>
+<Tab value="Via Wallets Kit">
+
+```ts
+await kit.signTransaction(xdr);
+```
+
+</Tab>
+<Tab value="React (coming)">
+
+```tsx
+useEffect(() => {
+  const h = mountSignScreen(ref.current, { flow, tx });
+  return () => h.unmount();
+}, []);
+```
+
+</Tab>
+</Tabs>
+
+## Mobile-web
+
+<Preview screen="create" />
+
+Works from 360px; ≥44–48px touch targets; calm opaque OS-sheet waiting (no spinner); bottom-edge OS-sheet hint bar; safe-area aware.
+
+Scan to open the live mobile-web demo on your device (mock mode, no wallet needed).
+
+<Callout type="info">
+On a real phone, the passkey sheet (Face ID / Touch ID) is the OS — our card stays calm behind it.
+</Callout>
+
+## Cross-device (hybrid / caBLE / QR)
+
+A recorded desktop → phone hybrid flow (captioned device/OS/date) demonstrates the intended experience.
+
+**ROADMAP** — Intended UX; component on roadmap:
+
+<Cards>
+  <Card title="1 · Offer" />
+  <Card title="2 · QR" />
+  <Card title="3 · Approve" />
+  <Card title="4 · Success" />
+</Cards>
+
+- **1 · Offer** — Connect modal: "Use a passkey on another device."
+- **2 · QR** — CrossDeviceConnect QR + calm hybrid-transport waiting (no spinner).
+- **3 · Approve** — "Approve on the phone that has your passkey."
+- **4 · Success** — Account chip.
+
+<Callout type="warn">
+`hybrid_transport` is sourced from MDN BCD + `getClientCapabilities()`, not yet machine-probed in CI (which covers internal + usb). It's a documented, sourced surface — the dedicated component is the next build. [See the matrix row →](/docs/compatibility)
+</Callout>
+
+## How the OS sheet behaves on each surface
+
+| Surface | Behavior |
+| --- | --- |
+| Desktop | Calm opaque panel + pulsing glyph behind the native sheet. |
+| Phone | Same + bottom-edge OS-sheet hint bar, ≥48px targets. |
+| Cross-device | Longer wait → leans on calm + "approve on your phone," still no spinner. |
+
+<Callout type="tip">
+Two busy looks: WaitOverlay (OS sheet up) vs WorkBlock (spinner + progress) — never both at once.
+</Callout>
