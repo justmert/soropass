@@ -7,13 +7,13 @@
  *   3. A tweaks bar that overrides tokens on a single scope element, proving the
  *      whole set re-themes with zero component code change (the S20 gate).
  *
- * Everything visual comes from `@stellar-passkey/ui/styled.css` (tokens + parts).
+ * Everything visual comes from `@soropass/ui/styled.css` (tokens + parts).
  */
-import '@stellar-passkey/ui/styled.css';
+import '@soropass/ui/styled.css';
 import './demo.css';
 
-import type { PasskeyCredential } from '@stellar-passkey/core/types';
-import type { RecoverResult } from '@stellar-passkey/core/recover';
+import type { PasskeyCredential } from '@soropass/core/types';
+import type { RecoverResult } from '@soropass/core/recover';
 import {
   createView,
   signView,
@@ -27,7 +27,7 @@ import {
   type CreateCtx,
   type SignCtx,
   type RecoverCtx,
-} from '@stellar-passkey/ui/styled';
+} from '@soropass/ui/styled';
 import { createDemo, type Demo } from './demoKit';
 
 declare global {

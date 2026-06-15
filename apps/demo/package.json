@@ -1,5 +1,5 @@
 {
-  "name": "@stellar-passkey/demo",
+  "name": "@soropass/demo",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,12 @@
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^2.3.0",
-    "@stellar-passkey/core": "workspace:^",
-    "@stellar-passkey/ui": "workspace:^"
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0",
+    "@soropass/core": "workspace:^",
+    "@soropass/ui": "workspace:^",
+    "@stellar/stellar-sdk": "^15.1.0",
+    "buffer": "^6.0.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

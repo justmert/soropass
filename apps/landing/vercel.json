@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @soropass/core build && pnpm --filter @soropass/ui build && pnpm --filter @soropass/landing build",
+  "outputDirectory": "dist",
+  "installCommand": "echo skip (install runs in buildCommand at repo root)",
+  "framework": "vite"
+}

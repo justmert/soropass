@@ -13,7 +13,7 @@ import {
   type SignFlowConfig,
   type StatusProps,
   type TriggerProps,
-} from '@stellar-passkey/ui/headless';
+} from '@soropass/ui/headless';
 
 export interface HarnessConfigs {
   create: CreateFlowConfig;

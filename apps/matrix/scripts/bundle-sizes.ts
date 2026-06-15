@@ -1,12 +1,12 @@
 /**
- * Measure the real per-subpath bundle cost of `@stellar-passkey/core` (the
+ * Measure the real per-subpath bundle cost of `@soropass/core` (the
  * "minimal SDK" proof). Each public subpath is bundled with esbuild — tree-shaken
  * and minified, with the peer deps (`@stellar/*`, `@noble/*`) externalized exactly
  * as a consumer's bundler would — then measured raw + gzip. Writes a flat JSON the
  * Mintlify docs fetch to render live bundle-size badges (Mintlify can't read repo
  * files, but `fetch` of a static JSON is allowed).
  *
- * Run with `pnpm --filter @stellar-passkey/matrix docs:sizes` (build core first).
+ * Run with `pnpm --filter @soropass/matrix docs:sizes` (build core first).
  */
 import { gzipSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -23,13 +23,13 @@ const publicDir = process.env.DOCS_PUBLIC_DIR ?? join(repo, 'apps', 'matrix', 'p
 const outFile = join(publicDir, 'bundle-sizes.json');
 
 const ENTRIES: { subpath: string; file: string; devOnly?: boolean }[] = [
-  { subpath: '@stellar-passkey/core', file: 'index.js' },
-  { subpath: '@stellar-passkey/core/create', file: 'create.js' },
-  { subpath: '@stellar-passkey/core/connect', file: 'connect.js' },
-  { subpath: '@stellar-passkey/core/sign', file: 'sign.js' },
-  { subpath: '@stellar-passkey/core/recover', file: 'recover.js' },
-  { subpath: '@stellar-passkey/core/types', file: 'types.js' },
-  { subpath: '@stellar-passkey/core/testing', file: 'testing.js', devOnly: true },
+  { subpath: '@soropass/core', file: 'index.js' },
+  { subpath: '@soropass/core/create', file: 'create.js' },
+  { subpath: '@soropass/core/connect', file: 'connect.js' },
+  { subpath: '@soropass/core/sign', file: 'sign.js' },
+  { subpath: '@soropass/core/recover', file: 'recover.js' },
+  { subpath: '@soropass/core/types', file: 'types.js' },
+  { subpath: '@soropass/core/testing', file: 'testing.js', devOnly: true },
 ];
 
 interface Entry {

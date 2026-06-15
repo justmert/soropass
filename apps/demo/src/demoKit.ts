@@ -12,14 +12,14 @@
  * `control` exposes deterministic failure injection so every error code + the
  * FAILED-submission path can be driven from tests.
  */
-import { KitError, type KitErrorCode, type SubmitResult } from '@stellar-passkey/core/types';
+import { KitError, type KitErrorCode, type SubmitResult } from '@soropass/core/types';
 import {
   browserWebAuthnClient,
   buildCreateOptions,
   extractPublicKeyFromAttestationObject,
-} from '@stellar-passkey/core/create';
-import { recover as recoverCeremony, type RecoverResult } from '@stellar-passkey/core/recover';
-import { createInMemoryBackend, mockAuthenticator } from '@stellar-passkey/core/testing';
+} from '@soropass/core/create';
+import { recover as recoverCeremony, type RecoverResult } from '@soropass/core/recover';
+import { createInMemoryBackend, mockAuthenticator } from '@soropass/core/testing';
 import {
   createCreatePasskeyFlow,
   createRecoverFlow,
@@ -27,8 +27,8 @@ import {
   type CreateFlow,
   type RecoverFlow,
   type SignFlow,
-} from '@stellar-passkey/ui/headless';
-import type { TxSummaryData } from '@stellar-passkey/ui/styled';
+} from '@soropass/ui/headless';
+import type { TxSummaryData } from '@soropass/ui/styled';
 
 export type DemoScreen = 'create' | 'sign' | 'recover';
 export type DemoMode = 'mock' | 'webauthn';

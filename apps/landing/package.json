@@ -1,0 +1,26 @@
+{
+  "name": "@soropass/landing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "soropass.dev landing — what it is, a live testnet passkey demo, on-chain proof, and links to the docs.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0",
+    "@soropass/core": "workspace:^",
+    "@soropass/ui": "workspace:^",
+    "@stellar/stellar-sdk": "^15.1.0",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.4.0"
+  }
+}

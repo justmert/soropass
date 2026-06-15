@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Soropass — live on testnet</title>
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: var(--pk-color-background, #f7f7fb);
+        color: var(--pk-color-text, #1b1b22);
+        padding: 32px 20px 80px;
+      }
+      .oc-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      .oc-head h1 {
+        font-size: 24px;
+        margin: 0 0 6px;
+      }
+      .oc-head p {
+        color: var(--pk-color-text-muted, #666);
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+      .oc-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0 26px;
+      }
+      .oc-badge {
+        font: 600 12px ui-monospace, 'SF Mono', monospace;
+        background: var(--pk-color-surface-sunken, #eee);
+        border: 1px solid var(--pk-color-border, #ddd);
+        border-radius: 999px;
+        padding: 4px 11px;
+      }
+      .oc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+      }
+      @media (max-width: 780px) {
+        .oc-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .oc-step {
+        background: var(--pk-color-surface, #fff);
+        border: 1px solid var(--pk-color-border, #ddd);
+        border-radius: 16px;
+        padding: 20px;
+      }
+      .oc-step__n {
+        font: 700 11px ui-monospace, monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pk-color-brand, #4f46e5);
+      }
+      .oc-step__t {
+        font-size: 17px;
+        font-weight: 650;
+        margin: 4px 0 14px;
+      }
+      .oc-mount {
+        display: flex;
+        justify-content: center;
+        min-height: 360px;
+      }
+      [data-disabled] {
+        opacity: 0.45;
+        pointer-events: none;
+        filter: grayscale(0.4);
+      }
+      .oc-acct {
+        margin-top: 14px;
+        font: 12px ui-monospace, monospace;
+        word-break: break-all;
+        color: var(--pk-color-text-muted, #666);
+      }
+      .oc-acct b {
+        color: var(--pk-color-text, #111);
+      }
+      .oc-links {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .oc-xlink {
+        font: 600 12px ui-monospace, monospace;
+        color: var(--pk-color-brand, #4f46e5);
+        text-decoration: none;
+      }
+      .oc-xlink:hover {
+        text-decoration: underline;
+      }
+      .oc-wrongbtn {
+        margin-top: 14px;
+        appearance: none;
+        cursor: pointer;
+        font: 600 13px system-ui;
+        color: var(--pk-color-error, #c0392b);
+        background: var(--pk-color-error-soft, #fdeaea);
+        border: 1px solid var(--pk-color-error, #c0392b);
+        border-radius: 10px;
+        padding: 9px 14px;
+        width: 100%;
+      }
+      .oc-log {
+        margin-top: 28px;
+        background: #0c0c12;
+        color: #c9d1d9;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font: 12px/1.7 ui-monospace, 'SF Mono', monospace;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .oc-log__line {
+        white-space: pre-wrap;
+      }
+      .oc-note {
+        font-size: 12.5px;
+        color: var(--pk-color-text-muted, #777);
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="oc-wrap">
+      <div class="oc-head">
+        <h1>Create a Stellar passkey wallet — live on testnet</h1>
+        <p>
+          Real WebAuthn (your Touch ID / Windows Hello), a real smart account deployed through our on-chain factory, and
+          a real <code>secp256r1 __check_auth</code> verification. Nothing is mocked.
+        </p>
+      </div>
+      <div class="oc-badges">
+        <span class="oc-badge">network: testnet</span>
+        <span class="oc-badge">rpId: <span id="rpid">…</span></span>
+        <span class="oc-badge">friendbot-funded · no secrets shipped</span>
+      </div>
+
+      <div class="oc-grid">
+        <div class="oc-step">
+          <div class="oc-step__n">Step 1</div>
+          <div class="oc-step__t">Create the wallet</div>
+          <div class="oc-mount" id="create"></div>
+          <div class="oc-acct">
+            account: <b id="acct">— deploy to mint a C-address —</b>
+            <div class="oc-links" id="acctlinks"></div>
+          </div>
+        </div>
+
+        <div class="oc-step" id="signpanel" data-disabled>
+          <div class="oc-step__n">Step 2</div>
+          <div class="oc-step__t">Authorize a transaction on-chain</div>
+          <div class="oc-mount" id="sign"></div>
+          <button class="oc-wrongbtn" id="wrongkey">Sign with the WRONG key → expect on-chain FAILED</button>
+          <div class="oc-links" id="resultlinks"></div>
+          <p class="oc-note">
+            The correct passkey signature passes <code>__check_auth</code>; a wrong key is rejected on-chain by
+            <code>secp256r1_verify</code>.
+          </p>
+        </div>
+      </div>
+
+      <div class="oc-log" id="log"></div>
+    </div>
+    <script type="module" src="/src/onchain.ts"></script>
+  </body>
+</html>

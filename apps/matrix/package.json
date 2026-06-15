@@ -1,5 +1,5 @@
 {
-  "name": "@stellar-passkey/matrix",
+  "name": "@soropass/matrix",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@stellar-passkey/core": "workspace:^",
+    "@soropass/core": "workspace:^",
     "zod": "^4.4.3"
   },
   "devDependencies": {

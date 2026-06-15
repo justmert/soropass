@@ -2,7 +2,7 @@
  * S07 (YK-433) ⭐ — virtual-authenticator CI. Exercises REAL WebAuthn
  * create→get ceremonies against CDP virtual authenticators (Chromium + Edge)
  * across a {transport × residentKey × UV} grid, verifies every round-trip with
- * @stellar-passkey/core's p256.verify, and writes a dated, zod-validated
+ * @soropass/core's p256.verify, and writes a dated, zod-validated
  * `apps/matrix/data/ci.<ISODATE>.json` (source:'ci'). Run with `pnpm matrix:ci`.
  *
  * Honest scope: virtual authenticators cannot reproduce biometrics, the Secure
@@ -15,8 +15,8 @@ import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type CDPSession, type Page } from '@playwright/test';
-import { extractPublicKeyFromAttestationObject } from '@stellar-passkey/core/create';
-import { verifyAssertionSignature } from '@stellar-passkey/core/sign';
+import { extractPublicKeyFromAttestationObject } from '@soropass/core/create';
+import { verifyAssertionSignature } from '@soropass/core/sign';
 import {
   CiSnapshotSchema,
   MATRIX_SCHEMA_VERSION,

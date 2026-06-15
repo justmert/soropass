@@ -5,7 +5,7 @@
  * allowed — this is what turns the static table into a live, sourced, dated,
  * diffable, filterable explorer.
  *
- * Run with `pnpm --filter @stellar-passkey/matrix docs:export` (after matrix:build).
+ * Run with `pnpm --filter @soropass/matrix docs:export` (after matrix:build).
  */
 import { copyFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

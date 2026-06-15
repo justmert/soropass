@@ -16,10 +16,10 @@
  * parent → iframe:  postMessage({ type:'pk-set', screen, state, theme, brand, radius, rtl, motion, errorCode, accounts })
  * iframe → parent:  postMessage({ type:'pk-ready' })  and  postMessage({ type:'pk-height', height })
  */
-import '@stellar-passkey/ui/styled.css';
+import '@soropass/ui/styled.css';
 
-import type { KitErrorCode, PasskeyCredential } from '@stellar-passkey/core/types';
-import type { RecoverResult } from '@stellar-passkey/core/recover';
+import type { KitErrorCode, PasskeyCredential } from '@soropass/core/types';
+import type { RecoverResult } from '@soropass/core/recover';
 import {
   createView,
   signView,
@@ -30,7 +30,7 @@ import {
   type CreateCtx,
   type SignCtx,
   type RecoverCtx,
-} from '@stellar-passkey/ui/styled';
+} from '@soropass/ui/styled';
 
 // ── sample data (mock; zero network) ────────────────────────────────────────
 const SAMPLE_CRED: PasskeyCredential = {
