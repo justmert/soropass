@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@stellar-passkey/matrix", "@stellar-passkey/demo", "@stellar-passkey/ci-tools"]
+  "ignore": ["@soropass/matrix", "@soropass/demo", "@soropass/ci-tools"]
 }

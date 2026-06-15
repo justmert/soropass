@@ -4,7 +4,6 @@ pnpm-lock.yaml
 references
 .changeset
 CHANGELOG.md
-CLAUDE.md
 apps/matrix/site/matrix-table.md
 # Astro cache + generated typedoc API reference
 **/.astro

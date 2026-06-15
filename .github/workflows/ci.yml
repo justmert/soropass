@@ -80,7 +80,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build SDK core (the harness verifies against it)
-        run: pnpm --filter @stellar-passkey/core build
+        run: pnpm --filter @soropass/core build
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Install Edge (best-effort)
@@ -118,7 +118,7 @@ jobs:
           name: matrix-ci-data
           path: apps/matrix/data
       - name: Refresh dated snapshot + diff (pull → build → diff)
-        run: pnpm --filter @stellar-passkey/matrix matrix:refresh
+        run: pnpm --filter @soropass/matrix matrix:refresh
       - name: Open a PR with the refreshed snapshot (only if something changed)
         uses: peter-evans/create-pull-request@v6
         with:
@@ -132,4 +132,4 @@ jobs:
   # NOTE: there is no docs deploy job here — the docs front-end is a separate
   # designed site, pushed independently. The matrix data (apps/matrix/data/*.json)
   # is committed back by matrix-refresh above; the docs site fetches the exported
-  # JSON (run `pnpm --filter @stellar-passkey/matrix docs:export` into its /public).
+  # JSON (run `pnpm --filter @soropass/matrix docs:export` into its /public).
