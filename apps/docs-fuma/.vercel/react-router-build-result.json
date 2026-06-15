@@ -1,0 +1,227 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs_eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "routes/home": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/docs": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/search": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/og.docs": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "llms/index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "llms/full": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "llms/mdx": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/not-found": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "app/root.tsx",
+        "path": "",
+        "config": {}
+      },
+      "routes/home": {
+        "id": "routes/home",
+        "parentId": "root",
+        "file": "app/routes/home.tsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/docs": {
+        "id": "routes/docs",
+        "parentId": "root",
+        "file": "app/routes/docs.tsx",
+        "path": "docs/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/search": {
+        "id": "routes/search",
+        "parentId": "root",
+        "file": "app/routes/search.ts",
+        "path": "api/search",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/og.docs": {
+        "id": "routes/og.docs",
+        "parentId": "root",
+        "file": "app/routes/og.docs.tsx",
+        "path": "og/docs/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "llms/index": {
+        "id": "llms/index",
+        "parentId": "root",
+        "file": "app/llms/index.ts",
+        "path": "llms.txt",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "llms/full": {
+        "id": "llms/full",
+        "parentId": "root",
+        "file": "app/llms/full.ts",
+        "path": "llms-full.txt",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "llms/mdx": {
+        "id": "llms/mdx",
+        "parentId": "root",
+        "file": "app/llms/mdx.ts",
+        "path": "llms.mdx/docs/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/not-found": {
+        "id": "routes/not-found",
+        "parentId": "root",
+        "file": "app/routes/not-found.tsx",
+        "path": "*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "reactRouterConfig": {
+    "appDirectory": "/Users/tolga/work/mert/passkey-ui/apps/docs-fuma/app",
+    "basename": "/",
+    "buildDirectory": "/Users/tolga/work/mert/passkey-ui/apps/docs-fuma/build",
+    "future": {
+      "unstable_optimizeDeps": false,
+      "v8_passThroughRequests": false,
+      "v8_trailingSlashAwareDataRequests": false,
+      "unstable_previewServerPrerendering": false,
+      "v8_middleware": true,
+      "v8_splitRouteModules": false,
+      "v8_viteEnvironmentApi": false
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "root.tsx",
+        "path": ""
+      },
+      "routes/home": {
+        "id": "routes/home",
+        "parentId": "root",
+        "file": "routes/home.tsx",
+        "index": true
+      },
+      "routes/docs": {
+        "id": "routes/docs",
+        "parentId": "root",
+        "file": "routes/docs.tsx",
+        "path": "docs/*"
+      },
+      "routes/search": {
+        "id": "routes/search",
+        "parentId": "root",
+        "file": "routes/search.ts",
+        "path": "api/search"
+      },
+      "routes/og.docs": {
+        "id": "routes/og.docs",
+        "parentId": "root",
+        "file": "routes/og.docs.tsx",
+        "path": "og/docs/*"
+      },
+      "llms/index": {
+        "id": "llms/index",
+        "parentId": "root",
+        "file": "llms/index.ts",
+        "path": "llms.txt"
+      },
+      "llms/full": {
+        "id": "llms/full",
+        "parentId": "root",
+        "file": "llms/full.ts",
+        "path": "llms-full.txt"
+      },
+      "llms/mdx": {
+        "id": "llms/mdx",
+        "parentId": "root",
+        "file": "llms/mdx.ts",
+        "path": "llms.mdx/docs/*"
+      },
+      "routes/not-found": {
+        "id": "routes/not-found",
+        "parentId": "root",
+        "file": "routes/not-found.tsx",
+        "path": "*"
+      }
+    },
+    "routeDiscovery": {
+      "mode": "lazy",
+      "manifestPath": "/__manifest"
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true,
+    "subResourceIntegrity": false,
+    "allowedActionOrigins": false,
+    "unstable_routeConfig": [
+      {
+        "id": "root",
+        "path": "",
+        "file": "root.tsx",
+        "children": [
+          {
+            "file": "routes/home.tsx",
+            "index": true
+          },
+          {
+            "file": "routes/docs.tsx",
+            "path": "docs/*"
+          },
+          {
+            "file": "routes/search.ts",
+            "path": "api/search"
+          },
+          {
+            "file": "routes/og.docs.tsx",
+            "path": "og/docs/*"
+          },
+          {
+            "file": "llms/index.ts",
+            "path": "llms.txt"
+          },
+          {
+            "file": "llms/full.ts",
+            "path": "llms-full.txt"
+          },
+          {
+            "file": "llms/mdx.ts",
+            "path": "llms.mdx/docs/*"
+          },
+          {
+            "file": "routes/not-found.tsx",
+            "path": "*"
+          }
+        ]
+      }
+    ]
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}

@@ -5,7 +5,7 @@ import { MonitorPlay } from 'lucide-react';
 //   const EMBED_BASE = 'https://demo.soropass.dev/embed.html';
 // While it is empty, previews render a styled placeholder instead of a broken
 // ("server not found") iframe.
-const EMBED_BASE = '';
+const EMBED_BASE = '/demo/embed.html';
 const DEMO_URL = 'https://demo.soropass.dev';
 
 export function Preview({
