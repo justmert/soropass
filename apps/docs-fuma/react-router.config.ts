@@ -1,4 +1,5 @@
 import type { Config } from '@react-router/dev/config';
+import { vercelPreset } from '@vercel/react-router/vite';
 import { glob } from 'node:fs/promises';
 import { createGetUrl, getSlugs } from 'fumadocs-core/source';
 import { getPageImagePath } from './app/lib/og';
@@ -7,6 +8,7 @@ const getUrl = createGetUrl('/docs');
 
 export default {
   ssr: true,
+  presets: [vercelPreset()],
   future: {
     v8_middleware: true,
   },
