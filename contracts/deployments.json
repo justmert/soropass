@@ -1,0 +1,44 @@
+{
+  "testnet": {
+    "network": "testnet",
+    "networkPassphrase": "Test SDF Network ; September 2015",
+    "rpcUrl": "https://soroban-testnet.stellar.org",
+    "deployer": "GBISW7YZ57FZPSJYQV3YJTM4XYKQ4HWTUTCQ2RIF2VVEZVM26F544M5F",
+    "accountFactory": {
+      "contractId": "CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM",
+      "wasmHash": "4be23bd16bc95c29e2a64d15b8dabe78c40cfbd5607f180081b4fd13dcf72e65",
+      "note": "AccountFactory.deploy(public_key, credential_id) -> deploys a webauthn-account, emits ('deployed', credential_id) -> address for eventsIndexer. This is factoryContractId for eventsIndexer({ rpcUrl, factoryContractId })."
+    },
+    "webauthnAccount": {
+      "wasmHash": "fda0c4e1bad1f45145acaf237befa68a90d874343de140ca6d5dccf109d5d6b8",
+      "note": "Single-signer secp256r1 smart account; __constructor(public_key: BytesN<65>), __check_auth."
+    },
+    "factoryDeployProof": {
+      "credentialId": "64656d6f63726564",
+      "deployedAccount": "CAGWE36MQRWXIXS4Z4G6UYEEJMJ7XGNOE7K5PHQ6BCZYMAPAWPBHLBQV",
+      "tx": "a40b141e6e34be2e8fc09ac5e3f6a10129e4602aa6701cbaa30c7a6cd974beac",
+      "note": "Test invocation proving the factory deploys + emits the indexer event."
+    },
+    "provenCheckAuth": {
+      "contractId": "CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2",
+      "successTx": "f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418",
+      "note": "Pre-existing single account proving the secp256r1 __check_auth path (success + a wrong-key rejection), from scripts/onchain-e2e.ts."
+    },
+    "createFromScratchProof": {
+      "account": "CDGZK67TRXJTSQL36PBBUIBKBULTGROX3ZIWVNHAY6DWEIATO2HZJ7VQ",
+      "deployTx": "f59c515a48f25c59479d9a0bd3b3c2ebbb121e82236bfc530ce9a361ae59384a",
+      "successTx": "95cc2693764384f0b1b32bd5b0510573decc19b749a812a6292f9c3b272a55f6",
+      "failTx": "72854d4fbe602c4aadb6cfdd1ec7e48f2b6ec01c922b3fa66c6dfaaa84bc3226",
+      "note": "Full create-from-scratch via factoryDeployer: fresh passkey -> factory.deploy -> sign protected() -> __check_auth SUCCESS; wrong key -> FAILED. Reproduce: SOURCE_SECRET=... pnpm --filter @soropass/core exec tsx scripts/factory-e2e.ts"
+    },
+    "nativeSac": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+    "transferProof": {
+      "wallet": "CBDOCYVDUBEGLZKT6OFMXBFLY5MTVHHHA6X7ARWHHLLTPFT5FTE3DFQ7",
+      "destination": "GC25GW44VV33F2YJXBS4PSMUA4F6WVVGRKJVSYVNWS5O2FWNPSPDSGOE",
+      "fundTx": "404d8b33eb811c2983c66de549994ff123d7368c6da4a3d4765307270f296626",
+      "transferSuccessTx": "58cd5d6307acc61d830bdb8b3a7299761bcf6435ddf0065f652e635457f5cc60",
+      "transferFailTx": "2a89cc6f38b2af4c59fbea37ac77e426a0092060a6be2842ec2cb6b0b9645a61",
+      "note": "REAL passkey-authorized XLM transfer (25 XLM) from a factory-deployed smart account to a fresh account, via the native SAC. Correct key SUCCESS, wrong key FAILED. Reproduce: scripts/transfer-e2e.ts"
+    }
+  }
+}

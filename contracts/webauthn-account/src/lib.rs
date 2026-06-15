@@ -1,6 +1,6 @@
 #![no_std]
 //! Minimal single-signer WebAuthn (secp256r1) smart account for **on-chain
-//! verification of `@stellar-passkey/core`'s signed auth entries**.
+//! verification of `@soropass/core`'s signed auth entries**.
 //!
 //! `__check_auth` mirrors the audited reference verifier
 //! (`references/stellar-contracts/.../webauthn-verifier`): it binds the WebAuthn
