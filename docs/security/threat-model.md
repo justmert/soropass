@@ -1,4 +1,4 @@
-# Threat model — `@stellar-passkey/core`
+# Threat model — `@soropass/core`
 
 Written for the SCF Audit Bank (post-testnet) and as a credibility signal now.
 **Every mitigation below references a concrete test or matrix row** — the

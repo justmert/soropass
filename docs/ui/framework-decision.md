@@ -7,8 +7,8 @@
 
 | Layer                                 | What ships                                                                                         | Framework dependency |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------- |
-| **Logic / state / a11y / i18n** (S18) | `@stellar-passkey/ui/headless` — framework-agnostic state machines + a11y prop-getters + i18n keys | **none**             |
-| **Styled reference** (S20)            | `@stellar-passkey/ui/styled` — vanilla-DOM `mount*` renderers + `styled.css`/`tokens.css`          | **none**             |
+| **Logic / state / a11y / i18n** (S18) | `@soropass/ui/headless` — framework-agnostic state machines + a11y prop-getters + i18n keys | **none**             |
+| **Styled reference** (S20)            | `@soropass/ui/styled` — vanilla-DOM `mount*` renderers + `styled.css`/`tokens.css`          | **none**             |
 | **Theming surface**                   | `tokens.css` (CSS custom properties)                                                               | **none** (CSS)       |
 
 We ship **framework-agnostic** at every layer. There is **no React/Vue/Svelte
@@ -71,7 +71,7 @@ re-implementation.
 ## What ships
 
 ```
-@stellar-passkey/ui
+@soropass/ui
   /headless     → flows + a11y prop-getters + i18n   (no DOM, no framework)
   /styled       → mountCreateScreen / mountSignScreen / mountRecoverScreen,
                   pure views, the error connector, identicon/icons helpers
@@ -87,9 +87,9 @@ own styles, or `styled` for the drop-in look.
 **Vanilla / any framework:**
 
 ```ts
-import { createCreatePasskeyFlow } from '@stellar-passkey/ui/headless';
-import { mountCreateScreen } from '@stellar-passkey/ui/styled';
-import '@stellar-passkey/ui/styled.css';
+import { createCreatePasskeyFlow } from '@soropass/ui/headless';
+import { mountCreateScreen } from '@soropass/ui/styled';
+import '@soropass/ui/styled.css';
 
 const flow = createCreatePasskeyFlow({ create, userActivation: navigator.userActivation });
 const { unmount } = mountCreateScreen(document.getElementById('slot')!, { flow });

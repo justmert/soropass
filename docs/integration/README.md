@@ -1,4 +1,4 @@
-# Integrating `@stellar-passkey/core`
+# Integrating `@soropass/core`
 
 A minimal, headless, ES256-only passkey SDK for Stellar smart accounts. This is
 the practical guide: install, the three flows (create / sign / recover), errors,
@@ -28,7 +28,7 @@ You supply the two things that are deployment-specific:
 your wallet app
    │  createPasskey / connect / recover / signTransaction
    ▼
-@stellar-passkey/core ── deployer (your factory) ──► smart-account contract
+@soropass/core ── deployer (your factory) ──► smart-account contract
    │  directSubmission / eventsIndexer
    ▼
 soroban-rpc (testnet/mainnet)
@@ -37,11 +37,11 @@ soroban-rpc (testnet/mainnet)
 ## Install
 
 ```bash
-pnpm add @stellar-passkey/core @stellar/stellar-sdk
+pnpm add @soropass/core @stellar/stellar-sdk
 ```
 
 `@stellar/stellar-sdk` (v15+, Protocol 23) is a **peer dependency** — it is never
-bundled into the SDK. Optional UI: `@stellar-passkey/ui`.
+bundled into the SDK. Optional UI: `@soropass/ui`.
 
 ## Flow 1 — Create a wallet
 
@@ -49,7 +49,7 @@ Register an ES256 passkey, extract its public key, deploy a smart account for it
 You provide `deployer` (your factory call); everything else is the SDK.
 
 ```ts
-import { createPasskey } from '@stellar-passkey/core/create';
+import { createPasskey } from '@soropass/core/create';
 
 const account = await createPasskey({
   rpId: 'wallet.example.com',
@@ -76,9 +76,9 @@ non-ES256 key (Soroban only verifies secp256r1) — see [Errors](#errors).
 one-line `browserPasskeySigner` and submit through an adapter.
 
 ```ts
-import { connect } from '@stellar-passkey/core/connect';
-import { signTransaction, browserPasskeySigner } from '@stellar-passkey/core/sign';
-import { directSubmission, eventsIndexer } from '@stellar-passkey/core';
+import { connect } from '@soropass/core/connect';
+import { signTransaction, browserPasskeySigner } from '@soropass/core/sign';
+import { directSubmission, eventsIndexer } from '@soropass/core';
 import { Networks } from '@stellar/stellar-sdk';
 
 const rpId = 'wallet.example.com';
@@ -119,7 +119,7 @@ Discoverable assertion (no stored credential) → resolve the accounts the passk
 controls via the indexer.
 
 ```ts
-import { recover } from '@stellar-passkey/core/recover';
+import { recover } from '@soropass/core/recover';
 
 const accounts = await recover({ rpId, indexer }); // RecoverResult[] = [{ contractId, credentialId }]
 // 0 → offer createPasskey(); 1 → use it; many → let the user choose.
@@ -131,7 +131,7 @@ Everything the SDK throws is a `KitError` with a stable `code`. Map it to UI cop
 (the styled layer does this for you).
 
 ```ts
-import { isKitError } from '@stellar-passkey/core/types';
+import { isKitError } from '@soropass/core/types';
 
 try {
   await createPasskey(/* … */);
@@ -168,16 +168,16 @@ Submission and indexing are pluggable; the defaults need no extra infrastructure
 | Submission | `directSubmission` (soroban-rpc)  | `launchtubeSubmission`, `openzeppelinRelayerSubmission` |
 | Indexer    | `eventsIndexer` (rpc `getEvents`) | `mercuryIndexer`                                        |
 
-All implement `SubmissionAdapter` / `IndexerAdapter` (from `@stellar-passkey/core/types`),
+All implement `SubmissionAdapter` / `IndexerAdapter` (from `@soropass/core/types`),
 so swapping one is a one-line change. `defaultAdapters({ rpcUrl, factoryContractId })`
 wires the zero-infra pair.
 
 ## Optional: drop-in UI
 
 ```ts
-import { createCreatePasskeyFlow } from '@stellar-passkey/ui/headless';   // logic + a11y + i18n
-import { mountCreateScreen } from '@stellar-passkey/ui/styled';            // styled DOM
-import '@stellar-passkey/ui/styled.css';                                  // tokens + parts
+import { createCreatePasskeyFlow } from '@soropass/ui/headless';   // logic + a11y + i18n
+import { mountCreateScreen } from '@soropass/ui/styled';            // styled DOM
+import '@soropass/ui/styled.css';                                  // tokens + parts
 
 const flow = createCreatePasskeyFlow({ create: /* wrap createPasskey */, userActivation: navigator.userActivation });
 const { unmount } = mountCreateScreen(document.getElementById('slot')!, { flow });

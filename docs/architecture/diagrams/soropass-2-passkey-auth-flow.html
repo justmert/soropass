@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"></head>
+<body><div class="canvas">
+  <div class="brand"><span class="logo">🔐</span><span class="title">Soropass — Passkey Authorization on Soroban</span></div>
+  <div class="subtitle">How a WebAuthn assertion becomes a Stellar authorization a smart account accepts on-chain. The challenge is bound to the exact Soroban auth — replay-safe by construction — and verified by the host-native <span class="mono">secp256r1_verify</span>.</div>
+
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div class="bd"><h4>Build <span class="tag">app / wallet</span></h4><p>Construct the transaction or auth entry the user wants to authorize.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="bd"><h4>Bind the challenge <span class="tag">@soropass/core</span></h4><p>challenge = <span class="mono">SHA256(XDR(HashIdPreimage::SorobanAuthorization{ networkId, nonce, signatureExpirationLedger, invocation }))</span>, networkId = SHA256(passphrase). This binds the passkey to <i>this</i> auth entry.</p></div></div>
+    <div class="step"><div class="num">3</div><div class="bd"><h4>Assert <span class="tag">platform authenticator</span></h4><p><span class="mono">navigator.credentials.get(challenge)</span> → assertion: <span class="mono">authenticatorData</span>, <span class="mono">clientDataJSON</span>, DER signature. Private key never leaves the secure element.</p></div></div>
+    <div class="step"><div class="num">4</div><div class="bd"><h4>Normalize + pack <span class="tag">@soropass/core</span></h4><p>DER → compact r‖s, <b>low-S normalize</b> (mandatory — Apple emits ~50% high-S). Pack <span class="mono">{ authenticator_data, client_data_json, signature }</span> as a <span class="mono">Secp256r1Signature</span> ScVal into the entry.</p></div></div>
+    <div class="step"><div class="num">5</div><div class="bd"><h4>Submit <span class="tag">adapter → soroban-rpc</span></h4><p>direct (default) / Launchtube / OZ Relayer sends the signed <span class="mono">SorobanAuthorizationEntry</span>.</p></div></div>
+    <div class="step"><div class="num">6</div><div class="bd"><h4>Verify on-chain <span class="tag">webauthn-account.__check_auth</span></h4><p>(a) <span class="mono">clientDataJSON.challenge == base64url(signature_payload)</span> &nbsp;·&nbsp; (b) message = <span class="mono">authenticator_data ‖ SHA256(client_data_json)</span> &nbsp;·&nbsp; (c) <span class="mono">secp256r1_verify(pubkey, SHA256(message), signature)</span>.</p></div></div>
+  </div>
+
+  <div class="branch">
+    <div class="out ok"><h4>✅ Correct key → SUCCESS</h4><p>Host verify passes; the smart account authorizes the call. Proven on testnet.</p></div>
+    <div class="out no"><h4>⛔ Wrong key → FAILED</h4><p>Host <span class="mono">secp256r1_verify</span> traps; the transaction is rejected on-chain.</p></div>
+  </div>
+</div></body></html>

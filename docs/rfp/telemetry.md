@@ -6,7 +6,7 @@ The SDK ships **no telemetry**. There is no analytics SDK, no network beacon, no
 phone-home — grep the source: `packages/**` contains no `fetch`/`sendBeacon`/
 analytics call outside the explicit, user-configured submission/indexer adapters
 (which talk only to the RPC URL the adopter provides). Installing
-`@stellar-passkey/core` sends nothing anywhere by default.
+`@soropass/core` sends nothing anywhere by default.
 
 ## If/when field data is added: opt-in by design
 

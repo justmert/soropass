@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"></head>
+<body><div class="canvas">
+  <div class="brand"><span class="logo">🏭</span><span class="title">Soropass — Account Creation &amp; Discovery</span></div>
+  <div class="subtitle">One passkey maps deterministically to one Soroban smart-account address. Creation deploys it; recovery re-derives it by reading a public on-chain event — <b>no Soropass database</b> ever holds the mapping.</div>
+
+  <div class="col2">
+    <div class="zone">
+      <span class="zone-label">Create a new account</span>
+      <span class="zone-tag">🆕 first time</span>
+      <div class="mini"><span class="dot b-violet">1</span><div class="bd"><h5>Create the passkey</h5><p><span class="mono">createPasskey()</span> → ES256 credential: <span class="mono">credentialId</span> + P-256 public key (SEC-1, 65 bytes).</p></div></div>
+      <div class="mini"><span class="dot b-amber">2</span><div class="bd"><h5>Factory deploy</h5><p><span class="mono">AccountFactory.deploy(public_key, credential_id)</span>, salt = <span class="mono">SHA256(credential_id)</span> → a deterministic C-address.</p></div></div>
+      <div class="mini"><span class="dot b-teal">3</span><div class="bd"><h5>Emit discovery event</h5><p>Contract publishes <span class="mono">("deployed", credential_id) → address</span>.</p></div></div>
+    </div>
+
+    <div class="zone">
+      <span class="zone-label">Reconnect / recover</span>
+      <span class="zone-tag">🔁 any device</span>
+      <div class="mini"><span class="dot b-violet">1</span><div class="bd"><h5>Discoverable assertion</h5><p><span class="mono">connect()</span> / <span class="mono">recover()</span> — the passkey returns its <span class="mono">credentialId</span> (resident credential).</p></div></div>
+      <div class="mini"><span class="dot b-teal">2</span><div class="bd"><h5>Resolve via the indexer</h5><p><span class="mono">eventsIndexer.resolveByCredential(id)</span> reads <span class="mono">soroban-rpc getEvents</span> on the factory.</p></div></div>
+      <div class="mini"><span class="dot b-green">3</span><div class="bd"><h5>Same address, back online</h5><p>The <span class="mono">deployed</span> event yields the same C-address → account reconnected.</p></div></div>
+    </div>
+  </div>
+
+  <div class="strip"><span class="ic">🧭</span><b>Deterministic mapping:</b><span class="m">one passkey ⇄ one C-address. Discovery is just reading a public event over public RPC — zero-infra, no custodial lookup service. Mercury is an optional drop-in indexer.</span></div>
+</div></body></html>

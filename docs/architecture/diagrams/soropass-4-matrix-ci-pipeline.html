@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"></head>
+<body><div class="canvas">
+  <div class="brand"><span class="logo">📊</span><span class="title">Soropass — Living Compatibility-Matrix CI</span></div>
+  <div class="subtitle">The RFP's highest-value deliverable: passkey support across browsers/devices, merged from three sources into one typed, dated, diffable snapshot — refreshed automatically so it never goes stale.</div>
+
+  <div class="zone">
+    <span class="zone-label">Three sources</span>
+    <div class="row">
+      <div class="card"><span class="bar blue"></span><h4><span class="ic">📚</span>MDN BCD</h4><p>Baseline support from <span class="mono">@mdn/browser-compat-data</span> + curated cross-refs (ES256, related-origin).</p></div>
+      <div class="card"><span class="bar violet"></span><h4><span class="ic">🤖</span>Virtual authenticators</h4><p>Playwright + CDP run a real <span class="mono">create→get→verify</span> grid (transport × residentKey × UV) on Chromium.</p></div>
+      <div class="card"><span class="bar teal"></span><h4><span class="ic">📡</span>Live feature-detect</h4><p><span class="mono">isUVPAA</span>, conditional mediation, <span class="mono">getClientCapabilities</span> probed in-page.</p></div>
+    </div>
+  </div>
+
+  <div class="flow"><span class="ln">▼</span><span class="lbl">merge &amp; validate (zod)</span><span class="ln">▼</span></div>
+
+  <div class="pipe">
+    <div class="stage"><span class="bar" style="background:var(--teal)"></span><h4>📦 Snapshot</h4><p><span class="mono">matrix.&lt;date&gt;.json</span> — dated, typed, per-cell source + tier.</p></div>
+    <div class="conn">→</div>
+    <div class="stage"><span class="bar" style="background:var(--amber)"></span><h4>🔀 Diff</h4><p>Fingerprints on status|source|tier — shows substance, not date churn.</p></div>
+    <div class="conn">→</div>
+    <div class="stage"><span class="bar" style="background:var(--green)"></span><h4>🚀 Publish</h4><p>Weekly cron <span class="mono">0 6 * * 1</span> + push-to-main open an auto-refresh PR.</p></div>
+  </div>
+
+  <div class="tiers">
+    <span class="chip b-green">● Tier-1 automated — Chromium (machine-verified each run)</span>
+    <span class="chip b-slate">○ Tier-2 manual — Firefox · Safari / WebKit (tracked from source)</span>
+  </div>
+</div></body></html>

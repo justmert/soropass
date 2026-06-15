@@ -13,10 +13,10 @@ as such — no aspirational claims.
 
 - **Living compatibility matrix** — sourced (MDN BCD) + live feature-detection +
   virtual-authenticator CI, dated/diffable, published. (S05–S10)
-- **Minimal SDK** `@stellar-passkey/core` — ES256-only, always low-S, pluggable
+- **Minimal SDK** `@soropass/core` — ES256-only, always low-S, pluggable
   adapters; **proven on testnet** (a passkey-signed auth entry passes a real
   deployed `__check_auth`). (S03–S15, `docs/security/onchain-verification.md`)
-- **`PasskeyModule`** for `@creit-tech/stellar-wallets-kit` v2.2.0 (branch + tests). (S16–S17)
+- **`PasskeyModule`** for `@creit.tech/stellar-wallets-kit` v2.2.0 (branch + tests). (S16–S17)
 - **Headless + styled UI** (design-gated), token-re-themeable, a11y. (S18–S20)
 - **Docs site** — quickstart + kit integration + generated API + matrix + security. (S22)
 - **RFP artifacts** — license, maintenance, telemetry, decentralization. (S23)

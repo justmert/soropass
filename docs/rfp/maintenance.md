@@ -32,7 +32,7 @@ there for moving rows from Tier-2 → Tier-1.
 ## Versioning, changelog, contributions
 
 - **Changesets** (`.changeset/`) drive semver + a generated changelog
-  (`@changesets/cli`); `@stellar-passkey/core` and `@stellar-passkey/ui` are the
+  (`@changesets/cli`); `@soropass/core` and `@soropass/ui` are the
   published surface (matrix/demo/ci-tools are `ignore`d).
 - **Conventional Commits** + the five CI gates gate every change.
 - Community matrix cells and fixes have a contribution path —

@@ -1,7 +1,7 @@
 # On-chain verification — passkey auth proven on Stellar testnet (real, not mock)
 
 This is the **live** proof that an authorization entry assembled and signed by
-`@stellar-passkey/core` is accepted by a real deployed `__check_auth` on Stellar
+`@soropass/core` is accepted by a real deployed `__check_auth` on Stellar
 **testnet** — closing the gap between "the crypto verifies in a JS model
 (`referenceCheckAuth`)" and "the network accepts it."
 

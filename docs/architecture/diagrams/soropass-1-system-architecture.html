@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"></head>
+<body><div class="canvas">
+  <div class="brand"><span class="logo">🦊</span><span class="title">Soropass — System Architecture</span></div>
+  <div class="subtitle">A device passkey is the signer of a Soroban smart account. The whole pipeline runs <b>client-side against public soroban-rpc</b> — no Soropass server, no API key, no database in the user's auth path. Managed adapters are optional drop-ins.</div>
+
+  <div class="zone">
+    <span class="zone-label">Client · browser / wallet</span>
+    <span class="zone-tag">no backend required</span>
+    <div class="row">
+      <div class="card"><span class="bar blue"></span><h4><span class="ic">🎨</span>@soropass/ui</h4><p>Headless + styled create / sign / recover. Framework-agnostic, token-themeable.</p></div>
+      <div class="card"><span class="bar violet"></span><h4><span class="ic">🔌</span>PasskeyModule</h4><p>Implements the <span class="mono">stellar-wallets-kit</span> ModuleInterface. Thin adapter over core.</p></div>
+      <div class="card"><span class="bar violet"></span><h4><span class="ic">🔐</span>@soropass/core</h4><p>ES256-only passkey SDK. WebAuthn → Soroban authorization. Always low-S.</p></div>
+    </div>
+    <div class="strip"><span class="ic">🛡️</span><b>Platform authenticator</b><span class="m">— Face ID · Touch ID · security key, via</span><span class="mono">navigator.credentials</span><span class="m">· private key never leaves the secure element</span></div>
+  </div>
+
+  <div class="flow"><span class="ln">▼</span><span class="lbl">signs &nbsp;→&nbsp; <span class="mono">SorobanAuthorizationEntry</span></span><span class="ln">▼</span></div>
+
+  <div class="zone">
+    <span class="zone-label">Pluggable adapters · no lock-in</span>
+    <div class="row">
+      <div class="card"><span class="bar amber"></span><h4><span class="ic">📤</span>Submission</h4><p><b>direct</b> (default, zero-infra) · Launchtube · OpenZeppelin Relayer</p></div>
+      <div class="card"><span class="bar amber"></span><h4><span class="ic">🔎</span>Indexer</h4><p><b>events</b> (default, reads factory event) · Mercury (optional)</p></div>
+    </div>
+  </div>
+
+  <div class="flow"><span class="ln">▼</span><span class="lbl">soroban-rpc</span><span class="ln">▼</span></div>
+
+  <div class="zone">
+    <span class="zone-label">Stellar / Soroban</span>
+    <span class="zone-tag">testnet today → mainnet</span>
+    <div class="row">
+      <div class="card"><span class="bar teal"></span><h4><span class="ic">🛰️</span>soroban-rpc</h4><p>Simulate · submit · getEvents. Public endpoint.</p></div>
+      <div class="card"><span class="bar teal"></span><h4><span class="ic">🏭</span>AccountFactory</h4><p>Deterministic deploy (salt = SHA256(credentialId)); emits <span class="mono">deployed</span> event.</p></div>
+      <div class="card"><span class="bar teal"></span><h4><span class="ic">📜</span>webauthn-account</h4><p>secp256r1 smart account. <span class="mono">__check_auth</span> verifies the passkey on-chain.</p></div>
+      <div class="card"><span class="bar teal"></span><h4><span class="ic">💎</span>native XLM SAC</h4><p>Value transfer authorized by the passkey-controlled account.</p></div>
+    </div>
+  </div>
+
+  <div class="note"><span class="d">▎</span><div>Non-custodial by construction: the passkey controls a Soroban smart account directly. Soroban's host-native <span class="mono">secp256r1_verify</span> is what makes a WebAuthn key a first-class Stellar signer.</div></div>
+</div></body></html>

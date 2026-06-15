@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"></head>
+<body><div class="canvas">
+  <div class="brand"><span class="logo">🛡️</span><span class="title">Soropass — Trust Boundaries</span></div>
+  <div class="subtitle">Four zones with a clear separation of what each holds. A breach of any single zone does not put user funds at risk: the private key never leaves the device, and funds move only with an on-chain secp256r1 signature bound to the exact transaction.</div>
+
+  <div class="row t">
+    <div class="card"><span class="bar blue"></span><h4><span class="ic">📱</span>Device secure element</h4>
+      <div class="holds">
+        <div class="h"><span class="t y">holds</span><div>The passkey private key (P-256). Generated and stored by the platform; <b>never leaves</b>.</div></div>
+        <div class="h"><span class="t n">never</span><div>Exportable. No seed phrase exists.</div></div>
+      </div>
+    </div>
+    <div class="card"><span class="bar violet"></span><h4><span class="ic">🔐</span>Client — SDK + UI</h4>
+      <div class="holds">
+        <div class="h"><span class="t y">holds</span><div>Public key only. Builds the challenge, low-S normalizes, assembles the auth entry.</div></div>
+        <div class="h"><span class="t n">never</span><div>Private keys, funds, or custody.</div></div>
+      </div>
+    </div>
+    <div class="card"><span class="bar amber"></span><h4><span class="ic">🛰️</span>Public soroban-rpc</h4>
+      <div class="holds">
+        <div class="h"><span class="t y">holds</span><div>Nothing of the user's. Simulates, relays, and serves public events.</div></div>
+        <div class="h"><span class="t n">never</span><div>No Soropass server, API key, or database in the auth path.</div></div>
+      </div>
+    </div>
+    <div class="card"><span class="bar teal"></span><h4><span class="ic">📜</span>On-chain smart account</h4>
+      <div class="holds">
+        <div class="h"><span class="t y">holds</span><div>The funds + the registered P-256 key. Verifies every action via <span class="mono">secp256r1_verify</span>.</div></div>
+        <div class="h"><span class="t n">never</span><div>Acts without a valid, challenge-bound passkey signature.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note"><span class="d">▎</span><div><b>Non-custodial end to end.</b> Soropass (client and any optional adapter) is never in a position to move funds. The only authority is the passkey in the user's device, checked on-chain — exactly the property Soroban's secp256r1 host function enables.</div></div>
+</div></body></html>
