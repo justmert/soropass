@@ -10,6 +10,7 @@ const GH = 'https://github.com/justmert/soropass';
 const KIT = 'https://github.com/Creit-Tech/Stellar-Wallets-Kit';
 const KIT_ISSUES = `${KIT}/issues/95`;
 const PASSKEYKIT_ISSUES = 'https://github.com/kalepail/passkey-kit/issues/32';
+const DEMO_VIDEO = 'https://youtu.be/d2-kvd6Twb8';
 
 // ── icons (inline SVG, matching the handoff) ────────────────────────────────
 const Fp = ({ s = 15, sw = 1.8 }) => (
@@ -323,7 +324,12 @@ export default function App() {
               >
                 <Octocat s={16} /> See on GitHub
               </a>
-              <a className="sp-btn sp-btn--white" href="#usecases">
+              <a
+                className="sp-btn sp-btn--white"
+                href={DEMO_VIDEO}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <span className="sp-play">
                   <i />
                 </span>{' '}
@@ -363,56 +369,65 @@ export default function App() {
       {/* ── HOW IT FITS ─────────────────────────────────── */}
       <div className="sp-fits">
         <div className="sp-fits__inner">
-          <div className="sp-fits__grid">
-            <div className="sp-fits__copy">
-              <div className="sp-eyebrow">HOW IT FITS</div>
-              <h2 className="sp-h2 sp-h2--sm">
-                A thin passkey layer between your app and Stellar.
-              </h2>
-              <p>
-                SoroPass brings <strong>passkeys</strong> to the Stellar wallets people already use
-                every day, so signing in and approving payments works like the apps they know, with
-                no seed phrase to write down. Their <strong>Stellar smart account</strong> checks
-                that passkey on-chain. It is a small piece you drop into your wallet, and it never
-                holds funds or keys.
-              </p>
-              <div className="sp-pills">
-                <span className="sp-pill">
-                  <span className="sp-pill__ok">✓</span> No custody of funds
-                </span>
-                <span className="sp-pill">
-                  <span className="sp-pill__ok">✓</span> No key storage
-                </span>
-                <span className="sp-pill">
-                  <span className="sp-pill__ok">✓</span> No infra to run
-                </span>
-              </div>
+          <div className="sp-fits__copy sp-fits__head">
+            <div className="sp-eyebrow">HOW IT FITS</div>
+            <h2 className="sp-h2 sp-h2--sm">
+              A thin passkey layer between your app and Stellar.
+            </h2>
+            <p>
+              SoroPass brings <strong>passkeys</strong> to the Stellar wallets people already use
+              every day, so signing in and approving payments works like the apps they know, with
+              no seed phrase to write down. Their <strong>Stellar smart account</strong> checks
+              that passkey on-chain. It is a small piece you drop into your wallet, and it never
+              holds funds or keys.
+            </p>
+            <div className="sp-pills">
+              <span className="sp-pill">
+                <span className="sp-pill__ok">✓</span> No custody of funds
+              </span>
+              <span className="sp-pill">
+                <span className="sp-pill__ok">✓</span> No key storage
+              </span>
+              <span className="sp-pill">
+                <span className="sp-pill__ok">✓</span> No infra to run
+              </span>
             </div>
-            <div className="sp-pipe">
-              <div className="sp-pipenode">
-                <div className="sp-pipenode__t">Your wallet / dApp</div>
-                <div className="sp-pipenode__d">Embeds the SDK + UI.</div>
+          </div>
+
+          <div className="sp-herovideo sp-fits__video">
+            <iframe
+              src="https://www.youtube.com/embed/d2-kvd6Twb8"
+              title="SoroPass demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
+
+          <div className="sp-pipe sp-pipe--row">
+            <div className="sp-pipenode">
+              <div className="sp-pipenode__t">Your wallet / dApp</div>
+              <div className="sp-pipenode__d">Embeds the SDK + UI.</div>
+            </div>
+            <div className="sp-arrow">→</div>
+            <div className="sp-pipenode sp-pipenode--brand">
+              <div className="sp-pipenode__t">
+                <span className="sp-pipeicon">
+                  <Fp s={11} sw={2} />
+                </span>{' '}
+                SoroPass
               </div>
-              <div className="sp-arrow">↓</div>
-              <div className="sp-pipenode sp-pipenode--brand">
-                <div className="sp-pipenode__t">
-                  <span className="sp-pipeicon">
-                    <Fp s={11} sw={2} />
-                  </span>{' '}
-                  SoroPass
-                </div>
-                <div className="sp-pipenode__d">Passkey SDK + drop-in UI + kit module.</div>
-              </div>
-              <div className="sp-arrow">↓</div>
-              <div className="sp-pipenode">
-                <div className="sp-pipenode__t sp-mono">stellar-wallets-kit</div>
-                <div className="sp-pipenode__d">The standard wallet connector.</div>
-              </div>
-              <div className="sp-arrow">↓</div>
-              <div className="sp-pipenode">
-                <div className="sp-pipenode__t">Soroban smart account</div>
-                <div className="sp-pipenode__d">Verifies the passkey signature on-chain.</div>
-              </div>
+              <div className="sp-pipenode__d">Passkey SDK + drop-in UI + kit module.</div>
+            </div>
+            <div className="sp-arrow">→</div>
+            <div className="sp-pipenode">
+              <div className="sp-pipenode__t sp-mono">stellar-wallets-kit</div>
+              <div className="sp-pipenode__d">The standard wallet connector.</div>
+            </div>
+            <div className="sp-arrow">→</div>
+            <div className="sp-pipenode">
+              <div className="sp-pipenode__t">Soroban smart account</div>
+              <div className="sp-pipenode__d">Verifies the passkey signature on-chain.</div>
             </div>
           </div>
         </div>
