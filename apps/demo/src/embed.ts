@@ -24,12 +24,22 @@ import {
   createView,
   signView,
   recoverView,
+  connectView,
+  addDeviceView,
   DEFAULT_CREATE_COPY,
   DEFAULT_SIGN_COPY,
   DEFAULT_RECOVER_COPY,
+  DEFAULT_CONNECT_COPY,
+  DEFAULT_ADDDEVICE_COPY,
+  icon,
+  identicon,
+  truncMiddle,
   type CreateCtx,
   type SignCtx,
   type RecoverCtx,
+  type ConnectCtx,
+  type AddDeviceCtx,
+  type IconName,
 } from '@soropass/ui/styled';
 
 // ── sample data (mock; zero network) ────────────────────────────────────────
@@ -77,6 +87,40 @@ const recoverCtx: RecoverCtx = {
   onCreateNew: noop,
   onTryDifferent: noop,
 };
+const connectCtx: ConnectCtx = {
+  copy: DEFAULT_CONNECT_COPY,
+  onCreate: noop,
+  onUseExisting: noop,
+  onHelp: noop,
+};
+const addDeviceCtx: AddDeviceCtx = {
+  copy: DEFAULT_ADDDEVICE_COPY,
+  onAdd: noop,
+  onCancel: noop,
+  onRetry: noop,
+  onDone: noop,
+};
+
+// ── living compatibility matrix (latest dated snapshot) ──────────────────────
+interface MatrixCell {
+  feature: string;
+  featureLabel: string;
+  browser: string;
+  os: string;
+  status: string;
+  source: string;
+  tier: string;
+  since?: string;
+  lastVerified?: string;
+}
+interface MatrixSnapshot {
+  builtAt: string;
+  cells: MatrixCell[];
+}
+// Bundled at build time from the matrix package; pick the newest by filename.
+const MATRIX_SNAPSHOTS = import.meta.glob('../../matrix/data/matrix.*.json', {
+  eager: true,
+}) as Record<string, { default: MatrixSnapshot }>;
 
 // ── params ──────────────────────────────────────────────────────────────────
 interface Params {
@@ -152,6 +196,175 @@ function recoverEl(state: string, p: Params): HTMLElement {
   }
 }
 
+function addDeviceEl(state: string, p: Params): HTMLElement {
+  switch (state) {
+    case 'prompting':
+      return addDeviceView({ status: 'prompting' }, addDeviceCtx);
+    case 'binding':
+      return addDeviceView({ status: 'binding' }, addDeviceCtx);
+    case 'success':
+      return addDeviceView({ status: 'success', result: { signer: SAMPLE_CRED.credentialId } }, addDeviceCtx);
+    case 'error':
+      return addDeviceView({ status: 'error', code: p.errorCode, message: '' }, addDeviceCtx);
+    default:
+      return addDeviceView({ status: 'idle' }, addDeviceCtx);
+  }
+}
+
+// ── primitives showcase ──────────────────────────────────────────────────────
+// The building blocks the screens compose from, rendered standalone (primitives
+// page). Reconstructed from the same `pk-*` classes the real components use, so
+// every value still resolves through the shipped design tokens.
+const ICON_NAMES: IconName[] = [
+  'passkey', 'key', 'shield', 'copy', 'check', 'checkCircle', 'alert',
+  'external', 'refresh', 'plus', 'chevron', 'help', 'arrowLeft',
+];
+
+function el(tag: string, className: string | null, ...kids: Array<Node | string>): HTMLElement {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  for (const k of kids) node.append(typeof k === 'string' ? document.createTextNode(k) : k);
+  return node;
+}
+
+function primButton(variant: string, label: string, opts: { glyph?: SVGElement; busy?: boolean } = {}): HTMLButtonElement {
+  const b = document.createElement('button');
+  b.className = `pk-btn pk-btn--${variant}`;
+  b.type = 'button';
+  if (opts.busy) {
+    b.setAttribute('aria-busy', 'true');
+    b.append(el('span', 'pk-spinner pk-btn__spinner'));
+  } else if (opts.glyph) {
+    b.append(opts.glyph);
+  }
+  b.append(document.createTextNode(label));
+  return b;
+}
+
+function primChip(address: string, label: string): HTMLElement {
+  const text = el('span', 'pk-address__text', el('span', 'pk-address__label', label), truncMiddle(address));
+  text.title = address;
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'pk-copy';
+  copyBtn.type = 'button';
+  copyBtn.setAttribute('aria-label', 'Copy full address');
+  copyBtn.append(icon('copy', 17));
+  copyBtn.addEventListener('click', () => {
+    try {
+      void navigator.clipboard?.writeText(address);
+    } catch {
+      /* clipboard unavailable — non-fatal */
+    }
+    copyBtn.classList.add('is-copied');
+    copyBtn.replaceChildren(icon('check', 17));
+    setTimeout(() => {
+      copyBtn.classList.remove('is-copied');
+      copyBtn.replaceChildren(icon('copy', 17));
+    }, 1500);
+  });
+  return el('div', 'pk-address', identicon(address), text, copyBtn);
+}
+
+function primStatus(role: 'status' | 'alert', tone: 'info' | 'error', text: string): HTMLElement {
+  const glyph = el('span', `pk-glyph pk-glyph--${tone}`, icon(tone === 'error' ? 'alert' : 'checkCircle', 20));
+  const msg = el('p', 'pk-message', text);
+  msg.setAttribute('role', role);
+  msg.setAttribute('aria-live', role === 'alert' ? 'assertive' : 'polite');
+  return el('div', 'pk-prims__status', glyph, msg);
+}
+
+function primRow(label: string, demo: HTMLElement): HTMLElement {
+  return el('div', 'pk-prims__row', el('div', 'pk-prims__label', label), demo);
+}
+
+function primitivesEl(): HTMLElement {
+  const buttons = el(
+    'div', 'pk-prims__demo',
+    primButton('primary', 'Create passkey', { glyph: icon('passkey', 18) }),
+    primButton('secondary', 'Cancel'),
+    primButton('ghost', 'Skip'),
+    primButton('primary', 'Working…', { busy: true }),
+  );
+
+  const idents = el('div', 'pk-prims__demo');
+  for (const seed of [SAMPLE_CRED.contractId, SAMPLE_ACCOUNTS[1]!.contractId, SAMPLE_ACCOUNTS[2]!.contractId, 'alice', 'bob']) {
+    idents.append(identicon(seed, 40));
+  }
+
+  const iconGrid = el('div', 'pk-prims__icons');
+  for (const name of ICON_NAMES) {
+    iconGrid.append(el('div', 'pk-prims__icon', icon(name, 22), el('span', null, name)));
+  }
+
+  return el(
+    'div', 'pk-prims',
+    primRow('Button · primary / secondary / ghost / busy', buttons),
+    primRow('Spinner', el('div', 'pk-prims__demo', el('span', 'pk-spinner'))),
+    primRow('AddressChip', primChip(SAMPLE_CRED.contractId, 'Smart account')),
+    primRow('Identicon · deterministic from seed', idents),
+    primRow('StatusLine · polite (role=status)', primStatus('status', 'info', 'Setting up your account…')),
+    primRow('StatusLine · error (role=alert)', primStatus('alert', 'error', 'Couldn’t reach the network.')),
+    primRow('Icon set · 1.75px line, currentColor, 24px grid', iconGrid),
+  );
+}
+
+function matrixEl(): HTMLElement {
+  const keys = Object.keys(MATRIX_SNAPSHOTS).sort();
+  const snap = keys.length ? MATRIX_SNAPSHOTS[keys[keys.length - 1]!]!.default : undefined;
+  if (!snap) return el('div', 'pk-matrix', 'Matrix data unavailable.');
+  const cells = snap.cells;
+
+  const colName = (c: MatrixCell): string => `${c.browser} / ${c.os}`;
+  const preferred = [
+    'Chrome / desktop', 'Safari / macOS', 'Firefox / desktop', 'Edge / Windows',
+    'Chrome / Android', 'Safari / iOS', 'Firefox / Android', 'Samsung Internet / Android',
+  ];
+  const present = [...new Set(cells.map(colName))];
+  const cols = [...preferred.filter((c) => present.includes(c)), ...present.filter((c) => !preferred.includes(c))];
+
+  const rowKeys: string[] = [];
+  const labels: Record<string, string> = {};
+  for (const c of cells) {
+    if (!(c.feature in labels)) {
+      labels[c.feature] = c.featureLabel;
+      rowKeys.push(c.feature);
+    }
+  }
+  const HIGHLIGHT = new Set(['es256_alg', 'hybrid_transport']);
+  const find = (feat: string, col: string): MatrixCell | undefined =>
+    cells.find((c) => c.feature === feat && colName(c) === col);
+  const glyph = (status?: string): [string, string] =>
+    status === 'supported' ? ['✓', 'pk-matrix__ok'] : status === 'unsupported' ? ['✕', 'pk-matrix__no'] : ['?', 'pk-matrix__unk'];
+
+  const headRow = el('tr', null, el('th', null, 'Feature'));
+  for (const c of cols) {
+    const [b, os] = c.split(' / ');
+    headRow.append(el('th', null, el('div', 'pk-matrix__b', b ?? c), el('div', 'pk-matrix__os', os ?? '')));
+  }
+  const body = document.createElement('tbody');
+  for (const feat of rowKeys) {
+    const tr = document.createElement('tr');
+    if (HIGHLIGHT.has(feat)) tr.className = 'pk-matrix__row--key';
+    tr.append(el('td', null, labels[feat] ?? feat));
+    for (const col of cols) {
+      const cell = find(feat, col);
+      const [g, cls] = glyph(cell?.status);
+      const span = el('span', `pk-matrix__cell ${cls}`, g);
+      if (cell) {
+        span.title = `${cell.status} · ${cell.source}${cell.since ? ` · since ${cell.since}` : ''} · ${cell.tier}`;
+      }
+      tr.append(el('td', null, span));
+    }
+    body.append(tr);
+  }
+  const table = el('table', 'pk-matrix__table', el('thead', null, headRow), body);
+  const meta = el(
+    'div', 'pk-matrix__meta',
+    `${String(cells.length)} cells · as of ${snap.builtAt} · ✓ supported · ✕ not supported · ? unknown · hover a cell for its source`,
+  );
+  return el('div', 'pk-matrix', table, meta);
+}
+
 // All 16 documented states, for the states gallery.
 function galleryEl(): HTMLElement {
   const grid = document.createElement('div');
@@ -193,6 +406,14 @@ function elFor(p: Params): HTMLElement {
       return signEl(p.state, p);
     case 'recover':
       return recoverEl(p.state, p);
+    case 'connect':
+      return connectView(connectCtx);
+    case 'adddevice':
+      return addDeviceEl(p.state, p);
+    case 'primitives':
+      return primitivesEl();
+    case 'matrix':
+      return matrixEl();
     case 'gallery':
       return galleryEl();
     case 'bad-input':
@@ -245,7 +466,8 @@ const scope = document.getElementById('app') as HTMLElement;
 let current = readParams();
 
 function postHeight(): void {
-  parent.postMessage({ type: 'pk-height', height: document.body.scrollHeight }, '*');
+  const height = Math.ceil(document.body.getBoundingClientRect().height);
+  parent.postMessage({ type: 'pk-height', height }, '*');
 }
 
 function render(): void {
@@ -265,6 +487,8 @@ window.addEventListener('resize', postHeight);
 
 render();
 parent.postMessage({ type: 'pk-ready' }, '*');
+// Keep the iframe sized tightly to the card as content/fonts settle.
+new ResizeObserver(() => postHeight()).observe(document.body);
 
 // Hero auto-cycle: walk the happy path so the landing shows a looping demo with
 // no interaction (and no React).

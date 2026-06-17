@@ -88,7 +88,10 @@ function signEl(state, errorCode) {
     case 'submitting':
       return signView({ status: 'submitting' }, signCtx);
     case 'done':
-      return signView({ status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } }, signCtx);
+      return signView(
+        { status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } },
+        signCtx,
+      );
     case 'error':
       return signView({ status: 'error', code: errorCode, message: '' }, signCtx);
     default:

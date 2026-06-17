@@ -3,14 +3,15 @@ import { createCreatePasskeyFlow } from '@soropass/ui/headless';
 import { mountCreateScreen, signView, DEFAULT_SIGN_COPY } from '@soropass/ui/styled';
 import {
   createWalletOnchain,
-  buildSignedTransfer,
+  prepareTransfer,
+  signPrepared,
   submitTransfer,
   EXPLORER,
   TRANSFER_XLM,
-  rpId,
-} from './onchain.ts';
+} from '../onchain.ts';
 
-const trunc = (s, n = 6, t = 6) => (!s || s.length <= n + t + 1 ? s : `${s.slice(0, n)}…${s.slice(-t)}`);
+const trunc = (s, n = 6, t = 6) =>
+  !s || s.length <= n + t + 1 ? s : `${s.slice(0, n)}…${s.slice(-t)}`;
 
 function ProofBtn({ href, children }) {
   return (
@@ -21,23 +22,29 @@ function ProofBtn({ href, children }) {
 }
 
 const STAGES = [
-  { key: 'passkey', label: 'Passkey created with Touch ID' },
-  { key: 'deployed', label: 'Smart account deployed' },
+  { key: 'passkey', label: 'Passkey created with Face ID, fingerprint, or a security key' },
+  { key: 'deployed', label: 'Smart account deployed on testnet' },
   { key: 'funded', label: 'Funded with 100 XLM' },
-  { key: 'transferred', label: `Passkey sends ${TRANSFER_XLM} XLM` },
+  { key: 'transferred', label: `Passkey authorizes ${TRANSFER_XLM} XLM transfer` },
 ];
 
-export default function Demo() {
+/**
+ * Flow 1 — Create & spend. The real create + sign styled screens wired to a live
+ * testnet round-trip (create → factory deploy → fund → passkey-authorized
+ * transfer), plus the wrong-key → rejected-on-chain proof. Lifts the created
+ * wallet up via `onWallet` so Flows 2 & 3 can reuse the same passkey.
+ */
+export default function Flow1CreateSpend({ onWallet }) {
   const createRef = useRef(null);
   const signRef = useRef(null);
   const walletRef = useRef(null);
   const wrongRef = useRef(false);
 
   const [wallet, setWallet] = useState(null);
-  const [busy, setBusy] = useState(false); // true only while a ceremony is actually running
+  const [busy, setBusy] = useState(false);
   const [ev, pushEvent] = useReducer((s, e) => ({ ...s, [e.kind]: e }), {});
 
-  // ── Create → deploy → fund ───────────────────────────────────────────────
+  // Create → deploy → fund
   useEffect(() => {
     const node = createRef.current;
     if (!node) return undefined;
@@ -47,6 +54,7 @@ export default function Demo() {
         const w = await createWalletOnchain(input.userName ?? 'alice', report, pushEvent);
         walletRef.current = w;
         setWallet(w);
+        onWallet?.(w);
         return { contractId: w.contractId, credentialId: w.credentialId, publicKey: w.publicKey };
       },
     });
@@ -54,23 +62,37 @@ export default function Demo() {
       const st = flow.getState().status;
       setBusy(st === 'prompting' || st === 'deploying');
     });
-    const handle = mountCreateScreen(node, { flow, input: { userName: 'alice' } });
+    const handle = mountCreateScreen(node, {
+      flow,
+      input: { userName: 'alice' },
+      copy: {
+        idleSubtitle:
+          'A passkey (your Face ID, fingerprint, or security key) replaces your seed phrase. Nothing to write down.',
+      },
+      onHelp: () => globalThis.open('https://passkeys.dev/', '_blank', 'noopener,noreferrer'),
+    });
     return () => {
       off();
       handle.unmount();
     };
-  }, []);
+  }, [onWallet]);
 
-  // ── Sign: real passkey-authorized transfer (correct + wrong key) ─────────
+  // Sign: real passkey-authorized transfer (correct + wrong key)
   function signCtx() {
     return {
       copy: { ...DEFAULT_SIGN_COPY, idleTitle: 'Send a transaction' },
-      tx: { amountValue: `${TRANSFER_XLM} XLM`, destination: ev.dest?.account ?? '', action: 'transfer' },
+      tx: {
+        amountValue: `${TRANSFER_XLM} XLM`,
+        destination: ev.dest?.account ?? '',
+        action: 'transfer',
+      },
       onSign: () => void doTransfer(false),
       onCancel: () => renderSign({ status: 'idle' }),
       onRetry: () => void doTransfer(wrongRef.current),
       onDone: () => renderSign({ status: 'idle' }),
-      onExplorer: () => {},
+      onExplorer: (hash) => {
+        if (hash) globalThis.open(`${EXPLORER}/tx/${hash}`, '_blank', 'noopener,noreferrer');
+      },
     };
   }
   function renderSign(state) {
@@ -83,10 +105,15 @@ export default function Demo() {
     setBusy(true);
     try {
       renderSign({ status: 'prompting' });
-      const xdr = await buildSignedTransfer(w, wrong);
+      // Build fresh on every click so the source sequence + Soroban auth nonce are
+      // always current. (A stale pre-built envelope was why a second action got
+      // rejected on-chain after the first one succeeded.)
+      const env = await prepareTransfer(w);
+      const xdr = await signPrepared(env, w, wrong);
       renderSign({ status: 'submitting' });
       const res = await submitTransfer(xdr, pushEvent);
-      if (res.status === 'SUCCESS') renderSign({ status: 'done', result: { status: 'SUCCESS', hash: res.hash } });
+      if (res.status === 'SUCCESS')
+        renderSign({ status: 'done', result: { status: 'SUCCESS', hash: res.hash } });
       else renderSign({ status: 'error', code: 'CONTRACT_AUTH_FAILED', message: '' });
     } catch (e) {
       renderSign({ status: 'error', code: 'NETWORK_ERROR', message: String(e) });
@@ -122,7 +149,6 @@ export default function Demo() {
         </div>
       </div>
 
-      {/* clean stepper + per-step proof links */}
       <ol className="demo__steps">
         {STAGES.map((s, i) => {
           const e = ev[s.key];
@@ -130,12 +156,19 @@ export default function Demo() {
           const active = busy && i === firstUndone;
           const failed = s.key === 'transferred' && e?.status === 'FAILED';
           return (
-            <li className={`demo__steprow ${done ? 'is-done' : active ? 'is-active' : 'is-pending'} ${failed ? 'is-failed' : ''}`} key={s.key}>
-              <span className="demo__stepmark">{done ? (failed ? '✕' : '✓') : active ? <span className="demo__spin" /> : i + 1}</span>
+            <li
+              className={`demo__steprow ${done ? 'is-done' : active ? 'is-active' : 'is-pending'} ${failed ? 'is-failed' : ''}`}
+              key={s.key}
+            >
+              <span className="demo__stepmark">
+                {done ? failed ? '✕' : '✓' : active ? <span className="demo__spin" /> : i + 1}
+              </span>
               <span className="demo__steplabel">
                 {s.label}
-                {failed && ' — rejected by secp256r1_verify'}
-                {s.key === 'deployed' && e && <code className="demo__addr">{trunc(e.account, 6, 6)}</code>}
+                {failed && ': rejected by secp256r1_verify'}
+                {s.key === 'deployed' && e && (
+                  <code className="demo__addr">{trunc(e.account, 6, 6)}</code>
+                )}
               </span>
               <span className="demo__steplinks">
                 {s.key === 'deployed' && e && (
@@ -144,11 +177,17 @@ export default function Demo() {
                     {e.tx && <ProofBtn href={`${EXPLORER}/tx/${e.tx}`}>deploy tx</ProofBtn>}
                   </>
                 )}
-                {s.key === 'funded' && e && <ProofBtn href={`${EXPLORER}/tx/${e.tx}`}>fund tx</ProofBtn>}
+                {s.key === 'funded' && e && (
+                  <ProofBtn href={`${EXPLORER}/tx/${e.tx}`}>fund tx</ProofBtn>
+                )}
                 {s.key === 'transferred' && e && (
                   <>
                     <ProofBtn href={`${EXPLORER}/tx/${e.tx}`}>transfer tx</ProofBtn>
-                    {ev.dest && <ProofBtn href={`${EXPLORER}/account/${ev.dest.account}`}>destination</ProofBtn>}
+                    {ev.dest && (
+                      <ProofBtn href={`${EXPLORER}/account/${ev.dest.account}`}>
+                        destination
+                      </ProofBtn>
+                    )}
                   </>
                 )}
               </span>
@@ -156,9 +195,6 @@ export default function Demo() {
           );
         })}
       </ol>
-      <p className="demo__foot">
-        Real testnet · rpId <code>{rpId}</code> · friendbot-funded ephemeral source · no secrets in the page.
-      </p>
     </div>
   );
 }

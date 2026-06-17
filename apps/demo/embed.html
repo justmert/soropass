@@ -16,8 +16,124 @@
         background: transparent;
       }
       body {
-        padding: 16px;
+        padding: 20px;
         font-family: system-ui, -apple-system, sans-serif;
+      }
+      /* base text color for the embed chrome (labels, icon names); the styled
+         components set their own colors, so this only drives the captions and
+         keeps them legible when the host docs page is in dark mode. */
+      #app {
+        color: #0b0c0e;
+      }
+      #app[data-theme='dark'] {
+        color: #e6e8eb;
+      }
+      /* center a single previewed screen (card); gallery / primitives / matrix are full-width */
+      #app > *:not(.pk-embed-gallery):not(.pk-prims):not(.pk-matrix) {
+        margin-inline: auto;
+      }
+      /* compatibility matrix grid */
+      .pk-matrix {
+        font: 12px/1.45 system-ui, -apple-system, sans-serif;
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      .pk-matrix__table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      .pk-matrix__table th,
+      .pk-matrix__table td {
+        border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+        padding: 6px 9px;
+        text-align: center;
+      }
+      .pk-matrix__table th:first-child,
+      .pk-matrix__table td:first-child {
+        text-align: left;
+        font-weight: 500;
+        min-width: 148px;
+      }
+      .pk-matrix__b {
+        font-weight: 600;
+        font-size: 11px;
+      }
+      .pk-matrix__os {
+        font-size: 10px;
+        opacity: 0.6;
+      }
+      .pk-matrix__row--key {
+        background: color-mix(in oklab, currentColor 5%, transparent);
+      }
+      .pk-matrix__row--key td:first-child {
+        font-weight: 700;
+      }
+      .pk-matrix__cell {
+        font-weight: 700;
+      }
+      .pk-matrix__ok {
+        color: #1a8f4c;
+      }
+      .pk-matrix__no {
+        color: #c2410c;
+      }
+      .pk-matrix__unk {
+        opacity: 0.35;
+      }
+      #app[data-theme='dark'] .pk-matrix__ok {
+        color: #4ade80;
+      }
+      #app[data-theme='dark'] .pk-matrix__no {
+        color: #fb923c;
+      }
+      .pk-matrix__meta {
+        margin-top: 10px;
+        font-size: 11px;
+        opacity: 0.6;
+      }
+      /* primitives showcase */
+      .pk-prims {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 460px;
+        margin-inline: auto;
+      }
+      .pk-prims__row {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .pk-prims__label {
+        font: 12px/1.4 ui-monospace, 'SF Mono', monospace;
+        opacity: 0.55;
+      }
+      .pk-prims__demo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      .pk-prims__status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .pk-prims__icons {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+        gap: 10px;
+      }
+      .pk-prims__icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        padding: 12px 6px;
+        border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+        border-radius: 10px;
+        font: 10.5px/1.2 ui-monospace, 'SF Mono', monospace;
+        opacity: 0.82;
       }
       .pk-embed-gallery {
         display: grid;

@@ -35,6 +35,8 @@ apps/matrix/rendered/
 apps/matrix/public/
 # Design / planning docs — local only, never committed (only outcomes ship)
 docs/design/
+# Outreach drafts — local only, prepared for the human to post (S25–S27)
+docs/outreach/
 # Competitor RFP proposals + cloned competitor repos (local intel — never commit)
 passkey-competitor-1.md
 passkey-competitor-2.md

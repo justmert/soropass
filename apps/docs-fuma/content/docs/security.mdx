@@ -18,7 +18,7 @@ The final node, `__check_auth`, is the only layer inside the trust boundary.
 
 ECDSA signatures are malleable: for a signature `(r, s)`, the reflected value `(r, n−s)` verifies just as well. Roughly **50% of Apple Touch ID / Face ID assertions are high-S**, and Soroban's `secp256r1_verify` host function does **not** reject high-S signatures — so canonicality is the SDK's responsibility, not the chain's.
 
-Invariant #2: the SDK **always** low-S normalizes client-side (`S > n/2 → n−S`) before assembling the authorization entry. A verifier that *does* enforce low-S still accepts our signatures, and any on-chain identity or replay logic keyed on the signature bytes stays stable. We additionally recommend the contract reject non-canonical S as defense-in-depth.
+Invariant #2: the SDK low-S normalizes the WebAuthn **DER** assertion client-side (`S > n/2 → n−S`) before assembling the authorization entry — `derToCompactLowS` on the bytes `navigator.credentials.get()` actually returns. A verifier that *does* enforce low-S still accepts our signatures, and any on-chain identity or replay logic keyed on the signature bytes stays stable. We additionally recommend the contract reject non-canonical S as defense-in-depth.
 
 ```
 DER ECDSA → R‖S (64 bytes) → if S > n/2 then S = n−S    // derToCompactLowS
@@ -63,13 +63,13 @@ There is no seed phrase to back up — so recovery is about finding the accounts
 | --- | --- | --- |
 | Synced (default) | Yes — via the platform cloud | You trust the platform provider (iCloud Keychain / Google Password Manager). |
 | Device-bound | No — lost with the device | Stronger isolation, but requires a backup signer. |
-| Multi-signer (recommended) | Yes — any one signer recovers | A second passkey on another device/domain, an Ed25519 backup key, or an OZ policy signer. |
+| Multi-signer (roadmap) | Yes — any one signer recovers | OZ-compatible multi-signer accounts (a second passkey, an Ed25519 backup key, or a policy signer) — planned; the reference contract today is single-signer. |
 
 <Callout type="warn">
-**Add-device is an account-takeover path.** Adding a new signer grants it the power to authorize the account, so the add-device flow must be gated behind a fresh re-authentication with an existing signer — never an unauthenticated mutation. The styled add-device screen requires that re-auth before it will submit.
+**Add-device is an account-takeover path.** Adding a new signer grants it the power to authorize the account, so the add-device flow must be gated behind a fresh re-authentication with an existing signer — never an unauthenticated mutation. The styled add-device screen surfaces this requirement; enforcing the re-auth gate (and the on-chain multi-signer add) is part of the roadmap.
 </Callout>
 
-The smart account itself supports multiple signers; `recover()` finds all accounts a credential controls (`ceremonies.test.ts`, matrix `conditional_mediation`).
+The reference `webauthn-account` is single-signer today; OZ-compatible multi-signer accounts are the roadmap. `recover()` finds every account a credential already controls (`ceremonies.test.ts`, matrix `conditional_mediation`).
 
 ## Threat model summary
 

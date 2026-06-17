@@ -20,7 +20,7 @@ The same create / sign / recover components across desktop, mobile-web, and the 
 
 ## Web (desktop)
 
-<Preview screen="sign" />
+<Preview screen="sign" stepper={false} />
 
 <Tabs items={['Standalone', 'Via Wallets Kit', 'React (coming)']}>
 <Tab value="Standalone">
@@ -51,7 +51,7 @@ useEffect(() => {
 
 ## Mobile-web
 
-<Preview screen="create" />
+<Preview screen="create" stepper={false} />
 
 Works from 360px; ≥44–48px touch targets; calm opaque OS-sheet waiting (no spinner); bottom-edge OS-sheet hint bar; safe-area aware.
 
