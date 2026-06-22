@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "pulledAt": "2026-06-22",
+  "runnerOs": "linux",
+  "browsers": [
+    {
+      "name": "Chromium",
+      "version": "148.0.7778.96",
+      "available": true
+    },
+    {
+      "name": "Edge",
+      "version": "149.0.4022.80",
+      "available": true
+    }
+  ],
+  "gridResults": [
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": true,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": true,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": false,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": false,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": true,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": true,
+      "userVerification": false,
+      "created": false,
+      "asserted": false,
+      "verified": false,
+      "alg": null,
+      "error": "page.evaluate: NotAllowedError: The operation either timed out or was not allowed. See: https://www.w3.org/TR/webauthn-2/#sctn-privacy-considerations-client."
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": false,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Chromium",
+      "browserVersion": "148.0.7778.96",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": false,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": true,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": true,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": false,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "internal",
+      "residentKey": false,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": true,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": true,
+      "userVerification": false,
+      "created": false,
+      "asserted": false,
+      "verified": false,
+      "alg": null,
+      "error": "page.evaluate: NotAllowedError: The operation either timed out or was not allowed. See: https://www.w3.org/TR/webauthn-2/#sctn-privacy-considerations-client."
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": false,
+      "userVerification": true,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    },
+    {
+      "browser": "Edge",
+      "browserVersion": "149.0.4022.80",
+      "runnerOs": "linux",
+      "transport": "usb",
+      "residentKey": false,
+      "userVerification": false,
+      "created": true,
+      "asserted": true,
+      "verified": true,
+      "alg": -7
+    }
+  ],
+  "rows": [
+    {
+      "feature": "conditional_mediation",
+      "featureLabel": "conditional_mediation",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "notes": "getClientCapabilities().conditionalGet",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "conditional_mediation",
+      "featureLabel": "conditional_mediation",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "notes": "getClientCapabilities().conditionalGet",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "es256_alg",
+      "featureLabel": "es256_alg",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "create→get round-trip verified via p256.verify with COSE alg -7",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "es256_alg",
+      "featureLabel": "es256_alg",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "create→get round-trip verified via p256.verify with COSE alg -7",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "hybrid_transport",
+      "featureLabel": "hybrid_transport",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "notes": "getClientCapabilities().hybridTransport",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "hybrid_transport",
+      "featureLabel": "hybrid_transport",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "notes": "getClientCapabilities().hybridTransport",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "is_uvpaa",
+      "featureLabel": "is_uvpaa",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "is_uvpaa",
+      "featureLabel": "is_uvpaa",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "unsupported",
+      "since": null,
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "related_origin_requests",
+      "featureLabel": "related_origin_requests",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "getClientCapabilities().relatedOrigins",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "related_origin_requests",
+      "featureLabel": "related_origin_requests",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "getClientCapabilities().relatedOrigins",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "webauthn",
+      "featureLabel": "webauthn",
+      "browser": "Chromium",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "virtual-authenticator create→get verified 7/8 grid cells",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    },
+    {
+      "feature": "webauthn",
+      "featureLabel": "webauthn",
+      "browser": "Edge",
+      "os": "linux",
+      "status": "supported",
+      "since": null,
+      "notes": "virtual-authenticator create→get verified 7/8 grid cells",
+      "source": "ci",
+      "pulledAt": "2026-06-22"
+    }
+  ],
+  "limitations": [
+    "Virtual authenticators cannot reproduce biometrics, the Apple Secure Enclave, or real device UX.",
+    "They emit deterministic low-S signatures, so they do NOT reproduce the ~50% high-S distribution of real Apple authenticators (see anchor low-s-normalization).",
+    "In-app WebView breakage (e.g. embedded browsers) is not exercised here.",
+    "Firefox/WebKit virtual authenticators are out of scope here — handled by the S08 WebDriver-BiDi spike."
+  ]
+}
