@@ -19,6 +19,50 @@ function fail(reason: string): CheckAuthResult {
 }
 
 /**
+ * Verify a bare `Secp256r1Signature` ScMap ({ authenticator_data,
+ * client_data_json, signature }) against a public key + the expected signature
+ * payload. Shared by the single-signer and smart-wallet reference verifiers.
+ */
+function verifySecp256r1StructMap(
+  structMap: xdr.ScMapEntry[],
+  publicKey: Uint8Array,
+  signaturePayload: Uint8Array,
+): { ok: boolean; challengeBound: boolean; signatureValid: boolean; reason?: string } {
+  const field = (name: string): Uint8Array | undefined => {
+    const e = structMap.find((x) => x.key().sym().toString() === name);
+    return e ? new Uint8Array(e.val().bytes()) : undefined;
+  };
+  const authenticatorData = field('authenticator_data');
+  const clientDataJSON = field('client_data_json');
+  const signature = field('signature');
+  if (!authenticatorData || !clientDataJSON || !signature) {
+    return { ok: false, challengeBound: false, signatureValid: false, reason: 'missing fields' };
+  }
+  if (signature.length !== 64) {
+    return {
+      ok: false,
+      challengeBound: false,
+      signatureValid: false,
+      reason: 'not 64-byte compact',
+    };
+  }
+  let challengeBound = false;
+  try {
+    const cdj = JSON.parse(bytesToUtf8(clientDataJSON)) as { challenge?: string };
+    challengeBound = cdj.challenge === bytesToBase64Url(signaturePayload);
+  } catch {
+    challengeBound = false;
+  }
+  // Host fn semantics: no low-S enforcement (lowS:false), compact format.
+  const digest = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
+  const signatureValid = p256.verify(signature, digest, publicKey, {
+    lowS: false,
+    format: 'compact',
+  });
+  return { ok: challengeBound && signatureValid, challengeBound, signatureValid };
+}
+
+/**
  * A faithful JavaScript model of the on-chain `__check_auth` (kalepail
  * `webauthn-wallet` `verify.rs`): reconstruct `SHA256(authenticator_data ‖
  * SHA256(client_data_json))`, run `secp256r1_verify` (which does NOT enforce
@@ -40,32 +84,63 @@ export function referenceCheckAuth(
   const structMap = entry.credentials().address().signature().map();
   if (!structMap) return fail('signature is not a Secp256r1Signature map');
 
-  const field = (name: string): Uint8Array | undefined => {
-    const e = structMap.find((x) => x.key().sym().toString() === name);
-    return e ? new Uint8Array(e.val().bytes()) : undefined;
-  };
-  const authenticatorData = field('authenticator_data');
-  const clientDataJSON = field('client_data_json');
-  const signature = field('signature');
-  if (!authenticatorData || !clientDataJSON || !signature) return fail('missing signature fields');
-  if (signature.length !== 64) return fail('signature is not 64-byte compact');
+  const signaturePayload = authEntryChallengeBytes(entry, networkPassphrase);
+  const r = verifySecp256r1StructMap(structMap, publicKey, signaturePayload);
+  return { success: r.ok, challengeBound: r.challengeBound, signatureValid: r.signatureValid };
+}
+
+export interface SmartWalletCheckAuthResult {
+  success: boolean;
+  signers: { credentialId: string; challengeBound: boolean; signatureValid: boolean }[];
+  reason?: string;
+}
+
+/**
+ * A reference model of passkey-kit's smart-wallet `__check_auth`: unwrap the
+ * `Signatures(Map<SignerKey, Signature>)` value (`ScVal::Vec([ScVal::Map(...)])`),
+ * and for each `SignerKey::Secp256r1(id) => Signature::Secp256r1(struct)` entry,
+ * look up that credential id's SEC-1 public key and verify the struct. Succeeds
+ * only when the map is non-empty and every signer verifies + is challenge-bound.
+ * `publicKeyFor` receives the lowercase-hex credential id.
+ */
+export function referenceSmartWalletCheckAuth(
+  entry: xdr.SorobanAuthorizationEntry,
+  publicKeyFor: (credentialIdHex: string) => Uint8Array | undefined,
+  networkPassphrase: string,
+): SmartWalletCheckAuthResult {
+  if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') {
+    return { success: false, signers: [], reason: 'no address credentials' };
+  }
+  const sig = entry.credentials().address().signature();
+  const map = sig.switch().name === 'scvVec' ? sig.vec()?.[0]?.map() : undefined;
+  if (!map) {
+    return { success: false, signers: [], reason: 'signature is not a Signatures(Map) vec' };
+  }
+  if (map.length === 0) return { success: false, signers: [], reason: 'empty signatures map' };
 
   const signaturePayload = authEntryChallengeBytes(entry, networkPassphrase);
+  const signers: SmartWalletCheckAuthResult['signers'] = [];
+  let allOk = true;
 
-  let challengeBound = false;
-  try {
-    const cdj = JSON.parse(bytesToUtf8(clientDataJSON)) as { challenge?: string };
-    challengeBound = cdj.challenge === bytesToBase64Url(signaturePayload);
-  } catch {
-    challengeBound = false;
+  for (const e of map) {
+    const keyVec = e.key().vec();
+    const idBytes = keyVec?.[1]?.bytes();
+    const credentialId = idBytes ? Buffer.from(idBytes).toString('hex') : '';
+    // Signature::Secp256r1(struct) → scvVec([Symbol, structMap]).
+    const structMap = e.val().vec()?.[1]?.map();
+    const publicKey = publicKeyFor(credentialId);
+    if (!structMap || !publicKey) {
+      allOk = false;
+      signers.push({ credentialId, challengeBound: false, signatureValid: false });
+      continue;
+    }
+    const r = verifySecp256r1StructMap(structMap, publicKey, signaturePayload);
+    if (!r.ok) allOk = false;
+    signers.push({
+      credentialId,
+      challengeBound: r.challengeBound,
+      signatureValid: r.signatureValid,
+    });
   }
-
-  // Host fn semantics: no low-S enforcement (lowS:false), compact format.
-  const digest = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
-  const signatureValid = p256.verify(signature, digest, publicKey, {
-    lowS: false,
-    format: 'compact',
-  });
-
-  return { success: challengeBound && signatureValid, challengeBound, signatureValid };
+  return { success: allOk, signers };
 }

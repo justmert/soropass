@@ -39,7 +39,8 @@ function defaultMatch(event: rpc.Api.EventResponse, credentialId: string): Resol
     if (topics.length >= 2) {
       const tag = decodeNative(topics[0]);
       const credRaw = decodeNative(topics[1]);
-      const cred = credRaw instanceof Uint8Array ? new TextDecoder().decode(credRaw) : String(credRaw ?? '');
+      const cred =
+        credRaw instanceof Uint8Array ? new TextDecoder().decode(credRaw) : String(credRaw ?? '');
       if (tag === 'deployed' && cred === credentialId) {
         const addr = decodeNative(event.value);
         if (typeof addr === 'string' && addr.startsWith('C')) return { contractId: addr };

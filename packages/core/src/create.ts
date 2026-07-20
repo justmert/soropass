@@ -12,3 +12,7 @@ export {
   coseKeyToSec1,
 } from './webauthn/publicKey';
 export { assertES256, assertUserActivation } from './anchors';
+// Deterministic account C-address derivation (no network round-trip) — the
+// AccountFactory salts by sha256(credentialId); mirrors the on-chain deploy.
+export { deriveAccountAddress } from './soroban/address';
+export type { DeriveAccountAddressOptions } from './soroban/address';

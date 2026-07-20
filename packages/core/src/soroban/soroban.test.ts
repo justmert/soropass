@@ -134,4 +134,51 @@ describe('Soroban auth assembly (S11)', () => {
     const entry = xdr.SorobanAuthorizationEntry.fromXDR(signed, 'base64');
     expect(referenceCheckAuth(entry, PUB, Networks.PUBLIC).success).toBe(false);
   });
+
+  it('signs the auth entries inside a fee-bump envelope (not just a v1 tx)', async () => {
+    const unsigned = buildUnsignedEntry();
+    const address = new Address(StrKey.encodeContract(Buffer.alloc(32, 9)));
+    const op = Operation.invokeHostFunction({
+      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: address.toScAddress(),
+          functionName: 'increment',
+          args: [],
+        }),
+      ),
+      auth: [unsigned],
+    });
+    const inner = new TransactionBuilder(new Account(Keypair.random().publicKey(), '0'), {
+      fee: '100',
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(op)
+      .setTimeout(60)
+      .build();
+    inner.sign(Keypair.random());
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random(),
+      '200',
+      inner,
+      Networks.TESTNET,
+    );
+
+    const signed = await signTransaction(feeBump.toEnvelope().toXDR('base64'), {
+      networkPassphrase: Networks.TESTNET,
+      sign: makeSigner(),
+    });
+    const envelope = xdr.TransactionEnvelope.fromXDR(signed, 'base64');
+    const signedEntry = envelope
+      .feeBump()
+      .tx()
+      .innerTx()
+      .v1()
+      .tx()
+      .operations()[0]!
+      .body()
+      .invokeHostFunctionOp()
+      .auth()[0];
+    expect(signedEntry).toBeDefined();
+    expect(referenceCheckAuth(signedEntry!, PUB, Networks.TESTNET).success).toBe(true);
+  });
 });

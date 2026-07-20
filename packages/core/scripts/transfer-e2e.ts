@@ -7,7 +7,16 @@
  *
  * Run: SOURCE_SECRET=… pnpm --filter @soropass/core exec tsx scripts/transfer-e2e.ts
  */
-import { rpc, Address, Contract, Keypair, Networks, TransactionBuilder, nativeToScVal, xdr } from '@stellar/stellar-sdk';
+import {
+  rpc,
+  Address,
+  Contract,
+  Keypair,
+  Networks,
+  TransactionBuilder,
+  nativeToScVal,
+  xdr,
+} from '@stellar/stellar-sdk';
 import { p256 } from '@noble/curves/nist';
 import { sha256 } from '@noble/hashes/sha256';
 import { readFileSync } from 'node:fs';
@@ -50,7 +59,12 @@ function makeSigner(privateKey: Uint8Array): WebAuthnSigner {
     );
     const payload = sha256(concat(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, privateKey).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: new Uint8Array(16).fill(1) };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: new Uint8Array(16).fill(1),
+    };
   };
 }
 
@@ -61,27 +75,39 @@ const addr = (s: string) => Address.fromString(s).toScVal();
 async function fund(to: string, stroops: bigint, label: string) {
   const account = await server.getAccount(SOURCE.publicKey());
   const tx = new TransactionBuilder(account, { fee: '1000000', networkPassphrase: NETWORK })
-    .addOperation(new Contract(SAC).call('transfer', addr(SOURCE.publicKey()), addr(to), i128(stroops)))
+    .addOperation(
+      new Contract(SAC).call('transfer', addr(SOURCE.publicKey()), addr(to), i128(stroops)),
+    )
     .setTimeout(120)
     .build();
   const sim = await server.simulateTransaction(tx);
-  if (!rpc.Api.isSimulationSuccess(sim)) throw new Error(`${label}: sim failed ${JSON.stringify(sim)}`);
+  if (!rpc.Api.isSimulationSuccess(sim))
+    throw new Error(`${label}: sim failed ${JSON.stringify(sim)}`);
   const prepared = rpc.assembleTransaction(tx, sim).build();
   prepared.sign(SOURCE);
-  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(prepared.toXDR());
+  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(
+    prepared.toXDR(),
+  );
   console.log(`${label}: ${res.status} (tx ${res.hash})`);
   return res;
 }
 
 /** passkey-authorized SAC transfer FROM the smart account. */
-async function transferFromWallet(wallet: string, to: string, stroops: bigint, signer: WebAuthnSigner, label: string) {
+async function transferFromWallet(
+  wallet: string,
+  to: string,
+  stroops: bigint,
+  signer: WebAuthnSigner,
+  label: string,
+) {
   const account = await server.getAccount(SOURCE.publicKey());
   const tx = new TransactionBuilder(account, { fee: '2000000', networkPassphrase: NETWORK })
     .addOperation(new Contract(SAC).call('transfer', addr(wallet), addr(to), i128(stroops)))
     .setTimeout(120)
     .build();
   const sim = await server.simulateTransaction(tx);
-  if (!rpc.Api.isSimulationSuccess(sim)) throw new Error(`${label}: sim failed ${JSON.stringify(sim)}`);
+  if (!rpc.Api.isSimulationSuccess(sim))
+    throw new Error(`${label}: sim failed ${JSON.stringify(sim)}`);
   const prepared = rpc.assembleTransaction(tx, sim).build();
   const validUntil = (await server.getLatestLedger()).sequence + 1000;
   const envelope = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
@@ -102,10 +128,15 @@ async function transferFromWallet(wallet: string, to: string, stroops: bigint, s
     sd.resourceFee(new xdr.Int64(10_000_000));
     v1.fee(11_000_000);
   }
-  const signedXdr = await signTransaction(envelope.toXDR('base64'), { networkPassphrase: NETWORK, sign: signer });
+  const signedXdr = await signTransaction(envelope.toXDR('base64'), {
+    networkPassphrase: NETWORK,
+    sign: signer,
+  });
   const finalTx = TransactionBuilder.fromXDR(signedXdr, NETWORK);
   finalTx.sign(SOURCE);
-  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(finalTx.toXDR());
+  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(
+    finalTx.toXDR(),
+  );
   console.log(`${label}: ${res.status} (tx ${res.hash})`);
   return res;
 }
@@ -130,7 +161,13 @@ async function main(): Promise<void> {
   await new Promise((r) => setTimeout(r, 1500));
   console.log(`✅ destination account: ${dest.publicKey()}`);
 
-  const positive = await transferFromWallet(wallet, dest.publicKey(), 250_000_000n, makeSigner(priv), 'TRANSFER correct key (25 XLM)');
+  const positive = await transferFromWallet(
+    wallet,
+    dest.publicKey(),
+    250_000_000n,
+    makeSigner(priv),
+    'TRANSFER correct key (25 XLM)',
+  );
   const negative = await transferFromWallet(
     wallet,
     dest.publicKey(),

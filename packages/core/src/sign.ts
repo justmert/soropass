@@ -20,6 +20,15 @@ export type { BrowserPasskeySignerOptions } from './ceremonies/browserSigner';
 
 // Soroban auth assembly (S11): sign a tx or a bare auth entry → SorobanAuthorizationEntry.
 export { signAuthEntry, signTransaction } from './soroban/sign';
+export type { SorobanSignOptions, SignVerifyOptions, WalletTarget } from './soroban/sign';
 export { authEntryChallenge, authEntryChallengeBytes } from './soroban/preimage';
 export { applyAssertionToEntry } from './soroban/assemble';
-export { referenceCheckAuth } from './soroban/checkAuth';
+// Smart-wallet ABI target (passkey-kit `Signatures(Map<SignerKey, Signature>)`) — issue #32.
+export {
+  applyAssertionToSmartWalletEntry,
+  buildSignerKeyScVal,
+  buildSmartWalletSignatureVariant,
+  compareSignerKeyScVal,
+} from './soroban/smartWallet';
+export { referenceCheckAuth, referenceSmartWalletCheckAuth } from './soroban/checkAuth';
+export type { SmartWalletCheckAuthResult } from './soroban/checkAuth';

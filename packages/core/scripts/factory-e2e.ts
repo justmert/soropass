@@ -59,7 +59,12 @@ function makeSigner(privateKey: Uint8Array): WebAuthnSigner {
     );
     const payload = sha256(concat(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, privateKey).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: new Uint8Array(16).fill(1) };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: new Uint8Array(16).fill(1),
+    };
   };
 }
 
@@ -151,7 +156,9 @@ async function main(): Promise<void> {
     ok = false;
   }
   if (ok) {
-    console.log('✅ CREATE-FROM-SCRATCH PROOF — factory-deployed account; correct key → SUCCESS, wrong key → FAILED.');
+    console.log(
+      '✅ CREATE-FROM-SCRATCH PROOF — factory-deployed account; correct key → SUCCESS, wrong key → FAILED.',
+    );
     console.log(`   account: https://stellar.expert/explorer/testnet/contract/${contractId}`);
     console.log(`   tx:      https://stellar.expert/explorer/testnet/tx/${positive.hash}`);
   }
