@@ -44,7 +44,11 @@ function choiceRow(opts: {
   return h(
     'button',
     { class: 'pk-choice', type: 'button', onClick: opts.onClick },
-    h('span', { class: `pk-choice__icon${opts.brand ? ' pk-choice__icon--brand' : ''}` }, icon(opts.glyph, 22)),
+    h(
+      'span',
+      { class: `pk-choice__icon${opts.brand ? ' pk-choice__icon--brand' : ''}` },
+      icon(opts.glyph, 22),
+    ),
     h(
       'span',
       { class: 'pk-choice__body' },
@@ -88,7 +92,12 @@ export function connectView(ctx: ConnectCtx): HTMLElement {
         onClick: ctx.onUseExisting,
       }),
     ),
-    h('button', { class: 'pk-link', type: 'button', onClick: ctx.onHelp }, icon('help', 14), ctx.copy.helpLabel),
+    h(
+      'button',
+      { class: 'pk-link', type: 'button', onClick: ctx.onHelp },
+      icon('help', 14),
+      ctx.copy.helpLabel,
+    ),
   );
 }
 
@@ -102,7 +111,10 @@ export interface ConnectScreenOptions {
 }
 
 /** Mount the styled Connect chooser. Stateless — both choices route out. */
-export function mountConnectScreen(root: HTMLElement, opts: ConnectScreenOptions = {}): ScreenHandle {
+export function mountConnectScreen(
+  root: HTMLElement,
+  opts: ConnectScreenOptions = {},
+): ScreenHandle {
   const copy: ConnectCopy = { ...DEFAULT_CONNECT_COPY, ...opts.copy };
   const ctx: ConnectCtx = {
     copy,

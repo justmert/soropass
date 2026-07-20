@@ -5,11 +5,11 @@
 
 ## TL;DR
 
-| Layer                                 | What ships                                                                                         | Framework dependency |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------- |
+| Layer                                 | What ships                                                                                  | Framework dependency |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------- |
 | **Logic / state / a11y / i18n** (S18) | `@soropass/ui/headless` — framework-agnostic state machines + a11y prop-getters + i18n keys | **none**             |
 | **Styled reference** (S20)            | `@soropass/ui/styled` — vanilla-DOM `mount*` renderers + `styled.css`/`tokens.css`          | **none**             |
-| **Theming surface**                   | `tokens.css` (CSS custom properties)                                                               | **none** (CSS)       |
+| **Theming surface**                   | `tokens.css` (CSS custom properties)                                                        | **none** (CSS)       |
 
 We ship **framework-agnostic** at every layer. There is **no React/Vue/Svelte
 runtime dependency** anywhere in the package. Framework wrappers are a thin,

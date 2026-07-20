@@ -69,9 +69,14 @@ describe('addDeviceView', () => {
   });
 
   it('error renders the single error layout, code mapped to addDevice:binding', () => {
-    const el = addDeviceView({ status: 'error', code: 'CONTRACT_AUTH_FAILED', message: '' }, addCtx);
+    const el = addDeviceView(
+      { status: 'error', code: 'CONTRACT_AUTH_FAILED', message: '' },
+      addCtx,
+    );
     expect(el.querySelector('[role="alert"]')).toBeTruthy();
-    expect(el.querySelector('[data-error-key]')?.getAttribute('data-error-key')).toBe('addDevice:binding');
+    expect(el.querySelector('[data-error-key]')?.getAttribute('data-error-key')).toBe(
+      'addDevice:binding',
+    );
   });
 });
 

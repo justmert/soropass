@@ -371,15 +371,13 @@ export default function App() {
         <div className="sp-fits__inner">
           <div className="sp-fits__copy sp-fits__head">
             <div className="sp-eyebrow">HOW IT FITS</div>
-            <h2 className="sp-h2 sp-h2--sm">
-              A thin passkey layer between your app and Stellar.
-            </h2>
+            <h2 className="sp-h2 sp-h2--sm">A thin passkey layer between your app and Stellar.</h2>
             <p>
               SoroPass brings <strong>passkeys</strong> to the Stellar wallets people already use
-              every day, so signing in and approving payments works like the apps they know, with
-              no seed phrase to write down. Their <strong>Stellar smart account</strong> checks
-              that passkey on-chain. It is a small piece you drop into your wallet, and it never
-              holds funds or keys.
+              every day, so signing in and approving payments works like the apps they know, with no
+              seed phrase to write down. Their <strong>Stellar smart account</strong> checks that
+              passkey on-chain. It is a small piece you drop into your wallet, and it never holds
+              funds or keys.
             </p>
             <div className="sp-pills">
               <span className="sp-pill">

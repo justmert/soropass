@@ -174,7 +174,10 @@ function signEl(state: string, p: Params): HTMLElement {
     case 'submitting':
       return signView({ status: 'submitting' }, signCtx);
     case 'done':
-      return signView({ status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } }, signCtx);
+      return signView(
+        { status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } },
+        signCtx,
+      );
     case 'error':
       return signView({ status: 'error', code: p.errorCode, message: '' }, signCtx);
     default:
@@ -203,7 +206,10 @@ function addDeviceEl(state: string, p: Params): HTMLElement {
     case 'binding':
       return addDeviceView({ status: 'binding' }, addDeviceCtx);
     case 'success':
-      return addDeviceView({ status: 'success', result: { signer: SAMPLE_CRED.credentialId } }, addDeviceCtx);
+      return addDeviceView(
+        { status: 'success', result: { signer: SAMPLE_CRED.credentialId } },
+        addDeviceCtx,
+      );
     case 'error':
       return addDeviceView({ status: 'error', code: p.errorCode, message: '' }, addDeviceCtx);
     default:
@@ -216,8 +222,19 @@ function addDeviceEl(state: string, p: Params): HTMLElement {
 // page). Reconstructed from the same `pk-*` classes the real components use, so
 // every value still resolves through the shipped design tokens.
 const ICON_NAMES: IconName[] = [
-  'passkey', 'key', 'shield', 'copy', 'check', 'checkCircle', 'alert',
-  'external', 'refresh', 'plus', 'chevron', 'help', 'arrowLeft',
+  'passkey',
+  'key',
+  'shield',
+  'copy',
+  'check',
+  'checkCircle',
+  'alert',
+  'external',
+  'refresh',
+  'plus',
+  'chevron',
+  'help',
+  'arrowLeft',
 ];
 
 function el(tag: string, className: string | null, ...kids: Array<Node | string>): HTMLElement {
@@ -227,7 +244,11 @@ function el(tag: string, className: string | null, ...kids: Array<Node | string>
   return node;
 }
 
-function primButton(variant: string, label: string, opts: { glyph?: SVGElement; busy?: boolean } = {}): HTMLButtonElement {
+function primButton(
+  variant: string,
+  label: string,
+  opts: { glyph?: SVGElement; busy?: boolean } = {},
+): HTMLButtonElement {
   const b = document.createElement('button');
   b.className = `pk-btn pk-btn--${variant}`;
   b.type = 'button';
@@ -242,7 +263,12 @@ function primButton(variant: string, label: string, opts: { glyph?: SVGElement; 
 }
 
 function primChip(address: string, label: string): HTMLElement {
-  const text = el('span', 'pk-address__text', el('span', 'pk-address__label', label), truncMiddle(address));
+  const text = el(
+    'span',
+    'pk-address__text',
+    el('span', 'pk-address__label', label),
+    truncMiddle(address),
+  );
   text.title = address;
   const copyBtn = document.createElement('button');
   copyBtn.className = 'pk-copy';
@@ -266,7 +292,11 @@ function primChip(address: string, label: string): HTMLElement {
 }
 
 function primStatus(role: 'status' | 'alert', tone: 'info' | 'error', text: string): HTMLElement {
-  const glyph = el('span', `pk-glyph pk-glyph--${tone}`, icon(tone === 'error' ? 'alert' : 'checkCircle', 20));
+  const glyph = el(
+    'span',
+    `pk-glyph pk-glyph--${tone}`,
+    icon(tone === 'error' ? 'alert' : 'checkCircle', 20),
+  );
   const msg = el('p', 'pk-message', text);
   msg.setAttribute('role', role);
   msg.setAttribute('aria-live', role === 'alert' ? 'assertive' : 'polite');
@@ -279,7 +309,8 @@ function primRow(label: string, demo: HTMLElement): HTMLElement {
 
 function primitivesEl(): HTMLElement {
   const buttons = el(
-    'div', 'pk-prims__demo',
+    'div',
+    'pk-prims__demo',
     primButton('primary', 'Create passkey', { glyph: icon('passkey', 18) }),
     primButton('secondary', 'Cancel'),
     primButton('ghost', 'Skip'),
@@ -287,7 +318,13 @@ function primitivesEl(): HTMLElement {
   );
 
   const idents = el('div', 'pk-prims__demo');
-  for (const seed of [SAMPLE_CRED.contractId, SAMPLE_ACCOUNTS[1]!.contractId, SAMPLE_ACCOUNTS[2]!.contractId, 'alice', 'bob']) {
+  for (const seed of [
+    SAMPLE_CRED.contractId,
+    SAMPLE_ACCOUNTS[1]!.contractId,
+    SAMPLE_ACCOUNTS[2]!.contractId,
+    'alice',
+    'bob',
+  ]) {
     idents.append(identicon(seed, 40));
   }
 
@@ -297,13 +334,20 @@ function primitivesEl(): HTMLElement {
   }
 
   return el(
-    'div', 'pk-prims',
+    'div',
+    'pk-prims',
     primRow('Button · primary / secondary / ghost / busy', buttons),
     primRow('Spinner', el('div', 'pk-prims__demo', el('span', 'pk-spinner'))),
     primRow('AddressChip', primChip(SAMPLE_CRED.contractId, 'Smart account')),
     primRow('Identicon · deterministic from seed', idents),
-    primRow('StatusLine · polite (role=status)', primStatus('status', 'info', 'Setting up your account…')),
-    primRow('StatusLine · error (role=alert)', primStatus('alert', 'error', 'Couldn’t reach the network.')),
+    primRow(
+      'StatusLine · polite (role=status)',
+      primStatus('status', 'info', 'Setting up your account…'),
+    ),
+    primRow(
+      'StatusLine · error (role=alert)',
+      primStatus('alert', 'error', 'Couldn’t reach the network.'),
+    ),
     primRow('Icon set · 1.75px line, currentColor, 24px grid', iconGrid),
   );
 }
@@ -316,11 +360,20 @@ function matrixEl(): HTMLElement {
 
   const colName = (c: MatrixCell): string => `${c.browser} / ${c.os}`;
   const preferred = [
-    'Chrome / desktop', 'Safari / macOS', 'Firefox / desktop', 'Edge / Windows',
-    'Chrome / Android', 'Safari / iOS', 'Firefox / Android', 'Samsung Internet / Android',
+    'Chrome / desktop',
+    'Safari / macOS',
+    'Firefox / desktop',
+    'Edge / Windows',
+    'Chrome / Android',
+    'Safari / iOS',
+    'Firefox / Android',
+    'Samsung Internet / Android',
   ];
   const present = [...new Set(cells.map(colName))];
-  const cols = [...preferred.filter((c) => present.includes(c)), ...present.filter((c) => !preferred.includes(c))];
+  const cols = [
+    ...preferred.filter((c) => present.includes(c)),
+    ...present.filter((c) => !preferred.includes(c)),
+  ];
 
   const rowKeys: string[] = [];
   const labels: Record<string, string> = {};
@@ -334,12 +387,18 @@ function matrixEl(): HTMLElement {
   const find = (feat: string, col: string): MatrixCell | undefined =>
     cells.find((c) => c.feature === feat && colName(c) === col);
   const glyph = (status?: string): [string, string] =>
-    status === 'supported' ? ['✓', 'pk-matrix__ok'] : status === 'unsupported' ? ['✕', 'pk-matrix__no'] : ['?', 'pk-matrix__unk'];
+    status === 'supported'
+      ? ['✓', 'pk-matrix__ok']
+      : status === 'unsupported'
+        ? ['✕', 'pk-matrix__no']
+        : ['?', 'pk-matrix__unk'];
 
   const headRow = el('tr', null, el('th', null, 'Feature'));
   for (const c of cols) {
     const [b, os] = c.split(' / ');
-    headRow.append(el('th', null, el('div', 'pk-matrix__b', b ?? c), el('div', 'pk-matrix__os', os ?? '')));
+    headRow.append(
+      el('th', null, el('div', 'pk-matrix__b', b ?? c), el('div', 'pk-matrix__os', os ?? '')),
+    );
   }
   const body = document.createElement('tbody');
   for (const feat of rowKeys) {
@@ -359,7 +418,8 @@ function matrixEl(): HTMLElement {
   }
   const table = el('table', 'pk-matrix__table', el('thead', null, headRow), body);
   const meta = el(
-    'div', 'pk-matrix__meta',
+    'div',
+    'pk-matrix__meta',
     `${String(cells.length)} cells · as of ${snap.builtAt} · ✓ supported · ✕ not supported · ? unknown · hover a cell for its source`,
   );
   return el('div', 'pk-matrix', table, meta);
@@ -374,19 +434,31 @@ function galleryEl(): HTMLElement {
     ['create · prompting', createView({ status: 'prompting' }, createCtx)],
     ['create · deploying', createView({ status: 'deploying' }, createCtx)],
     ['create · success', createView({ status: 'success', credential: SAMPLE_CRED }, createCtx)],
-    ['create · error', createView({ status: 'error', code: 'USER_CANCELLED', message: '' }, createCtx)],
+    [
+      'create · error',
+      createView({ status: 'error', code: 'USER_CANCELLED', message: '' }, createCtx),
+    ],
     ['sign · idle', signView({ status: 'idle' }, signCtx)],
     ['sign · prompting', signView({ status: 'prompting' }, signCtx)],
     ['sign · submitting', signView({ status: 'submitting' }, signCtx)],
-    ['sign · done', signView({ status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } }, signCtx)],
-    ['sign · error', signView({ status: 'error', code: 'CONTRACT_AUTH_FAILED', message: '' }, signCtx)],
+    [
+      'sign · done',
+      signView({ status: 'done', result: { status: 'SUCCESS', hash: SAMPLE_HASH } }, signCtx),
+    ],
+    [
+      'sign · error',
+      signView({ status: 'error', code: 'CONTRACT_AUTH_FAILED', message: '' }, signCtx),
+    ],
     ['recover · idle', recoverView({ status: 'idle' }, [], recoverCtx)],
     ['recover · discovering', recoverView({ status: 'discovering' }, [], recoverCtx)],
     [
       'recover · resolved',
       recoverView({ status: 'resolved', accounts: SAMPLE_ACCOUNTS }, SAMPLE_ACCOUNTS, recoverCtx),
     ],
-    ['recover · error', recoverView({ status: 'error', code: 'NETWORK_ERROR', message: '' }, [], recoverCtx)],
+    [
+      'recover · error',
+      recoverView({ status: 'error', code: 'NETWORK_ERROR', message: '' }, [], recoverCtx),
+    ],
   ];
   for (const [label, el] of tiles) {
     const tile = document.createElement('div');

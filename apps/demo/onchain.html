@@ -6,7 +6,10 @@
     <title>Soropass — live on testnet</title>
     <style>
       :root {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
       }
       body {
         margin: 0;
@@ -34,7 +37,10 @@
         margin: 12px 0 26px;
       }
       .oc-badge {
-        font: 600 12px ui-monospace, 'SF Mono', monospace;
+        font:
+          600 12px ui-monospace,
+          'SF Mono',
+          monospace;
         background: var(--pk-color-surface-sunken, #eee);
         border: 1px solid var(--pk-color-border, #ddd);
         border-radius: 999px;
@@ -57,7 +63,9 @@
         padding: 20px;
       }
       .oc-step__n {
-        font: 700 11px ui-monospace, monospace;
+        font:
+          700 11px ui-monospace,
+          monospace;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--pk-color-brand, #4f46e5);
@@ -79,7 +87,9 @@
       }
       .oc-acct {
         margin-top: 14px;
-        font: 12px ui-monospace, monospace;
+        font:
+          12px ui-monospace,
+          monospace;
         word-break: break-all;
         color: var(--pk-color-text-muted, #666);
       }
@@ -93,7 +103,9 @@
         margin-top: 8px;
       }
       .oc-xlink {
-        font: 600 12px ui-monospace, monospace;
+        font:
+          600 12px ui-monospace,
+          monospace;
         color: var(--pk-color-brand, #4f46e5);
         text-decoration: none;
       }
@@ -118,7 +130,10 @@
         color: #c9d1d9;
         border-radius: 12px;
         padding: 14px 16px;
-        font: 12px/1.7 ui-monospace, 'SF Mono', monospace;
+        font:
+          12px/1.7 ui-monospace,
+          'SF Mono',
+          monospace;
         max-height: 220px;
         overflow-y: auto;
       }
@@ -137,8 +152,9 @@
       <div class="oc-head">
         <h1>Create a Stellar passkey wallet — live on testnet</h1>
         <p>
-          Real WebAuthn (your Touch ID / Windows Hello), a real smart account deployed through our on-chain factory, and
-          a real <code>secp256r1 __check_auth</code> verification. Nothing is mocked.
+          Real WebAuthn (your Touch ID / Windows Hello), a real smart account deployed through our
+          on-chain factory, and a real <code>secp256r1 __check_auth</code> verification. Nothing is
+          mocked.
         </p>
       </div>
       <div class="oc-badges">
@@ -162,11 +178,13 @@
           <div class="oc-step__n">Step 2</div>
           <div class="oc-step__t">Authorize a transaction on-chain</div>
           <div class="oc-mount" id="sign"></div>
-          <button class="oc-wrongbtn" id="wrongkey">Sign with the WRONG key → expect on-chain FAILED</button>
+          <button class="oc-wrongbtn" id="wrongkey">
+            Sign with the WRONG key → expect on-chain FAILED
+          </button>
           <div class="oc-links" id="resultlinks"></div>
           <p class="oc-note">
-            The correct passkey signature passes <code>__check_auth</code>; a wrong key is rejected on-chain by
-            <code>secp256r1_verify</code>.
+            The correct passkey signature passes <code>__check_auth</code>; a wrong key is rejected
+            on-chain by <code>secp256r1_verify</code>.
           </p>
         </div>
       </div>

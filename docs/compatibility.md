@@ -22,18 +22,18 @@ its source and carries a verification tier so you can see how it was confirmed.
 
 ## Web support summary
 
-| Feature | Chrome | Safari | Firefox | Edge | Samsung |
-| --- | --- | --- | --- | --- | --- |
-| `PublicKeyCredential` (WebAuthn) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `navigator.credentials.create()` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `navigator.credentials.get()` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `isUVPAA()` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ES256 (COSE −7) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Conditional UI (autofill) | ✅ | ✅ 16+ | ✅ 119+ | ✅ | ✅ |
-| `getClientCapabilities()` | ✅ 133+ | ✅ 17.4+ | ✅ 135+ | ✅ 133+ | ✅ 29+ |
-| Hybrid / cross-device | ✅ | ✅ | ❔ | ✅ | ✅ |
-| Related Origin Requests | ✅ | ❔ | ❌ | ✅ | ✅ |
-| `signalAllAcceptedCredentials()` | ✅ 132+ | ✅ 26+ | ❌ | ✅ 132+ | ✅ |
+| Feature                          | Chrome  | Safari   | Firefox | Edge    | Samsung |
+| -------------------------------- | ------- | -------- | ------- | ------- | ------- |
+| `PublicKeyCredential` (WebAuthn) | ✅      | ✅       | ✅      | ✅      | ✅      |
+| `navigator.credentials.create()` | ✅      | ✅       | ✅      | ✅      | ✅      |
+| `navigator.credentials.get()`    | ✅      | ✅       | ✅      | ✅      | ✅      |
+| `isUVPAA()`                      | ✅      | ✅       | ✅      | ✅      | ✅      |
+| ES256 (COSE −7)                  | ✅      | ✅       | ✅      | ✅      | ✅      |
+| Conditional UI (autofill)        | ✅      | ✅ 16+   | ✅ 119+ | ✅      | ✅      |
+| `getClientCapabilities()`        | ✅ 133+ | ✅ 17.4+ | ✅ 135+ | ✅ 133+ | ✅ 29+  |
+| Hybrid / cross-device            | ✅      | ✅       | ❔      | ✅      | ✅      |
+| Related Origin Requests          | ✅      | ❔       | ❌      | ✅      | ✅      |
+| `signalAllAcceptedCredentials()` | ✅ 132+ | ✅ 26+   | ❌      | ✅ 132+ | ✅      |
 
 The full per-OS dataset (88 cells, with `since` versions, sources and tiers) lives
 in `apps/matrix/data/matrix.<date>.json` and is re-runnable from CI.
@@ -186,9 +186,9 @@ Source: [passkeys.dev — bootstrapping](https://passkeys.dev/docs/use-cases/boo
 
 Real-hardware tests of the reference demo; each entry records only what was confirmed.
 
-| Date | Device | Browser | Authenticator | Outcome | Confirmed |
-| --- | --- | --- | --- | --- | --- |
-| 2026-06-14 | MacBook (macOS) | Safari, Chrome | Touch ID | ✅ works | Passkey created, smart account deployed, and a passkey-authorized payment signed end-to-end on testnet. |
+| Date       | Device          | Browser        | Authenticator | Outcome  | Confirmed                                                                                               |
+| ---------- | --------------- | -------------- | ------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| 2026-06-14 | MacBook (macOS) | Safari, Chrome | Touch ID      | ✅ works | Passkey created, smart account deployed, and a passkey-authorized payment signed end-to-end on testnet. |
 
 Additional devices (iPhone/iOS, Android/Chrome, Windows/Edge) are scheduled in the Tier-2
 manual protocol below and will be added with their date and result as they are run.
@@ -197,7 +197,7 @@ manual protocol below and will be added with their date and result as they are r
 
 - **Tier-1 (automated)** — **Chromium** via the CDP virtual-authenticator harness, on every
   release and a weekly cron; the latest CI run verified 7/8 grid cells (`transport × residentKey ×
-  UV`) via `p256.verify`.
+UV`) via `p256.verify`.
 - **Tier-2 (manual / real-device)** — **Edge, Firefox and Safari/WebKit**. Edge is wired in the
   harness but not yet captured in CI; Firefox/Safari automation is feasible (geckodriver ≥ 0.35,
   safaridriver) but not wired. iOS Safari and Android stay real-device.

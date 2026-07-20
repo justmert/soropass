@@ -34,13 +34,13 @@ Every step runs against live testnet and is reproducible from
 real deployed `__check_auth` / `secp256r1_verify`, and a wrong key is rejected
 on-chain:
 
-| Step | Kind | On-chain proof (testnet) |
-| --- | --- | --- |
-| Passkey-authorized payment | tx | [`58cd5d6307acc61d830bdb8b3a7299761bcf6435ddf0065f652e635457f5cc60`](https://stellar.expert/explorer/testnet/tx/58cd5d6307acc61d830bdb8b3a7299761bcf6435ddf0065f652e635457f5cc60) |
-| Wrong key rejected on-chain | tx | [`2a89cc6f38b2af4c59fbea37ac77e426a0092060a6be2842ec2cb6b0b9645a61`](https://stellar.expert/explorer/testnet/tx/2a89cc6f38b2af4c59fbea37ac77e426a0092060a6be2842ec2cb6b0b9645a61) |
-| Create, deploy, then `__check_auth` | tx | [`95cc2693764384f0b1b32bd5b0510573decc19b749a812a6292f9c3b272a55f6`](https://stellar.expert/explorer/testnet/tx/95cc2693764384f0b1b32bd5b0510573decc19b749a812a6292f9c3b272a55f6) |
-| Smart-account contract | contract | [`CBDOCYVDUBEGLZKT6OFMXBFLY5MTVHHHA6X7ARWHHLLTPFT5FTE3DFQ7`](https://stellar.expert/explorer/testnet/contract/CBDOCYVDUBEGLZKT6OFMXBFLY5MTVHHHA6X7ARWHHLLTPFT5FTE3DFQ7) |
-| AccountFactory | contract | [`CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM`](https://stellar.expert/explorer/testnet/contract/CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM) |
+| Step                                | Kind     | On-chain proof (testnet)                                                                                                                                                          |
+| ----------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Passkey-authorized payment          | tx       | [`58cd5d6307acc61d830bdb8b3a7299761bcf6435ddf0065f652e635457f5cc60`](https://stellar.expert/explorer/testnet/tx/58cd5d6307acc61d830bdb8b3a7299761bcf6435ddf0065f652e635457f5cc60) |
+| Wrong key rejected on-chain         | tx       | [`2a89cc6f38b2af4c59fbea37ac77e426a0092060a6be2842ec2cb6b0b9645a61`](https://stellar.expert/explorer/testnet/tx/2a89cc6f38b2af4c59fbea37ac77e426a0092060a6be2842ec2cb6b0b9645a61) |
+| Create, deploy, then `__check_auth` | tx       | [`95cc2693764384f0b1b32bd5b0510573decc19b749a812a6292f9c3b272a55f6`](https://stellar.expert/explorer/testnet/tx/95cc2693764384f0b1b32bd5b0510573decc19b749a812a6292f9c3b272a55f6) |
+| Smart-account contract              | contract | [`CBDOCYVDUBEGLZKT6OFMXBFLY5MTVHHHA6X7ARWHHLLTPFT5FTE3DFQ7`](https://stellar.expert/explorer/testnet/contract/CBDOCYVDUBEGLZKT6OFMXBFLY5MTVHHHA6X7ARWHHLLTPFT5FTE3DFQ7)           |
+| AccountFactory                      | contract | [`CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM`](https://stellar.expert/explorer/testnet/contract/CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM)           |
 
 ## Install
 
@@ -54,42 +54,37 @@ Runtime dependencies are only `@noble/curves` and `@noble/hashes`.
 ## Quick start
 
 ```ts
-import {
-  createPasskey,
-  browserPasskeySigner,
-  signTransaction,
-  connect,
-} from '@soropass/core'
+import { createPasskey, browserPasskeySigner, signTransaction, connect } from '@soropass/core';
 
 // 1. Create a passkey and deploy its smart account (ES256 only).
-const { contractId, credentialId } = await createPasskey({ rpId: 'wallet.example' })
+const { contractId, credentialId } = await createPasskey({ rpId: 'wallet.example' });
 
 // 2. Sign a Soroban transaction with the passkey (low-S enforced automatically).
-const signer = browserPasskeySigner({ rpId: 'wallet.example', credentialId })
-const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign: signer })
+const signer = browserPasskeySigner({ rpId: 'wallet.example', credentialId });
+const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign: signer });
 
 // 3. Reconnect later from the passkey alone, no stored address needed.
-const account = await connect({ rpId: 'wallet.example' })
+const account = await connect({ rpId: 'wallet.example' });
 ```
 
 Drop-in UI is optional and ships without a framework dependency:
 
 ```ts
-import { mountCreateScreen } from '@soropass/ui/styled' // themeable via tokens.css
+import { mountCreateScreen } from '@soropass/ui/styled'; // themeable via tokens.css
 ```
 
 See the [docs](https://docs.soropass.dev/docs) for the full API and options.
 
 ## Packages
 
-| Package | What it does |
-| --- | --- |
-| `@soropass/core` | Passkey ceremonies, ES256 + low-S crypto, Soroban auth assembly, and pluggable adapters. |
-| `@soropass/ui` | Headless create / sign / recover logic, plus an optional token-themeable styled layer. |
+| Package                        | What it does                                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `@soropass/core`               | Passkey ceremonies, ES256 + low-S crypto, Soroban auth assembly, and pluggable adapters.                    |
+| `@soropass/ui`                 | Headless create / sign / recover logic, plus an optional token-themeable styled layer.                      |
 | `@soropass/wallets-kit-module` | A `PasskeyModule` for [@creit.tech/stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit). |
-| `contracts/` | The `webauthn-account` and `account-factory` Soroban contracts (Rust). |
-| `apps/landing` | The soropass.dev site and its live testnet passkey demos. |
-| `apps/matrix` | The compatibility dataset and the virtual-authenticator CI. |
+| `contracts/`                   | The `webauthn-account` and `account-factory` Soroban contracts (Rust).                                      |
+| `apps/landing`                 | The soropass.dev site and its live testnet passkey demos.                                                   |
+| `apps/matrix`                  | The compatibility dataset and the virtual-authenticator CI.                                                 |
 
 ## How a passkey signs a transaction
 

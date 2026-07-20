@@ -127,7 +127,10 @@ export interface AddDeviceScreenOptions {
 }
 
 /** Mount the styled Add-device screen, bound to a headless `AddDeviceFlow`. */
-export function mountAddDeviceScreen(root: HTMLElement, opts: AddDeviceScreenOptions): ScreenHandle {
+export function mountAddDeviceScreen(
+  root: HTMLElement,
+  opts: AddDeviceScreenOptions,
+): ScreenHandle {
   const copy: AddDeviceCopy = { ...DEFAULT_ADDDEVICE_COPY, ...opts.copy };
   const ctx: AddDeviceCtx = {
     copy,

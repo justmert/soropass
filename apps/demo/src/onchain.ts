@@ -83,7 +83,11 @@ async function doSign(wrong: boolean): Promise<void> {
     const xdr = await buildSignedProtected(wallet, wrong, log);
     renderSign({ status: 'submitting' });
     const res = await submitTx(xdr, log);
-    explorerLink(el('resultlinks'), `tx/${res.hash}`, `${res.status === 'SUCCESS' ? '✓' : '✕'} ${res.status} tx ↗`);
+    explorerLink(
+      el('resultlinks'),
+      `tx/${res.hash}`,
+      `${res.status === 'SUCCESS' ? '✓' : '✕'} ${res.status} tx ↗`,
+    );
     if (res.status === 'SUCCESS') {
       renderSign({ status: 'done', result: { status: 'SUCCESS', hash: res.hash } });
     } else {

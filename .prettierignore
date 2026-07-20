@@ -15,3 +15,9 @@ apps/matrix/site/content/docs/api
 packages/ui/styled/design
 packages/ui/styled/tokens.css
 packages/ui/styled/passkey.css
+# Generated output — never format-check machine-generated files
+apps/docs-fuma/.react-router
+apps/docs-fuma/.source
+apps/docs-fuma/public/demo
+# Orphaned/experimental matrix explorer build output (untracked)
+apps/site

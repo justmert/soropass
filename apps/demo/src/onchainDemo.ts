@@ -104,7 +104,12 @@ function softwareSigner(): WebAuthnSigner {
     );
     const payload = sha256(concat(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, priv).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: new Uint8Array(16).fill(2) };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: new Uint8Array(16).fill(2),
+    };
   };
 }
 
@@ -171,7 +176,9 @@ export async function submitTx(
   log: Log,
 ): Promise<{ status: 'SUCCESS' | 'PENDING' | 'FAILED'; hash: string }> {
   log('submitting to testnet…');
-  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(signedXdr);
+  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(
+    signedXdr,
+  );
   log(`on-chain __check_auth → ${res.status} (tx ${res.hash.slice(0, 10)}…)`);
   return { status: res.status, hash: res.hash };
 }
