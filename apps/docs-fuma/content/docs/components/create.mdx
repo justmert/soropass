@@ -11,7 +11,8 @@ A drop-in screen that creates a brand-new Stellar smart-account wallet from a pa
 Create wraps the first of the three passkey moments. The button press _is_ the WebAuthn user gesture, so the OS biometric sheet opens straight from `onCreate` — then the smart account deploys on-chain while the screen shows calm progress. Everything renders from the shared `tokens.css`: restyle by overriding tokens, never by editing the component.
 
 <Callout type="info">
-  **Logic stays headless.** This is the visual + interaction layer. You pass it a `flow` object (created / deployed / error events) from the SDK or the kit; it never touches the network itself.
+  **Logic stays headless.** This is the visual + interaction layer. You pass it a `flow` object
+  (created / deployed / error events) from the SDK or the kit; it never touches the network itself.
 </Callout>
 
 ## Use cases
@@ -42,10 +43,11 @@ import { mountCreateScreen } from '@soropass/ui/styled';
 import '@soropass/ui/styled.css';
 
 const handle = mountCreateScreen(root, {
-  flow,
-  onContinue(credential) { /* getAddress() */ },
+flow,
+onContinue(credential) {/* getAddress() */},
 });
-```
+
+````
   </Tab>
   <Tab value="Via Stellar Wallets Kit">
 ```ts
@@ -53,28 +55,17 @@ const passkey = new PasskeyModule({ rpId, rpName, networkPassphrase, indexer, de
 StellarWalletsKit.init({ network: Networks.TESTNET, modules: [passkey] });
 await StellarWalletsKit.authModal();
 const addr = await StellarWalletsKit.getAddress();
-```
+````
+
   </Tab>
 </Tabs>
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn']}>
-  <Tab value="pnpm">
-```bash
-pnpm add @soropass/ui @soropass/core
-```
-  </Tab>
-  <Tab value="npm">
-```bash
-npm i @soropass/ui @soropass/core
-```
-  </Tab>
-  <Tab value="yarn">
-```bash
-yarn add @soropass/ui @soropass/core
-```
-  </Tab>
+  <Tab value="pnpm">```bash pnpm add @soropass/ui @soropass/core ```</Tab>
+  <Tab value="npm">```bash npm i @soropass/ui @soropass/core ```</Tab>
+  <Tab value="yarn">```bash yarn add @soropass/ui @soropass/core ```</Tab>
 </Tabs>
 
 Import the stylesheet once at your app root:
@@ -84,7 +75,8 @@ import '@soropass/ui/styled.css';
 ```
 
 <Callout type="tip">
-  The package depends only on `@soropass/core`. `@stellar/stellar-sdk` is a peer dependency, never bundled.
+  The package depends only on `@soropass/core`. `@stellar/stellar-sdk` is a peer dependency, never
+  bundled.
 </Callout>
 
 ## Usage
@@ -114,7 +106,7 @@ const handle = mountCreateScreen(document.querySelector('#auth'), {
   flow,
   copy: { idleTitle: 'Create your Acme wallet' },
   onContinue(credential) {
-    router.push('/home');          // account is live on-chain
+    router.push('/home'); // account is live on-chain
     handle.unmount();
   },
 });
@@ -127,38 +119,40 @@ Five states. The error state cycles the frozen 10-code KitError taxonomy through
 <Preview screen="create" />
 
 <Callout type="info">
-  **Two busy looks.** `prompting` shows a calm opaque scrim + pulsing glyph (no spinner) while the OS sheet is up; `deploying` shows a spinner + progress because the SDK is working. `success` uses the result layout; `error` the single error view.
+  **Two busy looks.** `prompting` shows a calm opaque scrim + pulsing glyph (no spinner) while the
+  OS sheet is up; `deploying` shows a spinner + progress because the SDK is working. `success` uses
+  the result layout; `error` the single error view.
 </Callout>
 
 ### Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `flow` **REQ** | `CreateFlow` | — | Headless flow controller from the SDK / kit. Drives state transitions. |
-| `copy` | `Partial<CreateCopy>` | `DEFAULT_CREATE_COPY` | Override any UI string for i18n / brand voice. |
-| `input` | `{ userName? }` | `undefined` | Optional hint passed to the passkey ceremony. |
-| `onContinue` | `(c: PasskeyCredential) => void` | `undefined` | Fires on the success screen's Continue button. |
-| `onHelp` | `() => void` | `undefined` | Fires on the "What's a passkey?" link. |
+| Prop           | Type                             | Default               | Description                                                            |
+| -------------- | -------------------------------- | --------------------- | ---------------------------------------------------------------------- |
+| `flow` **REQ** | `CreateFlow`                     | —                     | Headless flow controller from the SDK / kit. Drives state transitions. |
+| `copy`         | `Partial<CreateCopy>`            | `DEFAULT_CREATE_COPY` | Override any UI string for i18n / brand voice.                         |
+| `input`        | `{ userName? }`                  | `undefined`           | Optional hint passed to the passkey ceremony.                          |
+| `onContinue`   | `(c: PasskeyCredential) => void` | `undefined`           | Fires on the success screen's Continue button.                         |
+| `onHelp`       | `() => void`                     | `undefined`           | Fires on the "What's a passkey?" link.                                 |
 
 ### Events
 
-| Callback | When it fires | Payload |
-| --- | --- | --- |
+| Callback     | When it fires                      | Payload             |
+| ------------ | ---------------------------------- | ------------------- |
 | `onContinue` | User confirms on the success state | `PasskeyCredential` |
-| `onHelp` | User taps the help link on idle | `void` |
+| `onHelp`     | User taps the help link on idle    | `void`              |
 
 ### Copy (i18n)
 
 Every key of `CreateCopy` with its default. Pass a partial `copy` to override.
 
-| Key | Default string |
-| --- | --- |
-| `idleTitle` | Create your wallet |
-| `idleSubtitle` | A passkey — your Face ID, fingerprint, or security key — replaces your seed phrase. |
-| `createLabel` | Create passkey |
-| `promptingTitle` | Waiting for your passkey |
-| `deployingTitle` | Setting up your account… |
-| `successTitle` | Wallet ready |
+| Key              | Default string                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `idleTitle`      | Create your wallet                                                                  |
+| `idleSubtitle`   | A passkey — your Face ID, fingerprint, or security key — replaces your seed phrase. |
+| `createLabel`    | Create passkey                                                                      |
+| `promptingTitle` | Waiting for your passkey                                                            |
+| `deployingTitle` | Setting up your account…                                                            |
+| `successTitle`   | Wallet ready                                                                        |
 
 ## Accessibility
 
@@ -171,12 +165,12 @@ Every key of `CreateCopy` with its default. Pass a partial `copy` to override.
 
 The token groups this screen reads. A CI token gate guarantees the CSS references only `var()` tokens.
 
-| Area | Tokens |
-| --- | --- |
-| idle | `--pk-color-brand / -soft / -on-brand`, `--pk-radius-lg/md`, `--pk-space-*` |
-| waiting (OS sheet) | `--pk-scrim`, `--pk-busy-opacity`, `--pk-z-toast`, `--pk-pulse-duration` |
-| deploying | `--pk-spinner-*`, `--pk-progress-*` |
-| error | `--pk-color-error / -soft` |
+| Area               | Tokens                                                                      |
+| ------------------ | --------------------------------------------------------------------------- |
+| idle               | `--pk-color-brand / -soft / -on-brand`, `--pk-radius-lg/md`, `--pk-space-*` |
+| waiting (OS sheet) | `--pk-scrim`, `--pk-busy-opacity`, `--pk-z-toast`, `--pk-pulse-duration`    |
+| deploying          | `--pk-spinner-*`, `--pk-progress-*`                                         |
+| error              | `--pk-color-error / -soft`                                                  |
 
 ## In Stellar Wallets Kit
 
@@ -192,7 +186,8 @@ const address = await StellarWalletsKit.getAddress(); // C-address → AddressCh
 ```
 
 <Callout type="tip">
-  `PasskeyModule.isAvailable()` resolves `isUVPAA` within a 500ms budget to show or hide passkey in the picker.
+  `PasskeyModule.isAvailable()` resolves `isUVPAA` within a 500ms budget to show or hide passkey in
+  the picker.
 </Callout>
 
 <Cards>

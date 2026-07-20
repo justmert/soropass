@@ -23,38 +23,39 @@ The styled layer ships a small set of primitives. Each is driven entirely by des
 
 Thin line (1.75px stroke), `currentColor`, 24px grid. Chevron / arrowLeft are defined-but-unused, available for nav.
 
-| Icon | Name |
-| --- | --- |
-| Passkey | `passkey` |
-| Key | `key` |
-| Shield | `shield` |
-| Copy | `copy` |
-| Check | `check` |
+| Icon         | Name          |
+| ------------ | ------------- |
+| Passkey      | `passkey`     |
+| Key          | `key`         |
+| Shield       | `shield`      |
+| Copy         | `copy`        |
+| Check        | `check`       |
 | Check circle | `checkcircle` |
-| Alert | `alert` |
-| External | `external` |
-| Refresh | `refresh` |
-| Plus | `plus` |
-| Chevron | `chevron` |
-| Help | `help` |
-| Arrow left | `arrowleft` |
+| Alert        | `alert`       |
+| External     | `external`    |
+| Refresh      | `refresh`     |
+| Plus         | `plus`        |
+| Chevron      | `chevron`     |
+| Help         | `help`        |
+| Arrow left   | `arrowleft`   |
 
 ## Signatures
 
-| Primitive | Signature / notes |
-| --- | --- |
-| Card | max-width 384px · `.is-waiting` · dir |
-| Button | variant: primary \| secondary \| ghost · busy · 48px min |
-| AddressChip | `{ address, label, showIdenticon }` · copy-with-feedback |
-| Identicon | `{ seed, size }` · deterministic 5×5 symmetric |
-| TxSummary | host-supplied `{ amountValue, amountFiat?, destination, action }` |
-| RecoverList | listbox · roving focus · Up/Down/Home/End |
-| WaitOverlay | calm OS-sheet look + `.pk-ossheet` peek bar · NO spinner |
-| WorkBlock | spinner + indeterminate progress |
-| errorView | single layout, copy by KitError code |
+| Primitive   | Signature / notes                                                 |
+| ----------- | ----------------------------------------------------------------- |
+| Card        | max-width 384px · `.is-waiting` · dir                             |
+| Button      | variant: primary \| secondary \| ghost · busy · 48px min          |
+| AddressChip | `{ address, label, showIdenticon }` · copy-with-feedback          |
+| Identicon   | `{ seed, size }` · deterministic 5×5 symmetric                    |
+| TxSummary   | host-supplied `{ amountValue, amountFiat?, destination, action }` |
+| RecoverList | listbox · roving focus · Up/Down/Home/End                         |
+| WaitOverlay | calm OS-sheet look + `.pk-ossheet` peek bar · NO spinner          |
+| WorkBlock   | spinner + indeterminate progress                                  |
+| errorView   | single layout, copy by KitError code                              |
 
 <Callout type="info">
-Promote-to-standalone candidates (AccountChip, Skeleton, Empty / Success / Error) carry **ROADMAP** badges.
+  Promote-to-standalone candidates (AccountChip, Skeleton, Empty / Success / Error) carry
+  **ROADMAP** badges.
 </Callout>
 
 <Cards>

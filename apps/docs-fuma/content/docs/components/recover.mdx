@@ -11,7 +11,7 @@ Return on a new device and find the accounts a passkey controls — no seed phra
 Six states. The resolved list is a real `role="listbox"` with roving focus. This is **discover-only** — to enroll a new credential, see [Add backup passkey](/docs/components/connect).
 
 <Callout type="info">
-`discovering` shows the calm OS-sheet wait. On `resolved`, focus lands on the first account row.
+  `discovering` shows the calm OS-sheet wait. On `resolved`, focus lands on the first account row.
 </Callout>
 
 ## Use cases
@@ -70,7 +70,9 @@ const handle = mountRecoverScreen(document.querySelector('#signin'), {
     session.use(account.address);
     handle.unmount();
   },
-  onCreateNew() { router.push('/create'); },
+  onCreateNew() {
+    router.push('/create');
+  },
 });
 ```
 
@@ -81,38 +83,39 @@ The screen exposes six states: `idle`, `discovering`, `resolved`, `selected`, `n
 <Preview screen="recover" />
 
 <Callout type="info">
-**none** is the empty state — "No accounts found" + a "Create a new passkey instead" call-to-action.
+  **none** is the empty state — "No accounts found" + a "Create a new passkey instead"
+  call-to-action.
 </Callout>
 
 ### Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| flow `REQ` | `RecoverFlow` | — | Headless discovery controller. |
-| copy | `Partial<RecoverCopy>` | `DEFAULT_RECOVER_COPY` | i18n / brand voice. |
-| accountMeta | `(a, i) => string` | `undefined` | Secondary line per row. |
-| onContinue | `(a: Account) => void` | `undefined` | Selected account confirmed. |
-| onCreateNew | `() => void` | `undefined` | Empty-state CTA. |
+| Prop        | Type                   | Default                | Description                    |
+| ----------- | ---------------------- | ---------------------- | ------------------------------ |
+| flow `REQ`  | `RecoverFlow`          | —                      | Headless discovery controller. |
+| copy        | `Partial<RecoverCopy>` | `DEFAULT_RECOVER_COPY` | i18n / brand voice.            |
+| accountMeta | `(a, i) => string`     | `undefined`            | Secondary line per row.        |
+| onContinue  | `(a: Account) => void` | `undefined`            | Selected account confirmed.    |
+| onCreateNew | `() => void`           | `undefined`            | Empty-state CTA.               |
 
 ### Copy (i18n)
 
-| Key | Default string |
-| --- | --- |
-| idleTitle | Find your account |
-| recoverLabel | Recover |
+| Key              | Default string                       |
+| ---------------- | ------------------------------------ |
+| idleTitle        | Find your account                    |
+| recoverLabel     | Recover                              |
 | manyTitle(count) | \{count} accounts found — a function |
-| noneTitle | No accounts found |
+| noneTitle        | No accounts found                    |
 
 ## Accessibility
 
 The resolved list is an APG-pattern listbox.
 
-| Key | Action |
-| --- | --- |
-| ↑ / ↓ | Move active option (wraps) |
-| Home / End | First / last option |
-| Enter / Space | Choose the active option |
-| Tab | Roving tabindex — only the active row is in the tab order |
+| Key           | Action                                                    |
+| ------------- | --------------------------------------------------------- |
+| ↑ / ↓         | Move active option (wraps)                                |
+| Home / End    | First / last option                                       |
+| Enter / Space | Choose the active option                                  |
+| Tab           | Roving tabindex — only the active row is in the tab order |
 
 - aria-selected + check on the chosen row; visible focus ring on the active row.
 - On resolved, focus lands on the first account; on error, the status paragraph.
@@ -120,12 +123,12 @@ The resolved list is an APG-pattern listbox.
 
 ## Theming hooks
 
-| Area | Tokens |
-| --- | --- |
-| listbox row | `--pk-color-surface, --pk-color-border, --pk-radius-md` |
-| selected row | `--pk-color-brand, --pk-color-brand-soft` |
-| focus ring | `--pk-focus-color / -width / -offset / -halo` |
-| discovering | `--pk-scrim, --pk-busy-opacity` |
+| Area         | Tokens                                                  |
+| ------------ | ------------------------------------------------------- |
+| listbox row  | `--pk-color-surface, --pk-color-border, --pk-radius-md` |
+| selected row | `--pk-color-brand, --pk-color-brand-soft`               |
+| focus ring   | `--pk-focus-color / -width / -offset / -halo`           |
+| discovering  | `--pk-scrim, --pk-busy-opacity`                         |
 
 ## In Stellar Wallets Kit
 

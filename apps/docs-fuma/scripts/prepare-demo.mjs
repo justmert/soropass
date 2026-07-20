@@ -11,7 +11,10 @@ const dest = fileURLToPath(new URL('../public/demo', import.meta.url));
 
 // The demo imports the workspace libraries (@soropass/core, @soropass/ui), which
 // are not prebuilt on CI — build them first so their dist resolves.
-execSync('pnpm --filter @soropass/core --filter @soropass/ui build', { cwd: demoDir, stdio: 'inherit' });
+execSync('pnpm --filter @soropass/core --filter @soropass/ui build', {
+  cwd: demoDir,
+  stdio: 'inherit',
+});
 execSync('pnpm exec vite build --base=/demo/', { cwd: demoDir, stdio: 'inherit' });
 rmSync(dest, { recursive: true, force: true });
 cpSync(join(demoDir, 'dist'), dest, { recursive: true });

@@ -8,13 +8,16 @@ Turn a Soroban transaction or a single authorization entry into a passkey-signed
 
 <Cards>
   <Card title="Address-credential auth" href="#signtransaction">
-    Signs every address-credential Soroban auth entry carried by the InvokeHostFunction operations of a transaction.
+    Signs every address-credential Soroban auth entry carried by the InvokeHostFunction operations
+    of a transaction.
   </Card>
   <Card title="Always low-S" href="#low-s-normalization">
-    Every assertion is low-S-normalized downstream — Soroban's secp256r1_verify does not enforce it, so the SDK must.
+    Every assertion is low-S-normalized downstream — Soroban's secp256r1_verify does not enforce it,
+    so the SDK must.
   </Card>
   <Card title="Pluggable signer" href="#browserpasskeysigner">
-    browserPasskeySigner adapts navigator.credentials.get; inject a custom WebAuthnClient for tests or non-browser hosts.
+    browserPasskeySigner adapts navigator.credentials.get; inject a custom WebAuthnClient for tests
+    or non-browser hosts.
   </Card>
 </Cards>
 
@@ -26,9 +29,9 @@ Sign every address-credential Soroban auth entry carried by the `InvokeHostFunct
 signTransaction(txXdr: string, options: SorobanSignOptions): Promise<string>
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
-| `txXdr` | `string` | Base64 XDR transaction envelope to sign. |
+| Param     | Type                 | Description                                       |
+| --------- | -------------------- | ------------------------------------------------- |
+| `txXdr`   | `string`             | Base64 XDR transaction envelope to sign.          |
 | `options` | `SorobanSignOptions` | Network passphrase + WebAuthn signer (see below). |
 
 **Returns** `Promise<string>` — the signed envelope as base64 XDR.
@@ -48,10 +51,10 @@ Obtain a WebAuthn assertion, low-S-normalize, and assemble the contract signatur
 signAuthEntry(entryXdr: string, options: SorobanSignOptions): Promise<string>
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
-| `entryXdr` | `string` | Base64 XDR of a single SorobanAuthorizationEntry. |
-| `options` | `SorobanSignOptions` | Network passphrase + WebAuthn signer (see below). |
+| Param      | Type                 | Description                                       |
+| ---------- | -------------------- | ------------------------------------------------- |
+| `entryXdr` | `string`             | Base64 XDR of a single SorobanAuthorizationEntry. |
+| `options`  | `SorobanSignOptions` | Network passphrase + WebAuthn signer (see below). |
 
 **Returns** `Promise<string>` — the signed entry as base64 XDR.
 
@@ -66,10 +69,10 @@ const signedEntry = await signAuthEntry(entryXdr, { networkPassphrase, sign });
 
 The options object shared by `signTransaction` and `signAuthEntry`.
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `networkPassphrase` | `string` | Network passphrase bound into the auth challenge (networkId = SHA256(networkPassphrase)). |
-| `sign` | `WebAuthnSigner` | The signer that produces the assertion — usually browserPasskeySigner(...). |
+| Field               | Type             | Description                                                                               |
+| ------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
+| `networkPassphrase` | `string`         | Network passphrase bound into the auth challenge (networkId = SHA256(networkPassphrase)). |
+| `sign`              | `WebAuthnSigner` | The signer that produces the assertion — usually browserPasskeySigner(...).               |
 
 ## browserPasskeySigner
 
@@ -83,15 +86,16 @@ browserPasskeySigner(options: BrowserPasskeySignerOptions): WebAuthnSigner
 
 ### BrowserPasskeySignerOptions
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `rpId` | `string` | Relying Party ID (registrable domain). |
-| `allowCredentials?` | `string[]` | base64url credential ids; omit for a discoverable prompt. |
-| `userVerification?` | `'discouraged' \| 'preferred' \| 'required'` | WebAuthn user-verification requirement. |
-| `webauthn?` | `WebAuthnClient` | Inject a custom client (tests / non-browser). |
+| Field               | Type                                         | Description                                               |
+| ------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| `rpId`              | `string`                                     | Relying Party ID (registrable domain).                    |
+| `allowCredentials?` | `string[]`                                   | base64url credential ids; omit for a discoverable prompt. |
+| `userVerification?` | `'discouraged' \| 'preferred' \| 'required'` | WebAuthn user-verification requirement.                   |
+| `webauthn?`         | `WebAuthnClient`                             | Inject a custom client (tests / non-browser).             |
 
 <Callout type="tip">
-Omit `allowCredentials` to drive a discoverable (resident-key) prompt where the authenticator surfaces the credential itself.
+  Omit `allowCredentials` to drive a discoverable (resident-key) prompt where the authenticator
+  surfaces the credential itself.
 </Callout>
 
 ```ts title="signer.ts"
@@ -111,7 +115,8 @@ const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign });
 Invariant #2. Roughly 50% of Apple Touch ID / Face ID assertions come back high-S, and Soroban's `secp256r1_verify` does **not** enforce low-S — so the SDK must emit low-S before any contract sees the signature.
 
 <Callout type="warn">
-A high-S signature is malleable: the same message has two valid encodings. Always normalize to canonical low-S (S ≤ n/2) client-side.
+  A high-S signature is malleable: the same message has two valid encodings. Always normalize to
+  canonical low-S (S ≤ n/2) client-side.
 </Callout>
 
 ### isLowS
@@ -193,7 +198,8 @@ applyAssertionToEntry(entry, assertion): SorobanAuthorizationEntry
 ```
 
 <Callout type="warn">
-The `signature` passed to `applyAssertionToEntry` must already be the 64-byte low-S compact form. Use `derToCompactLowS` first.
+  The `signature` passed to `applyAssertionToEntry` must already be the 64-byte low-S compact form.
+  Use `derToCompactLowS` first.
 </Callout>
 
 ```ts title="soroban-auth.ts"
@@ -223,7 +229,8 @@ const signed = applyAssertionToEntry(entry, {
 ## Production note
 
 <Callout type="warn">
-`simulateTransaction` does not run `secp256r1_verify`, so it under-budgets `__check_auth`. Raise the instruction budget + resource fee before submit, or use a managed submitter.
+  `simulateTransaction` does not run `secp256r1_verify`, so it under-budgets `__check_auth`. Raise
+  the instruction budget + resource fee before submit, or use a managed submitter.
 </Callout>
 
 For the matching error codes raised by these functions — including `INVALID_SIGNATURE_DER` and challenge/origin mismatches — see [the KitError taxonomy](/docs/sdk/errors).

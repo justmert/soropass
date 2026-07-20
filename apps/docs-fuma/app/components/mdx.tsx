@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { MDXComponents } from 'mdx/types';
 import { Preview } from './preview';
+import { CompatibilityMatrix } from './compatibility-matrix';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -29,6 +30,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Step,
     Steps,
     Preview,
+    CompatibilityMatrix,
     // icons usable inside MDX, e.g. <Card icon={<Boxes />} ... />
     Rocket,
     Boxes,

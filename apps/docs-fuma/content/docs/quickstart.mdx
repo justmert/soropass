@@ -13,7 +13,8 @@ One runnable path from zero to a working passkey wallet: **create** a smart acco
     A passkey registers and deploys a Stellar smart-account wallet — one Face ID / Touch ID prompt.
   </Card>
   <Card title="2 · Sign" href="/docs/sdk/sign">
-    Approve a transaction; the assertion is DER → raw, low-S normalized, then assembled into Soroban auth.
+    Approve a transaction; the assertion is DER → raw, low-S normalized, then assembled into Soroban
+    auth.
   </Card>
   <Card title="3 · Recover" href="/docs/sdk/recover">
     On a fresh device, a discoverable prompt + the indexer find every account the passkey controls.
@@ -27,16 +28,8 @@ One runnable path from zero to a working passkey wallet: **create** a smart acco
 The SDK is the only required dependency:
 
 <Tabs items={['pnpm', 'npm']}>
-  <Tab value="pnpm">
-```bash
-pnpm add @soropass/core
-```
-  </Tab>
-  <Tab value="npm">
-```bash
-npm i @soropass/core
-```
-  </Tab>
+  <Tab value="pnpm">```bash pnpm add @soropass/core ```</Tab>
+  <Tab value="npm">```bash npm i @soropass/core ```</Tab>
 </Tabs>
 
 To go through Stellar Wallets Kit (Path B), add the kit and the module:
@@ -46,7 +39,8 @@ pnpm add @creit.tech/stellar-wallets-kit @soropass/wallets-kit-module
 ```
 
 <Callout type="tip">
-`@stellar/stellar-sdk` is a **peer dependency** — it's never bundled into the SDK output. Install it alongside if your app doesn't already depend on it.
+  `@stellar/stellar-sdk` is a **peer dependency** — it's never bundled into the SDK output. Install
+  it alongside if your app doesn't already depend on it.
 </Callout>
 
 ## Path A — headless / direct
@@ -62,13 +56,14 @@ import { createPasskeyKit } from '@soropass/core/testing';
 const kit = createPasskeyKit({ mode: 'mock', rpId: 'localhost' });
 
 const account = await kit.createPasskey({ userName: 'alice' });
-console.log(account.contractId);            // C-address
+console.log(account.contractId); // C-address
 
 const signedEntry = await kit.signAuthEntry(entryXdr);
-const accounts = await kit.recover();        // 0, 1, or many
+const accounts = await kit.recover(); // 0, 1, or many
 
 // Swap mode 'mock' → 'live' (with real adapters) and the path stays green.
-```
+
+````
   </Tab>
   <Tab value="Live browser">
 ```ts
@@ -95,12 +90,15 @@ const accounts = await recover({
   rpId: 'example.com',
   indexer: eventsIndexer({ rpcUrl, factoryContractId }),
 });
-```
+````
+
   </Tab>
 </Tabs>
 
 <Callout type="info">
-The `deployer` (an `AccountDeployer`) is the only piece the adopter supplies — it deploys the smart account for a new passkey against your factory. Everything else (DER → raw, low-S, the Soroban auth struct) is handled inside the SDK.
+  The `deployer` (an `AccountDeployer`) is the only piece the adopter supplies — it deploys the
+  smart account for a new passkey against your factory. Everything else (DER → raw, low-S, the
+  Soroban auth struct) is handled inside the SDK.
 </Callout>
 
 ## Path B — through the kit (recommended)
@@ -133,7 +131,10 @@ const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, { network
 ```
 
 <Callout type="info">
-**Two facts to keep in mind.** `module.isAvailable()` resolves `isUVPAA` within a 500ms budget — that's what gates whether passkey appears in the wallet picker. And raise the resource budget after `simulate()`: on-chain `secp256r1_verify` is under-budgeted by simulation, so a transaction sent at the simulated budget will fail.
+  **Two facts to keep in mind.** `module.isAvailable()` resolves `isUVPAA` within a 500ms budget —
+  that's what gates whether passkey appears in the wallet picker. And raise the resource budget
+  after `simulate()`: on-chain `secp256r1_verify` is under-budgeted by simulation, so a transaction
+  sent at the simulated budget will fail.
 </Callout>
 
 ## Handle errors
@@ -153,9 +154,12 @@ try {
 } catch (e) {
   if (isKitError(e)) {
     switch (e.code) {
-      case 'USER_CANCELLED': return; // user dismissed the sheet
-      case 'NETWORK_ERROR': /* retry */ break;
-      case 'ES256_NOT_SUPPORTED': /* wrong algorithm */ break;
+      case 'USER_CANCELLED':
+        return; // user dismissed the sheet
+      case 'NETWORK_ERROR':
+        /* retry */ break;
+      case 'ES256_NOT_SUPPORTED':
+        /* wrong algorithm */ break;
     }
   }
   throw e;
@@ -163,7 +167,8 @@ try {
 ```
 
 <Callout type="tip">
-The full taxonomy with per-code copy lives in [the KitError taxonomy](/docs/sdk/errors). The styled screens already render the right message per code.
+  The full taxonomy with per-code copy lives in [the KitError taxonomy](/docs/sdk/errors). The
+  styled screens already render the right message per code.
 </Callout>
 
 ## Test in CI (no authenticator)
@@ -207,5 +212,6 @@ const backend = createInMemoryBackend();
 </Cards>
 
 <Callout type="tip">
-Want a styled flow instead of wiring the screens yourself? Mount one from `@soropass/ui/styled` — see the [component docs](/docs/components/create).
+  Want a styled flow instead of wiring the screens yourself? Mount one from `@soropass/ui/styled` —
+  see the [component docs](/docs/components/create).
 </Callout>

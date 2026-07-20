@@ -12,13 +12,16 @@ A submission adapter takes a signed transaction XDR to the network; an indexer a
 
 <Cards>
   <Card title="Zero-infra default" href="#defaultadapters">
-    directSubmission + eventsIndexer need only an RPC URL and a factoryContractId — no relayer, no indexer service, no account.
+    directSubmission + eventsIndexer need only an RPC URL and a factoryContractId — no relayer, no
+    indexer service, no account.
   </Card>
   <Card title="One-line swap" href="#submission-adapters">
-    Every submission factory returns SubmissionAdapter and every indexer factory returns IndexerAdapter, so the call site never changes.
+    Every submission factory returns SubmissionAdapter and every indexer factory returns
+    IndexerAdapter, so the call site never changes.
   </Card>
   <Card title="No hard coupling" href="#invariant-4--pluggable-zero-infra-by-default">
-    Launchtube, OZ Relayer, and Mercury are optional adapters behind the same interfaces — the SDK never requires any of them.
+    Launchtube, OZ Relayer, and Mercury are optional adapters behind the same interfaces — the SDK
+    never requires any of them.
   </Card>
 </Cards>
 
@@ -36,8 +39,8 @@ interface SubmissionAdapter {
 }
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param         | Type     | Description                               |
+| ------------- | -------- | ----------------------------------------- |
 | `signedTxXdr` | `string` | The fully signed transaction, base64 XDR. |
 
 **Returns** `Promise<SubmitResult>` — the outcome of submission (see below).
@@ -48,17 +51,17 @@ interface SubmissionAdapter {
 interface SubmitResult {
   status: 'SUCCESS' | 'PENDING' | 'FAILED';
   hash: string;
-  returnValue?: unknown;     // decoded contract return value on success
-  errorResultXdr?: string;   // base64 XDR of the failure result when failed
+  returnValue?: unknown; // decoded contract return value on success
+  errorResultXdr?: string; // base64 XDR of the failure result when failed
 }
 ```
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `status` | `'SUCCESS' \| 'PENDING' \| 'FAILED'` | Terminal or in-flight state of the submission. |
-| `hash` | `string` | Transaction hash. |
-| `returnValue` | `unknown?` | Decoded contract return value on success (implementation-defined). |
-| `errorResultXdr` | `string?` | Base64 XDR of the failure result, present when status is 'FAILED'. |
+| Field            | Type                                 | Description                                                        |
+| ---------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| `status`         | `'SUCCESS' \| 'PENDING' \| 'FAILED'` | Terminal or in-flight state of the submission.                     |
+| `hash`           | `string`                             | Transaction hash.                                                  |
+| `returnValue`    | `unknown?`                           | Decoded contract return value on success (implementation-defined). |
+| `errorResultXdr` | `string?`                            | Base64 XDR of the failure result, present when status is 'FAILED'. |
 
 ### IndexerAdapter
 
@@ -72,8 +75,8 @@ interface IndexerAdapter {
 // ResolvedAccount = { contractId: string }
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param          | Type     | Description                           |
+| -------------- | -------- | ------------------------------------- |
 | `credentialId` | `string` | The passkey credential id to resolve. |
 
 **Returns** `Promise<ResolvedAccount[]>` where `ResolvedAccount = { contractId: string }`.
@@ -90,8 +93,8 @@ Zero-infra default; sends straight to soroban-rpc.
 directSubmission(options: DirectSubmissionOptions): SubmissionAdapter
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                      | Description                                                         |
+| --------- | ------------------------- | ------------------------------------------------------------------- |
 | `options` | `DirectSubmissionOptions` | Direct soroban-rpc submission options (rpcUrl + networkPassphrase). |
 
 **Returns** `SubmissionAdapter` that sends straight to soroban-rpc.
@@ -117,8 +120,8 @@ Legacy relay (Launchtube) — modeled as one optional adapter.
 launchtubeSubmission(options: LaunchtubeSubmissionOptions): SubmissionAdapter
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                          | Description               |
+| --------- | ----------------------------- | ------------------------- |
 | `options` | `LaunchtubeSubmissionOptions` | Launchtube relay options. |
 
 **Returns** `SubmissionAdapter` backed by the Launchtube relay.
@@ -126,7 +129,9 @@ launchtubeSubmission(options: LaunchtubeSubmissionOptions): SubmissionAdapter
 ```ts
 import { launchtubeSubmission } from '@soropass/core';
 
-const submission = launchtubeSubmission({ /* LaunchtubeSubmissionOptions */ });
+const submission = launchtubeSubmission({
+  /* LaunchtubeSubmissionOptions */
+});
 const res = await submission.send(signedTxXdr);
 ```
 
@@ -138,8 +143,8 @@ OZ Relayer / Defender — the post-Launchtube direction.
 openzeppelinRelayerSubmission(options: OpenZeppelinRelayerOptions): SubmissionAdapter
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                         | Description                    |
+| --------- | ---------------------------- | ------------------------------ |
 | `options` | `OpenZeppelinRelayerOptions` | OZ Relayer / Defender options. |
 
 **Returns** `SubmissionAdapter` backed by the OZ Relayer / Defender.
@@ -147,7 +152,9 @@ openzeppelinRelayerSubmission(options: OpenZeppelinRelayerOptions): SubmissionAd
 ```ts
 import { openzeppelinRelayerSubmission } from '@soropass/core';
 
-const submission = openzeppelinRelayerSubmission({ /* OpenZeppelinRelayerOptions */ });
+const submission = openzeppelinRelayerSubmission({
+  /* OpenZeppelinRelayerOptions */
+});
 const res = await submission.send(signedTxXdr);
 ```
 
@@ -163,8 +170,8 @@ Zero-infra default; reads on-chain contract events (just an RPC URL + factory co
 eventsIndexer(options: EventsIndexerOptions): IndexerAdapter
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                   | Description                                               |
+| --------- | ---------------------- | --------------------------------------------------------- |
 | `options` | `EventsIndexerOptions` | On-chain events options (an RPC URL + factoryContractId). |
 
 **Returns** `IndexerAdapter` that reads on-chain contract events.
@@ -188,20 +195,23 @@ Optional Mercury index; the SDK never requires Mercury.
 mercuryIndexer(options: MercuryIndexerOptions): IndexerAdapter
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                    | Description                       |
+| --------- | ----------------------- | --------------------------------- |
 | `options` | `MercuryIndexerOptions` | Mercury index options (optional). |
 
 **Returns** `IndexerAdapter` backed by a Mercury index.
 
 <Callout type="info">
-Mercury is strictly optional. The default `eventsIndexer` covers credential → C-address resolution with no external index service.
+  Mercury is strictly optional. The default `eventsIndexer` covers credential → C-address resolution
+  with no external index service.
 </Callout>
 
 ```ts
 import { mercuryIndexer } from '@soropass/core';
 
-const indexer = mercuryIndexer({ /* MercuryIndexerOptions */ });
+const indexer = mercuryIndexer({
+  /* MercuryIndexerOptions */
+});
 const accounts = await indexer.resolveByCredential(credentialId);
 ```
 
@@ -213,8 +223,8 @@ The zero-infra default stack: direct + events. Returns both seams pre-wired.
 defaultAdapters(options: DefaultAdapterOptions): { submission: SubmissionAdapter; indexer: IndexerAdapter }
 ```
 
-| Param | Type | Description |
-| --- | --- | --- |
+| Param     | Type                    | Description                                                                                     |
+| --------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
 | `options` | `DefaultAdapterOptions` | Options for the default direct + events stack (rpcUrl + networkPassphrase + factoryContractId). |
 
 **Returns** `{ submission: SubmissionAdapter; indexer: IndexerAdapter }` — the zero-infra default stack (direct submission + events indexer).
@@ -237,7 +247,8 @@ const res = await submission.send(signedTxXdr);
 ## Invariant #4 — pluggable, zero-infra by default
 
 <Callout type="info">
-Pluggable adapters for submission + indexer; the default is zero-infra (direct + events). No hard coupling to any relayer or indexer.
+  Pluggable adapters for submission + indexer; the default is zero-infra (direct + events). No hard
+  coupling to any relayer or indexer.
 </Callout>
 
 Because every factory returns the same interface, you can start on the zero-infra default and move to Launchtube, the OZ Relayer, or Mercury later without touching call sites. `@stellar/stellar-sdk` remains a peer dependency and is never bundled into `@soropass/core`.
