@@ -119,15 +119,31 @@ jobs:
           path: apps/matrix/data
       - name: Refresh dated snapshot + diff (pull → build → diff)
         run: pnpm --filter @soropass/matrix matrix:refresh
-      - name: Open a PR with the refreshed snapshot (only if something changed)
+      - name: Publish the freshness report to the run summary
+        run: |
+          {
+            echo "## Living compatibility matrix — weekly re-verification"
+            echo
+            cat apps/matrix/rendered/matrix-diff.md
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Open a PR when the matrix changed or a re-verification was logged
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "chore(matrix): living-matrix weekly refresh — dated snapshot + diff (YK-435)"
-          title: "chore(matrix): living-matrix weekly refresh"
-          body: "Automated re-verification. See the latest `apps/matrix/data/matrix-diff.*.json` for what changed between the two latest dated snapshots."
+          commit-message: 'chore(matrix): weekly living-matrix refresh'
+          title: 'chore(matrix): weekly living-matrix refresh'
+          body: |
+            Automated weekly re-verification of the compatibility matrix.
+
+            A new dated `matrix.<date>.json` is written only when a cell's status,
+            source, tier, or verifying engine version actually changed, so this PR
+            is not date-churn. Every run appends one honest line to
+            `apps/matrix/data/verification-log.json` (proof we re-verified on this
+            date + browser build). See `apps/matrix/data/matrix-diff.*.json` and
+            `apps/matrix/rendered/matrix-diff.md` for what moved.
           branch: matrix/auto-refresh
           add-paths: |
             apps/matrix/data/*.json
+            apps/matrix/rendered/*.md
 
   # NOTE: there is no docs deploy job here — the docs front-end is a separate
   # designed site, pushed independently. The matrix data (apps/matrix/data/*.json)

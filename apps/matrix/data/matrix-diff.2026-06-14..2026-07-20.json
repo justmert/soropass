@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "from": "2026-06-14",
+  "to": "2026-07-20",
+  "changed": [
+    {
+      "cell": "credentials_create|Chrome|desktop",
+      "before": "supported|BCD|tier-1-automated",
+      "after": "supported|BCD|tier-2-manual"
+    },
+    {
+      "cell": "credentials_get|Chrome|desktop",
+      "before": "supported|BCD|tier-1-automated",
+      "after": "supported|BCD|tier-2-manual"
+    },
+    {
+      "cell": "get_client_capabilities|Chrome|desktop",
+      "before": "supported|BCD|tier-1-automated",
+      "after": "supported|BCD|tier-2-manual"
+    },
+    {
+      "cell": "parse_creation_options|Chrome|desktop",
+      "before": "supported|BCD|tier-1-automated",
+      "after": "supported|BCD|tier-2-manual"
+    },
+    {
+      "cell": "signal_credentials|Chrome|desktop",
+      "before": "supported|BCD|tier-1-automated",
+      "after": "supported|BCD|tier-2-manual"
+    }
+  ],
+  "added": [],
+  "removed": [],
+  "reverified": []
+}

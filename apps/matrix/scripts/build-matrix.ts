@@ -1,11 +1,15 @@
 /**
- * S09 (YK-435) — the matrix builder. Merges the BCD static snapshot (S05) with
- * the virtual-authenticator CI snapshot (S07) into one dated, diffable matrix
- * where every cell is tagged with `source` + `tier` (S08) + `lastVerified`.
- * CI (machine-verified) overrides BCD/curated for the same cell. Writes
- * `data/matrix.<ISODATE>.json` (+ pointer) and renders `site/matrix-table.md`.
- * The live "your device" overlay (S06) is applied client-side in the site.
- * Run with `pnpm matrix:build`.
+ * The matrix builder. Merges the BCD static snapshot with the virtual-authenticator
+ * CI snapshot into one dated, diffable matrix where every cell is tagged with
+ * `source` + `tier` + `lastVerified`, and CI-verified cells also carry the exact
+ * engine version (`verifiedOn`). CI (machine-verified) overrides BCD/curated for
+ * the same cell. Run with `pnpm matrix:build`.
+ *
+ * Anti-churn: a new `data/matrix.<ISODATE>.json` is written ONLY when the matrix
+ * substance or a verifying engine version actually changed. An unchanged weekly
+ * re-run appends one honest line to `data/verification-log.json` (proof we
+ * re-verified on this date + engine) and mints no new snapshot — so dated history
+ * marks real change-points, not date stamps.
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -13,15 +17,20 @@ import { fileURLToPath } from 'node:url';
 import {
   CiSnapshotSchema,
   MATRIX_SCHEMA_VERSION,
+  ManualSessionsFileSchema,
   MatrixSnapshotSchema,
   MergedMatrixSnapshotSchema,
-  type MergedCell,
+  VerificationLogSchema,
+  type CiSnapshot,
+  type ManualSession,
+  type MergedMatrixSnapshot,
+  type VerificationRun,
 } from '../src/matrixSchema';
-import { tierFor } from '../src/tiers';
+import { matrixChanged, mergeMatrix } from '../src/pipeline';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(here, '..', 'data');
-const renderedDir = join(here, '..', 'rendered');
+const dataDir = process.env.MATRIX_DATA_DIR ?? join(here, '..', 'data');
+const renderedDir = process.env.MATRIX_RENDERED_DIR ?? join(here, '..', 'rendered');
 const builtAt = process.env.MATRIX_PULL_DATE ?? new Date().toISOString().slice(0, 10);
 
 function latestFile(prefix: string): string | null {
@@ -30,9 +39,7 @@ function latestFile(prefix: string): string | null {
     .sort();
   return files.at(-1) ?? null;
 }
-function readJson(file: string): unknown {
-  return JSON.parse(readFileSync(join(dataDir, file), 'utf8'));
-}
+const readJson = (file: string): unknown => JSON.parse(readFileSync(join(dataDir, file), 'utf8'));
 
 // ── inputs ───────────────────────────────────────────────────────────────────
 const bcdFile = latestFile('bcd.');
@@ -40,91 +47,89 @@ const ciFile = latestFile('ci.');
 const bcd = bcdFile ? MatrixSnapshotSchema.parse(readJson(bcdFile)) : null;
 const ci = ciFile ? CiSnapshotSchema.parse(readJson(ciFile)) : null;
 
-const cellKey = (feature: string, browser: string, os: string): string =>
-  `${feature}|${browser}|${os}`;
-const cells = new Map<string, MergedCell>();
-
-function upsert(cell: Omit<MergedCell, 'tier'>): void {
-  cells.set(cellKey(cell.feature, cell.browser, cell.os), {
-    ...cell,
-    tier: tierFor(cell.browser, cell.os).tier,
-  });
+let manual: ManualSession[] | null = null;
+try {
+  manual = ManualSessionsFileSchema.parse(readJson('manual-sessions.json')).sessions;
+} catch {
+  /* no manual-sessions.json — real-device evidence is optional */
 }
 
-// 1. BCD / curated / passkeys.dev rows (the static baseline).
-if (bcd) {
-  for (const row of bcd.rows) {
-    upsert({
-      feature: row.feature,
-      featureLabel: row.featureLabel,
-      browser: row.browser,
-      os: row.os,
-      status: row.status,
-      source: row.source,
-      lastVerified: row.pulledAt,
-      since: row.since,
-      ...(row.notes ? { notes: row.notes } : {}),
-      ...(row.sourceUrl ? { sourceUrl: row.sourceUrl } : {}),
-    });
-  }
-}
+const next = mergeMatrix({ bcd, ci, manual, bcdFile, ciFile, builtAt });
 
-// 2. CI rows override matching cells. The harness reports the engine on the
-//    runner OS; map it onto the matrix's desktop browser+OS cells.
-const CI_BROWSER_MAP: Record<string, { browser: string; os: string }> = {
-  Chromium: { browser: 'Chrome', os: 'desktop' },
-  Chrome: { browser: 'Chrome', os: 'desktop' },
-  Edge: { browser: 'Edge', os: 'Windows' },
-};
-if (ci) {
-  for (const row of ci.rows) {
-    const mapped = CI_BROWSER_MAP[row.browser];
-    if (!mapped) continue;
-    upsert({
-      feature: row.feature,
-      featureLabel: row.featureLabel,
-      browser: mapped.browser,
-      os: mapped.os,
-      status: row.status,
-      source: 'ci',
-      lastVerified: row.pulledAt,
-      ...(row.notes ? { notes: row.notes } : {}),
-    });
-  }
-}
+// The latest already-committed dated snapshot (the change-point we compare to).
+const prevFile = readdirSync(dataDir)
+  .filter((f) => /^matrix\.\d{4}-\d{2}-\d{2}\.json$/.test(f))
+  .sort()
+  .at(-1);
+const prev: MergedMatrixSnapshot | null = prevFile
+  ? MergedMatrixSnapshotSchema.parse(readJson(prevFile))
+  : null;
 
-const mergedCells = [...cells.values()].sort(
-  (a, b) =>
-    a.feature.localeCompare(b.feature) ||
-    a.browser.localeCompare(b.browser) ||
-    a.os.localeCompare(b.os),
-);
-
-const features = bcd
-  ? bcd.features.map((f) => ({ id: f.id, label: f.label }))
-  : [...new Set(mergedCells.map((c) => c.feature))].map((id) => ({ id, label: id }));
-
-const snapshot = MergedMatrixSnapshotSchema.parse({
-  schemaVersion: MATRIX_SCHEMA_VERSION,
-  builtAt,
-  inputs: { bcd: bcdFile, ci: ciFile },
-  features,
-  cells: mergedCells,
-});
-
+const changed = matrixChanged(prev, next);
 mkdirSync(dataDir, { recursive: true });
-const file = `matrix.${builtAt}.json`;
-writeFileSync(join(dataDir, file), JSON.stringify(snapshot, null, 2) + '\n');
-writeFileSync(
-  join(dataDir, 'matrix-latest.json'),
-  JSON.stringify(
-    { latestSnapshot: file, builtAt, cellCount: mergedCells.length, inputs: snapshot.inputs },
-    null,
-    2,
-  ) + '\n',
-);
 
-// ── render the markdown grid the VitePress site includes ─────────────────────
+// The snapshot the docs should render: the newly-written one, or the unchanged prior.
+let resolved: MergedMatrixSnapshot;
+let resolvedFile: string;
+if (changed) {
+  resolvedFile = `matrix.${builtAt}.json`;
+  resolved = next;
+  writeFileSync(join(dataDir, resolvedFile), JSON.stringify(next, null, 2) + '\n');
+  writeFileSync(
+    join(dataDir, 'matrix-latest.json'),
+    JSON.stringify(
+      { latestSnapshot: resolvedFile, builtAt, cellCount: next.cells.length, inputs: next.inputs },
+      null,
+      2,
+    ) + '\n',
+  );
+} else {
+  // Unchanged — keep the prior change-point; do NOT mint a byte-different dated file.
+  resolvedFile = prevFile as string;
+  resolved = prev as MergedMatrixSnapshot;
+}
+
+// ── verification log (freshness proof, appended EVERY run) ────────────────────
+function canonicalVerified(snap: CiSnapshot | null): boolean {
+  return (
+    snap?.gridResults.some(
+      (g) =>
+        g.transport === 'internal' &&
+        g.residentKey &&
+        g.userVerification &&
+        g.verified &&
+        g.alg === -7,
+    ) ?? false
+  );
+}
+const run: VerificationRun = {
+  ranAt: builtAt,
+  runnerOs: ci?.runnerOs ?? process.platform,
+  bcdVersion: bcd?.bcdVersion ?? 'unknown',
+  engines: ci
+    ? ci.browsers.filter((b) => b.available).map((b) => ({ browser: b.name, version: b.version }))
+    : [],
+  canonicalVerified: canonicalVerified(ci),
+  snapshot: resolvedFile,
+  changed,
+};
+const logPath = join(dataDir, 'verification-log.json');
+let log = {
+  schemaVersion: MATRIX_SCHEMA_VERSION as typeof MATRIX_SCHEMA_VERSION,
+  runs: [] as VerificationRun[],
+};
+try {
+  log = VerificationLogSchema.parse(readJson('verification-log.json'));
+} catch {
+  /* first run — start a fresh log */
+}
+// Replace a same-date run (idempotent re-runs on one day), else append; keep the last 200.
+log.runs = [...log.runs.filter((r) => r.ranAt !== run.ranAt), run]
+  .sort((a, b) => a.ranAt.localeCompare(b.ranAt))
+  .slice(-200);
+writeFileSync(logPath, JSON.stringify(VerificationLogSchema.parse(log), null, 2) + '\n');
+
+// ── render the markdown grid (stamped with the snapshot's change date) ────────
 const STATUS_ICON: Record<string, string> = {
   supported: '✅',
   unsupported: '❌',
@@ -135,25 +140,31 @@ const TIER_LABEL: Record<string, string> = {
   'tier-1-automated': 'T1 · automated',
   'tier-2-manual': 'T2 · manual',
 };
-const featureLabel = (id: string): string => features.find((f) => f.id === id)?.label ?? id;
+const featureLabel = (id: string): string =>
+  resolved.features.find((f) => f.id === id)?.label ?? id;
 
-let md = `<!-- GENERATED by \`pnpm matrix:build\` on ${builtAt}. Do not edit by hand. -->\n`;
-md += `_Built ${builtAt} from ${bcdFile ?? '(no BCD)'} + ${ciFile ?? '(no CI)'}._\n`;
-for (const feature of features) {
-  const rows = mergedCells.filter((c) => c.feature === feature.id);
+let md = `<!-- GENERATED by \`pnpm matrix:build\`. Do not edit by hand. -->\n`;
+md += `_Data as of ${resolved.builtAt}`;
+if (run.engines.length)
+  md += `; re-verified ${builtAt} on ${run.engines.map((e) => `${e.browser} ${e.version}`).join(', ')} (${run.runnerOs})`;
+md += `._\n`;
+for (const feature of resolved.features) {
+  const rows = resolved.cells.filter((c) => c.feature === feature.id);
   if (rows.length === 0) continue;
   md += `\n### ${featureLabel(feature.id)}\n\n`;
-  md += `| Browser / OS | Status | Source | Tier | Last verified |\n`;
-  md += `| --- | --- | --- | --- | --- |\n`;
+  md += `| Browser / OS | Status | Source | Tier | Verified on | Last verified |\n`;
+  md += `| --- | --- | --- | --- | --- | --- |\n`;
   for (const c of rows) {
     const icon = STATUS_ICON[c.status] ?? '';
-    md += `| ${c.browser} / ${c.os} | ${icon} ${c.status} | \`${c.source}\` | ${TIER_LABEL[c.tier] ?? c.tier} | ${c.lastVerified} |\n`;
+    const engine = c.verifiedOn ? `${c.verifiedOn.browser} ${c.verifiedOn.version}` : '—';
+    md += `| ${c.browser} / ${c.os} | ${icon} ${c.status} | \`${c.source}\` | ${TIER_LABEL[c.tier] ?? c.tier} | ${engine} | ${c.lastVerified} |\n`;
   }
 }
-
 mkdirSync(renderedDir, { recursive: true });
 writeFileSync(join(renderedDir, 'matrix-table.md'), md);
 
 console.log(
-  `matrix:build → ${file}: ${String(mergedCells.length)} cells from bcd=${bcdFile ?? '–'} ci=${ciFile ?? '–'}; wrote rendered/matrix-table.md`,
+  `matrix:build → ${changed ? `wrote ${resolvedFile} (substance changed)` : `no change; kept ${resolvedFile}`}; ` +
+    `${String(resolved.cells.length)} cells from bcd=${bcdFile ?? '–'} ci=${ciFile ?? '–'}; ` +
+    `logged re-verification ${builtAt} (canonical ${run.canonicalVerified ? '✓' : '✗'}).`,
 );

@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "readme": "Hand-logged real-device sessions for engines the virtual-authenticator CI cannot reach (Safari/WebKit, Firefox, and real biometrics such as macOS Touch ID). Add one entry per session. Feature ids match the matrix: webauthn, es256_alg, is_uvpaa, conditional_mediation, related_origin_requests, hybrid_transport. Each session merges into the matrix as source 'manual', tier-2-manual, dated with the real session date. Never invent a result here - only log sessions actually run on a real device. Shape: { date: 'YYYY-MM-DD', browser, os, browserVersion?, device?, tester?, result: 'pass'|'partial'|'fail', features: [{ feature, status: 'supported'|'unsupported'|'partial'|'unknown', notes? }], notes? }.",
+  "sessions": []
+}

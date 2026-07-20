@@ -1,7 +1,10 @@
 /**
- * S08 (YK-434) — verification tiers. Every matrix cell is labelled with HOW it
- * was verified so none is ambiguous (the S08 gate). See
- * `docs/matrix/automation-coverage.md` for the sourced findings.
+ * Verification tiers. NOTE: the ACTUAL per-cell tier in the published matrix is
+ * derived from the cell's real source at merge time (`pipeline.ts` →
+ * `tierForSource`): a cell is `tier-1-automated` only when it was machine-
+ * verified this run (`ci`/`live`), never by static assumption. This module
+ * documents the automation FEASIBILITY per engine (method / automatable /
+ * wired) for the architecture narrative — see `docs/matrix/automation-coverage.md`.
  */
 import { BROWSER_OS } from './matrixSchema';
 
@@ -30,10 +33,10 @@ const DESKTOP_TIERS: Record<string, VerificationTier> = {
   },
   Edge: {
     tier: 'tier-2-manual',
-    method: 'Chromium/Blink — the Chrome CDP virtual-authenticator path applies (Playwright, S07)',
+    method: 'Chromium/Blink — the Chrome CDP virtual-authenticator path applies (Playwright)',
     automatable: true,
-    wired: false,
-    note: 'Edge shares Chrome’s Blink+CDP engine, so the Tier-1 harness applies — but msedge is best-effort in CI and was not captured in the committed run; treated as not-yet-machine-verified until a run with Edge present lands.',
+    wired: true,
+    note: 'Edge shares Chrome’s Blink+CDP engine, so the same virtual-authenticator harness runs it. msedge install is best-effort in CI: when the runner has it, Edge cells are machine-verified (source ci → tier-1); otherwise they fall back to BCD (tier-2). The tier reflects what actually happened on the run, not an assumption.',
   },
   Firefox: {
     tier: 'tier-2-manual',

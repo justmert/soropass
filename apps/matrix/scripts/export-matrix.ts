@@ -27,8 +27,18 @@ function latest(prefix: string): string | null {
 
 mkdirSync(outDir, { recursive: true });
 
-// The pointer files (stable names) + the latest dated snapshot/diff/ci/bcd.
-const PREFIXES = ['matrix-latest.', 'latest.', 'matrix.', 'matrix-diff.', 'ci.', 'bcd.'];
+// The pointer files (stable names) + the latest dated snapshot/diff/ci/bcd +
+// the verification log (the anti-staleness freshness proof the docs render).
+const PREFIXES = [
+  'matrix-latest.',
+  'latest.',
+  'matrix.',
+  'matrix-diff.',
+  'ci.',
+  'bcd.',
+  'verification-log.',
+  'manual-sessions.',
+];
 const copied: string[] = [];
 for (const prefix of PREFIXES) {
   const file = latest(prefix);
@@ -46,6 +56,7 @@ const manifest = {
     diff: copied.find((f) => f.startsWith('matrix-diff.')) ?? null,
     ci: copied.find((f) => /^ci\.\d/.test(f)) ?? null,
     bcd: copied.find((f) => /^bcd\.\d/.test(f)) ?? null,
+    verificationLog: copied.includes('verification-log.json') ? 'verification-log.json' : null,
   },
   files: copied,
 };

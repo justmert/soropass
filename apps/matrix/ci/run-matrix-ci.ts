@@ -326,7 +326,8 @@ const snapshot = CiSnapshotSchema.parse({
   ],
 });
 
-const dataDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+const dataDir =
+  process.env.MATRIX_DATA_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 mkdirSync(dataDir, { recursive: true });
 const file = `ci.${pulledAt}.json`;
 writeFileSync(join(dataDir, file), JSON.stringify(snapshot, null, 2) + '\n');

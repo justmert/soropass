@@ -1,0 +1,42 @@
+# Keeps the living compatibility matrix actually living. The two deps that feed
+# it new browser data are auto-bumped weekly, so "test against new versions"
+# happens without a human remembering to. When a bump merges to main, the weekly
+# matrix-refresh re-pulls the newer BCD / re-verifies on the newer Chromium and
+# records a real, dated diff (see apps/matrix + .github/workflows/ci.yml).
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '05:00'
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore(deps)'
+    labels:
+      - 'dependencies'
+    groups:
+      # The matrix's data sources — bump these together, promptly.
+      matrix-sources:
+        patterns:
+          - '@mdn/browser-compat-data'
+          - '@playwright/test'
+      # Everything else batched so we don't get a PR per package.
+      dev-dependencies:
+        dependency-type: 'development'
+        exclude-patterns:
+          - '@mdn/browser-compat-data'
+          - '@playwright/test'
+      production-dependencies:
+        dependency-type: 'production'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - 'dependencies'

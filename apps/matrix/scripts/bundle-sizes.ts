@@ -64,10 +64,20 @@ mkdirSync(dirname(outFile), { recursive: true });
 const measuredAt = process.env.SOURCE_DATE ?? new Date().toISOString().slice(0, 10);
 writeFileSync(
   outFile,
-  JSON.stringify({ measuredAt, note: 'minified + gzip, @stellar/* and @noble/* externalized (peer deps)', entries }, null, 2) + '\n',
+  JSON.stringify(
+    {
+      measuredAt,
+      note: 'minified + gzip, @stellar/* and @noble/* externalized (peer deps)',
+      entries,
+    },
+    null,
+    2,
+  ) + '\n',
 );
 
 console.log(`bundle-sizes → ${outFile} (measured ${measuredAt})`);
 for (const r of entries) {
-  console.log(`  ${r.subpath}: ${String(r.rawBytes)} B raw / ${String(r.gzipBytes)} B gzip${r.devOnly ? ' (dev-only)' : ''}`);
+  console.log(
+    `  ${r.subpath}: ${String(r.rawBytes)} B raw / ${String(r.gzipBytes)} B gzip${r.devOnly ? ' (dev-only)' : ''}`,
+  );
 }

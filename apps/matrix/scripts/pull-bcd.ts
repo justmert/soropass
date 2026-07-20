@@ -9,7 +9,7 @@
  * (with source URLs); their authoritative values are produced by the
  * virtual-authenticator CI in S07 (YK-433).
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import bcd from '@mdn/browser-compat-data';
@@ -245,10 +245,33 @@ const snapshot = {
 // Validate on write (acceptance: typed + zod-validated).
 const validated = MatrixSnapshotSchema.parse(snapshot);
 
-const dataDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+const dataDir =
+  process.env.MATRIX_DATA_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 mkdirSync(dataDir, { recursive: true });
-const snapshotFile = `bcd.${pulledAt}.json`;
-writeFileSync(join(dataDir, snapshotFile), JSON.stringify(validated, null, 2) + '\n');
+
+// Anti-churn: only mint a new dated BCD snapshot when the DATA changed (version
+// or support values), not just because a week passed. The `pulledAt` stamp is
+// stripped before comparing so an identical weekly re-pull writes nothing new.
+const contentKey = (snap: { bcdVersion: string; features: unknown; rows: MatrixRow[] }): string =>
+  JSON.stringify({
+    bcdVersion: snap.bcdVersion,
+    features: snap.features,
+    rows: snap.rows.map(({ pulledAt: _drop, ...rest }) => rest),
+  });
+
+const latestBcd = readdirSync(dataDir)
+  .filter((f) => /^bcd\.\d{4}-\d{2}-\d{2}\.json$/.test(f))
+  .sort()
+  .at(-1);
+const prev = latestBcd
+  ? (JSON.parse(readFileSync(join(dataDir, latestBcd), 'utf8')) as typeof validated)
+  : null;
+const unchanged = prev !== null && contentKey(prev) === contentKey(validated);
+
+const snapshotFile = unchanged ? (latestBcd as string) : `bcd.${pulledAt}.json`;
+if (!unchanged) {
+  writeFileSync(join(dataDir, snapshotFile), JSON.stringify(validated, null, 2) + '\n');
+}
 writeFileSync(
   join(dataDir, 'latest.json'),
   JSON.stringify(
@@ -259,5 +282,7 @@ writeFileSync(
 );
 
 console.log(
-  `matrix:pull → ${snapshotFile} (${String(validated.rows.length)} rows, BCD ${bcdVersion}, ${String(validated.features.length)} features)`,
+  unchanged
+    ? `matrix:pull → BCD ${bcdVersion} unchanged; kept ${snapshotFile} (no churn), pointer refreshed ${pulledAt}`
+    : `matrix:pull → ${snapshotFile} (${String(validated.rows.length)} rows, BCD ${bcdVersion}, ${String(validated.features.length)} features)`,
 );

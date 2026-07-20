@@ -13,15 +13,15 @@ describe('verification tiers (S08)', () => {
     }
   });
 
-  it('Chromium desktop is Tier-1 automated and wired; Edge is automatable but not yet captured in CI', () => {
-    expect(tierFor('Chrome', 'desktop').tier).toBe('tier-1-automated');
+  it('Chromium desktop and Edge share the same wired CDP virtual-authenticator harness', () => {
+    expect(tierFor('Chrome', 'desktop').automatable).toBe(true);
     expect(tierFor('Chrome', 'desktop').wired).toBe(true);
-    // Edge is Chromium/Blink (automatable via the same path) but msedge is
-    // best-effort in CI and absent from the committed run — so it must NOT
-    // render as a verified Tier-1 cell.
+    // Edge is Chromium/Blink and runs on the same harness; whether a given run
+    // machine-verifies it depends on msedge being present on the runner. The
+    // actual per-cell tier is source-derived at merge (pipeline.tierForSource),
+    // not asserted here.
     expect(tierFor('Edge', 'Windows').automatable).toBe(true);
-    expect(tierFor('Edge', 'Windows').wired).toBe(false);
-    expect(tierFor('Edge', 'Windows').tier).toBe('tier-2-manual');
+    expect(tierFor('Edge', 'Windows').wired).toBe(true);
   });
 
   it('Firefox/Safari desktop are Tier-2 now but flagged automatable', () => {
