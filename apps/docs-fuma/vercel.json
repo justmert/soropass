@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "react-router",
-  "buildCommand": "node scripts/prepare-demo.mjs && pnpm exec react-router build"
+  "buildCommand": "node scripts/prepare-demo.mjs && node scripts/prepare-matrix.mjs && pnpm exec react-router build",
+  "redirects": [
+    { "source": "/compatibility", "destination": "/docs/compatibility", "permanent": false }
+  ]
 }
