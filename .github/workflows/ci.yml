@@ -93,13 +93,14 @@ jobs:
           path: apps/matrix/data/ci.*.json
           if-no-files-found: error
 
-  # S09 (YK-435) — the living mechanism. Re-pull BCD, merge the fresh
-  # virtual-authenticator results (matrix-ci), regenerate the dated snapshot +
-  # diff, and COMMIT IT BACK as a PR — so the matrix accrues real dated history
-  # instead of one frozen snapshot. Runs on the weekly cron + pushes to main.
+  # The living mechanism. Re-pull BCD, merge the fresh virtual-authenticator
+  # results (matrix-ci), regenerate the dated snapshot + diff, and open a PR so
+  # the matrix accrues real dated history. Runs only on the weekly cron (not on
+  # every push), and opening the PR requires the repo setting "Allow GitHub
+  # Actions to create and approve pull requests" (Settings → Actions → General).
   matrix-refresh:
     needs: [matrix-ci]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -127,6 +128,7 @@ jobs:
             cat apps/matrix/rendered/matrix-diff.md
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Open a PR when the matrix changed or a re-verification was logged
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: 'chore(matrix): weekly living-matrix refresh'
