@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPasskey } from './create';
+import { createPasskey, registerPasskey } from './create';
 import { connect } from './connect';
 import { recover } from './recover';
 import type { AccountDeployer, CredentialStorage, WebAuthnClient } from './types';
@@ -77,6 +77,22 @@ describe('ceremonies (S13)', () => {
     expect(recovered).toHaveLength(1);
     expect(recovered[0]?.contractId).toBe(created.contractId);
     expect(connected?.contractId).toBe(created.contractId);
+  });
+
+  it('registerPasskey returns {credentialId, publicKey} WITHOUT deploying (new-device primitive)', async () => {
+    const storage = memStorage();
+    // No deployer, no storage-write: registerPasskey is create-minus-deploy, the
+    // primitive a NEW device uses to produce a signer for addSigner.
+    const registered = await registerPasskey({
+      rpId: RP_ID,
+      rpName: 'Test',
+      userName: 'alice',
+      webauthn: mockWebAuthn(),
+    });
+    expect(registered.credentialId).toBe(CRED_ID);
+    // ES256-only SEC-1 key extracted (RS256 would have thrown).
+    expect(bytesToHex(registered.publicKey)).toBe(EXPECTED.attestationSec1Hex);
+    expect(storage.get(RP_ID)).toBeNull(); // nothing persisted
   });
 
   it('connect returns null when no credential is stored (caller should recover)', async () => {

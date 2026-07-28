@@ -30,5 +30,22 @@ export {
   buildSmartWalletSignatureVariant,
   compareSignerKeyScVal,
 } from './soroban/smartWallet';
+// Smart-wallet WRITE path: encode `Signer::Secp256r1` + build the wallet-authorized
+// `add_signer` / `remove_signer` invocations for on-chain multi-device recovery.
+export {
+  buildSecp256r1Signer,
+  buildAddSignerOperation,
+  buildRemoveSignerOperation,
+} from './soroban/signer';
+export type {
+  Secp256r1SignerSpec,
+  SignerStorage,
+  BuildAddSignerOptions,
+  BuildRemoveSignerOptions,
+} from './soroban/signer';
 export { referenceCheckAuth, referenceSmartWalletCheckAuth } from './soroban/checkAuth';
 export type { SmartWalletCheckAuthResult } from './soroban/checkAuth';
+// Sign + submit ANY passkey-authorized smart-wallet transaction (payment, contract
+// call, add/remove signer): recording → sign → enforcing re-sim → submit.
+export { sendSmartWalletTx } from './soroban/submit';
+export type { SendSmartWalletTxOptions } from './soroban/submit';

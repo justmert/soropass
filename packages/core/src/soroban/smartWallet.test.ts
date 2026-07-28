@@ -167,6 +167,28 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
     expect(map).toHaveLength(1);
   });
 
+  it('stamps signatureExpirationLedger BEFORE signing so the challenge binds it', async () => {
+    const credId = new Uint8Array([7, 7, 7, 7]);
+    const signed = await signAuthEntry(unsignedEntryXdr(), {
+      networkPassphrase: Networks.TESTNET,
+      sign: makeSigner(PRIV_A, credId),
+      target: 'smart-wallet',
+      signatureExpirationLedger: 5000, // overrides the entry's 2000
+    });
+    const entry = xdr.SorobanAuthorizationEntry.fromXDR(signed, 'base64');
+    // The entry now carries 5000, and — since it was stamped BEFORE the challenge
+    // was computed — the signature binds 5000 too (verify would fail if the sig
+    // still bound the old 2000 while the entry reads 5000).
+    expect(entry.credentials().address().signatureExpirationLedger()).toBe(5000);
+    const r = referenceSmartWalletCheckAuth(
+      entry,
+      (id) => (id === hex(credId) ? PUB_A : undefined),
+      Networks.TESTNET,
+    );
+    expect(r.success).toBe(true);
+    expect(r.signers[0]?.challengeBound).toBe(true);
+  });
+
   it('challenge-binding still holds: a wrong-network verify fails', async () => {
     const credId = new Uint8Array([9, 9]);
     const signed = await signAuthEntry(unsignedEntryXdr(), {

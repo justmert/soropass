@@ -62,6 +62,14 @@ export interface SorobanSignOptions {
   target?: WalletTarget;
   /** Opt-in pre-flight assertion validation. Omit to skip. */
   verify?: SignVerifyOptions;
+  /**
+   * Stamp this `signatureExpirationLedger` onto every address-credential auth
+   * entry BEFORE the challenge is computed, so the signature binds the exact
+   * expiration the contract re-derives in `__check_auth`. Needed for smart-wallet
+   * writes (add/remove signer) where the caller learns the ledger at sign time;
+   * omit when the entry already carries the intended expiration.
+   */
+  signatureExpirationLedger?: number;
 }
 
 /** Validate an assertion against the expected challenge + RP context. Throws KitError. */
@@ -132,6 +140,14 @@ async function signEntryInPlace(
   entry: xdr.SorobanAuthorizationEntry,
   options: SorobanSignOptions,
 ): Promise<void> {
+  // Stamp the expiration first: the challenge preimage includes
+  // signatureExpirationLedger, so it must be final before we compute it.
+  if (options.signatureExpirationLedger !== undefined) {
+    const creds = entry.credentials();
+    if (creds.switch().name === 'sorobanCredentialsAddress') {
+      creds.address().signatureExpirationLedger(options.signatureExpirationLedger);
+    }
+  }
   const challenge = authEntryChallenge(entry, options.networkPassphrase);
   const assertion = await options.sign(challenge);
   if (options.verify) preflightAssertion(assertion, challenge, options.verify);

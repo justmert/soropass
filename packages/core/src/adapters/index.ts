@@ -14,3 +14,10 @@ export { defaultAdapters } from './defaults';
 export type { DefaultAdapterOptions } from './defaults';
 export { factoryDeployer } from './factory';
 export type { FactoryDeployerOptions } from './factory';
+// passkey-kit v1 smart-wallet lifecycle: deterministic deploy + credential->wallet indexer.
+export {
+  smartWalletV1Deployer,
+  smartWalletV1Indexer,
+  SMART_WALLET_V1_WASM_HASH,
+} from './smartWalletV1';
+export type { SmartWalletV1DeployerOptions, SmartWalletV1IndexerOptions } from './smartWalletV1';
