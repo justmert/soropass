@@ -1,4 +1,4 @@
-import { assertUserActivation } from '@soropass/core/create';
+import { assertUserActivation, type RegisteredPasskey } from '@soropass/core/create';
 import { isKitError, type KitErrorCode } from '@soropass/core/types';
 import { createStore, type ReadableStore } from './store';
 import { defaultTranslate, errorKey, type Translate } from './messages';
@@ -93,5 +93,40 @@ export function createAddDeviceFlow(config: AddDeviceFlowConfig): AddDeviceFlow 
       'aria-label': t('passkey.addDevice.trigger'),
       onClick: () => void start(),
     }),
+  };
+}
+
+/** Dependencies for {@link coreAddDevice} — the two app-wired core operations. */
+export interface CoreAddDeviceDeps {
+  /**
+   * Register the NEW device's passkey (no deploy). Typically
+   * `() => registerPasskey({ rpId, rpName, userName })` from `@soropass/core`.
+   */
+  register: () => Promise<RegisteredPasskey>;
+  /**
+   * Authorize + submit `add_signer` on-chain for the freshly-registered signer.
+   * Typically `(s) => addSigner({ walletContractId, newSigner: s, rpcUrl,
+   * sourceSecret, sign, submission })`. The infra config (rpc / source / adapters)
+   * lives HERE, in app code — the headless layer never holds it (invariants #3/#4).
+   */
+  bind: (newSigner: RegisteredPasskey) => Promise<unknown>;
+  /** How to render the enrolled signer for display. Default: its credential id. */
+  formatSigner?: (newSigner: RegisteredPasskey) => string;
+}
+
+/**
+ * Compose the standard add-device choreography from core primitives so it works
+ * WITH our UI out of the box: register the backup passkey (`prompting`), report
+ * the on-chain phase (`binding`), then bind the signer. Returns the `addDevice`
+ * callback {@link createAddDeviceFlow} expects, so an app gets the correct
+ * prompting → binding → success transitions without hand-writing them. Apps that
+ * need custom wiring skip this and pass their own `addDevice` (works WITHOUT it).
+ */
+export function coreAddDevice(deps: CoreAddDeviceDeps): AddDeviceFlowConfig['addDevice'] {
+  return async (report) => {
+    const registered = await deps.register(); // prompting: create the backup passkey
+    report.binding(); // → binding: on-chain add_signer begins
+    await deps.bind(registered);
+    return { signer: deps.formatSigner?.(registered) ?? registered.credentialId };
   };
 }

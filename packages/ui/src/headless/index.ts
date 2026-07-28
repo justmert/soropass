@@ -9,12 +9,13 @@ export { createSignFlow } from './signFlow';
 export type { SignFlow, SignFlowConfig, SignFlowState } from './signFlow';
 export { createRecoverFlow } from './recoverFlow';
 export type { RecoverFlow, RecoverFlowConfig, RecoverFlowState } from './recoverFlow';
-export { createAddDeviceFlow } from './addDeviceFlow';
+export { createAddDeviceFlow, coreAddDevice } from './addDeviceFlow';
 export type {
   AddDeviceFlow,
   AddDeviceFlowConfig,
   AddDeviceFlowState,
   AddedSigner,
+  CoreAddDeviceDeps,
 } from './addDeviceFlow';
 export { DEFAULT_MESSAGES, defaultTranslate, errorKey } from './messages';
 export type { Translate } from './messages';

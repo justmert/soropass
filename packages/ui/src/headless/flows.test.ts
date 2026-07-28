@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { KitError } from '@soropass/core/types';
 import type { PasskeyCredential, SubmitResult } from '@soropass/core/types';
 import type { RecoverResult } from '@soropass/core/recover';
+import type { RegisteredPasskey } from '@soropass/core/create';
 import { createCreatePasskeyFlow } from './createFlow';
 import { createSignFlow } from './signFlow';
 import { createRecoverFlow } from './recoverFlow';
+import { coreAddDevice, createAddDeviceFlow } from './addDeviceFlow';
 
 const CRED: PasskeyCredential = {
   contractId: 'CACCOUNT',
@@ -131,5 +133,75 @@ describe('createRecoverFlow (S18)', () => {
     flow.select(b); // re-select while already in selected
     const state = flow.getState();
     expect(state.status === 'selected' && state.account.contractId).toBe('C2');
+  });
+});
+
+describe('createAddDeviceFlow + coreAddDevice (multi-device recovery)', () => {
+  const REGISTERED: RegisteredPasskey = { credentialId: 'newcred', publicKey: new Uint8Array(65) };
+
+  it('idle → prompting → binding → success; registers BEFORE binding, reports the signer', async () => {
+    const order: string[] = [];
+    const flow = createAddDeviceFlow({
+      addDevice: coreAddDevice({
+        register: () => {
+          order.push('register');
+          return Promise.resolve(REGISTERED);
+        },
+        bind: () => {
+          order.push('bind');
+          return Promise.resolve({ status: 'SUCCESS', hash: 'h' } satisfies SubmitResult);
+        },
+      }),
+    });
+    const seen = track(flow);
+    await flow.start();
+    expect(seen).toEqual(['prompting', 'binding', 'success']);
+    expect(order).toEqual(['register', 'bind']); // new passkey created, THEN bound on-chain
+    const state = flow.getState();
+    expect(state.status === 'success' && state.result.signer).toBe('newcred');
+  });
+
+  it('does not bind when registration fails, and surfaces the KitErrorCode', async () => {
+    let bound = false;
+    const flow = createAddDeviceFlow({
+      addDevice: coreAddDevice({
+        register: () => Promise.reject(new KitError('ES256_NOT_SUPPORTED', 'nope')),
+        bind: () => {
+          bound = true;
+          return Promise.resolve({});
+        },
+      }),
+    });
+    await flow.start();
+    expect(bound).toBe(false);
+    const state = flow.getState();
+    expect(state.status === 'error' && state.code).toBe('ES256_NOT_SUPPORTED');
+  });
+
+  it('maps an on-chain bind failure to its KitErrorCode (after reaching binding)', async () => {
+    const flow = createAddDeviceFlow({
+      addDevice: coreAddDevice({
+        register: () => Promise.resolve(REGISTERED),
+        bind: () => Promise.reject(new KitError('CONTRACT_AUTH_FAILED', 'rejected')),
+      }),
+    });
+    const seen = track(flow);
+    await flow.start();
+    expect(seen).toEqual(['prompting', 'binding', 'error']);
+    const state = flow.getState();
+    expect(state.status === 'error' && state.code).toBe('CONTRACT_AUTH_FAILED');
+  });
+
+  it('honors a custom formatSigner for display', async () => {
+    const flow = createAddDeviceFlow({
+      addDevice: coreAddDevice({
+        register: () => Promise.resolve(REGISTERED),
+        bind: () => Promise.resolve({}),
+        formatSigner: (s) => `signer:${s.credentialId}`,
+      }),
+    });
+    await flow.start();
+    const state = flow.getState();
+    expect(state.status === 'success' && state.result.signer).toBe('signer:newcred');
   });
 });
