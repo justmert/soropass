@@ -1,0 +1,179 @@
+---
+title: smart-wallet & recovery
+icon: Users
+description: Sign and submit passkey-authorized smart-wallet transactions, and add or remove passkey signers on-chain for multi-device recovery — the passkey-kit v1 (Protocol 27) ABI.
+---
+
+Beyond the single-signer account, `@soropass/core` targets the passkey-kit **v1 smart-wallet** (audited, Protocol 27) — a multi-signer account whose `type Signature = Signatures(Map<SignerKey, Signature>)`. This unlocks **payments**, arbitrary contract calls, and **multi-device recovery** (add a second passkey so a lost device never locks the user out).
+
+<Callout type="info">
+  The smart-wallet wire shape — `SignerKey::Secp256r1(raw credential id)`, the SEC-1 public key in
+  `SignerVal`, and the canonical ScVal byte-order map sort — was confirmed with the passkey-kit
+  author (kalepail, issue #32) and is proven on testnet (see `contracts/deployments.json`).
+</Callout>
+
+<Cards>
+  <Card title="One-call smart-wallet tx" href="#sendsmartwallettx">
+    sendSmartWalletTx signs any wallet-authorized invocation with a passkey and submits it, handling
+    the enforcing re-simulation the footprint needs.
+  </Card>
+  <Card title="Multi-device recovery" href="#addsigner">
+    addSigner enrolls a new passkey signer on-chain, authorized by an existing device.
+  </Card>
+  <Card title="New-device registration" href="#registerpasskey">
+    registerPasskey creates a passkey and extracts its SEC-1 key without deploying — the signer a
+    new device contributes.
+  </Card>
+  <Card title="The ABI target" href="#the-smart-wallet-target">
+    signTransaction(..., &#123; target: 'smart-wallet' &#125;) assembles the Signatures map instead
+    of the bare struct.
+  </Card>
+</Cards>
+
+## The smart-wallet target
+
+`signTransaction` / `signAuthEntry` take a `target`. The default `single-signer` assembles the bare `Secp256r1Signature` our own account reads; `smart-wallet` wraps it as the `Signatures(Map<SignerKey, Signature>)` the passkey-kit wallet reads. Same low-S / field-packing / challenge-binding core — only the outer wrapper differs.
+
+```ts
+import { signTransaction } from '@soropass/core/sign';
+
+const signedXdr = await signTransaction(txXdr, {
+  networkPassphrase,
+  sign,
+  target: 'smart-wallet', // Signatures(Map<SignerKey, Signature>)
+});
+```
+
+<Callout type="info">
+  The map is sorted in the Soroban host's canonical order — an element-wise ScVal byte comparison,
+  not a string/`localeCompare` sort — so multi-signer entries validate. Existing entries in a
+  partially-signed auth are preserved and merged.
+</Callout>
+
+## sendSmartWalletTx
+
+Sign **and submit** a single passkey-authorized smart-wallet transaction — the general primitive behind every smart-wallet action (payment, contract call, add/remove signer). It runs the full submission dance so you do not have to:
+
+1. recording simulation → assemble (discovers the wallet's auth requirement);
+2. sign the wallet auth entry with the passkey (binding the expiration ledger);
+3. **enforcing re-simulation** of the signed tx — recording auth never runs the account's `__check_auth`, so it under-counts the footprint and instructions; the enforcing pass yields the true resources, and doubles as a client-side proof the auth is accepted;
+4. pay the fee from the classic source and submit via the pluggable adapter.
+
+```ts
+sendSmartWalletTx(options: SendSmartWalletTxOptions): Promise<SubmitResult>
+```
+
+### SendSmartWalletTxOptions
+
+| Field                                | Type                | Description                                                                 |
+| ------------------------------------ | ------------------- | --------------------------------------------------------------------------- |
+| `operation` **(required)**           | `xdr.Operation`     | The wallet-authorized invocation (a SAC `transfer`, a contract call, …).    |
+| `networkPassphrase` **(required)**   | `string`            | Bound into the auth challenge.                                              |
+| `rpcUrl` **(required)**              | `string`            | soroban-rpc endpoint used for simulate/assemble.                            |
+| `sourceSecret` **(required)**        | `string`            | Funded classic account that pays the fee + sequences the tx (sponsor only). |
+| `sign` **(required)**                | `WebAuthnSigner`    | The wallet's passkey signer that authorizes the invocation.                 |
+| `submission`                         | `SubmissionAdapter` | Where the signed tx is sent. Defaults to `direct` (soroban-rpc).            |
+| `verify`                             | `SignVerifyOptions` | Opt-in pre-flight validation of the assertion.                              |
+| `signatureExpirationLedgerOffset`    | `number`            | Ledgers ahead of latest to expire the auth signature at (default 60).       |
+| `fee`, `timeoutSeconds`, `allowHttp` | —                   | Standard transaction knobs.                                                 |
+
+**Returns** `Promise<SubmitResult>` — `{ status, hash, … }`; the tx hash lands on Stellar Expert on success.
+
+```ts title="payment.ts"
+import { sendSmartWalletTx } from '@soropass/core/sign';
+import { Contract, Address, nativeToScVal } from '@stellar/stellar-sdk';
+
+// The wallet sends 10 XLM to `dest`, authorized by the passkey.
+const transfer = new Contract(NATIVE_SAC).call(
+  'transfer',
+  Address.fromString(walletContractId).toScVal(),
+  Address.fromString(dest).toScVal(),
+  nativeToScVal(10_0000000n, { type: 'i128' }),
+);
+
+const result = await sendSmartWalletTx({
+  operation: transfer,
+  networkPassphrase,
+  rpcUrl,
+  sourceSecret, // fee sponsor
+  sign, // the wallet's passkey
+});
+```
+
+<Callout type="tip">
+  This replaces the old manual "raise the instruction budget + resource fee before submit" step —
+  the enforcing re-simulation measures the real cost, including `secp256r1_verify`.
+</Callout>
+
+## registerPasskey
+
+Register an ES256-only passkey and extract its SEC-1 public key **without** deploying an account or persisting anything — the "new device" primitive. A fresh device produces a `{ credentialId, publicKey }` that an existing device then enrolls with `addSigner`. (`createPasskey` is this plus a deploy.)
+
+```ts
+registerPasskey(options: RegisterPasskeyOptions): Promise<RegisteredPasskey>
+// RegisteredPasskey = { credentialId: string; publicKey: Uint8Array /* SEC-1, 65B */ }
+```
+
+```ts
+import { registerPasskey } from '@soropass/core/create';
+
+const device = await registerPasskey({ rpId, rpName: 'My Wallet', userName: 'alice' });
+// device.publicKey (SEC-1) + device.credentialId → hand to addSigner
+```
+
+## addSigner
+
+Enroll a new passkey signer on a smart-wallet **on-chain**, authorized by an existing device — the multi-device recovery flow. Under the hood it builds `add_signer(Signer::Secp256r1(...))` and runs it through `sendSmartWalletTx`.
+
+```ts
+addSigner(options: AddSignerOptions): Promise<SubmitResult>
+```
+
+### AddSignerOptions
+
+Everything from [`SendSmartWalletTxOptions`](#sendsmartwallettoptions) **except `operation`**, plus:
+
+| Field                             | Type              | Description                                                                      |
+| --------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `walletContractId` **(required)** | `string`          | The smart-wallet C-address to add the signer to.                                 |
+| `newSigner` **(required)**        | `NewDeviceSigner` | `{ credentialId, publicKey, expiration?, storage? }` — the new device's passkey. |
+| `sign` **(required)**             | `WebAuthnSigner`  | The **existing** device's passkey, which authorizes the change.                  |
+
+`NewDeviceSigner.credentialId` accepts either a base64url string or raw bytes. `expiration` is an optional **UNIX-seconds** timestamp (v1); omit for a non-expiring recovery signer.
+
+```ts title="add-device.ts"
+import { registerPasskey } from '@soropass/core/create';
+import { addSigner } from '@soropass/core/recover';
+
+// On the NEW device:
+const device = await registerPasskey({ rpId, rpName: 'My Wallet', userName: 'alice' });
+
+// Authorized by the EXISTING device's passkey:
+const result = await addSigner({
+  walletContractId,
+  newSigner: device,
+  networkPassphrase,
+  rpcUrl,
+  sourceSecret,
+  sign: existingDeviceSigner,
+});
+// result.hash → the add_signer tx on Stellar Expert
+```
+
+## removeSigner
+
+The symmetric operation — remove a signer by credential id (authorized by an existing device). Same options as `addSigner`, with `credentialId` in place of `newSigner`.
+
+```ts
+removeSigner(options: RemoveSignerOptions): Promise<SubmitResult>
+```
+
+## With the UI
+
+The headless [`coreAddDevice`](/docs/components/framework) helper composes `registerPasskey` → an on-chain bind (your `addSigner` call) into the add-device flow's prompting → binding → success states, so the flow works with the styled screens or fully headless.
+
+<Cards>
+  <Card title="signTransaction" href="/docs/sdk/sign" />
+  <Card title="Recover & Connect" href="/docs/sdk/recover" />
+  <Card title="Adapters" href="/docs/sdk/adapters" />
+</Cards>

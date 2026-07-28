@@ -17,17 +17,24 @@ optional adopter concern — and because the headless layer already owns all log
 state, accessibility, and i18n, a wrapper is ~20 lines (examples below), not a
 re-implementation.
 
+> Published, reader-facing version: `docs.soropass.dev/docs/components/framework`
+> (`apps/docs-fuma/content/docs/components/framework.mdx`). This file is the
+> detailed internal record. Both now cover all **five** flows
+> (create · sign · recover · connect · add-device).
+
 ## Decision
 
 1. **Headless core stays framework-agnostic** (already true from S18). It is the
-   product: the create/sign/recover state machines, the a11y prop-getters
-   (`getTriggerProps`, `getStatusProps`, `getListProps`, `getOptionProps`), and
-   the i18n message keys. Zero DOM, zero framework.
+   product: the create/sign/recover/connect/add-device state machines, the a11y
+   prop-getters (`getTriggerProps`, `getStatusProps`, `getListProps`,
+   `getOptionProps`), the `coreAddDevice` composition helper, and the i18n message
+   keys. Zero DOM, zero framework.
 2. **The styled reference layer is also framework-agnostic.** It is a set of
-   `mount*Screen(root, { flow, … })` functions that render plain DOM and bind to
-   a headless flow. All visual values come from CSS custom properties in
-   `tokens.css`; the markup is identical to the design reference, so the result is
-   **pixel-identical** to the React prototype in the handoff.
+   `mount*Screen(root, { flow, … })` functions (create/sign/recover/connect/
+   add-device) that render plain DOM and bind to a headless flow. All visual values
+   come from CSS custom properties in `tokens.css`; the markup is identical to the
+   design reference, so the result is **pixel-identical** to the React prototype in
+   the handoff.
 3. **No framework wrapper is shipped as the default.** Instead we document thin
    wrappers (React/Vue/Web Component) that adopters drop in. If wallet teams ask
    for a first-class React package, it is a small follow-up that _wraps_ the
@@ -72,9 +79,11 @@ re-implementation.
 
 ```
 @soropass/ui
-  /headless     → flows + a11y prop-getters + i18n   (no DOM, no framework)
-  /styled       → mountCreateScreen / mountSignScreen / mountRecoverScreen,
-                  pure views, the error connector, identicon/icons helpers
+  /headless     → create/sign/recover/connect/add-device flows + coreAddDevice,
+                  a11y prop-getters + i18n   (no DOM, no framework)
+  /styled       → mountCreateScreen / mountSignScreen / mountRecoverScreen /
+                  mountConnectScreen / mountAddDeviceScreen, pure views, the error
+                  connector, identicon/icons helpers
   /styled.css   → tokens.css + passkey.css (one import)
   /tokens.css   → the theming surface alone (override to re-skin)
 ```

@@ -229,9 +229,14 @@ const signed = applyAssertionToEntry(entry, {
 ## Production note
 
 <Callout type="warn">
-  `simulateTransaction` does not run `secp256r1_verify`, so it under-budgets `__check_auth`. Raise
-  the instruction budget + resource fee before submit, or use a managed submitter.
+  Recording-auth `simulateTransaction` does not run `secp256r1_verify`, so it under-budgets
+  `__check_auth`. For smart-wallet accounts, prefer
+  [`sendSmartWalletTx`](/docs/sdk/smart-wallet#sendsmartwallettx) — it re-simulates the signed tx in
+  enforcing mode to measure the true footprint before submit. If you submit manually, raise the
+  instruction budget + resource fee, or use a managed submitter.
 </Callout>
+
+To wrap the signature as the passkey-kit smart-wallet `Signatures` map instead of the single-signer struct, pass `target: 'smart-wallet'` — see [smart-wallet & recovery](/docs/sdk/smart-wallet).
 
 For the matching error codes raised by these functions — including `INVALID_SIGNATURE_DER` and challenge/origin mismatches — see [the KitError taxonomy](/docs/sdk/errors).
 

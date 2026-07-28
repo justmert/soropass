@@ -1,5 +1,5 @@
 {
   "title": "SDK",
   "icon": "Package",
-  "pages": ["index", "create", "sign", "recover", "adapters", "errors"]
+  "pages": ["index", "create", "sign", "smart-wallet", "recover", "adapters", "errors"]
 }

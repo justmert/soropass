@@ -14,6 +14,29 @@ Three skins ship by default. Set `[data-theme]` on any wrapping element; dark an
 <div data-theme="dark">…</div>
 ```
 
+## Light and dark — one token swap, every state
+
+The same 22 component states, re-themed by nothing but a `data-theme` token override — no component code changes. Generated from the reference demo (`pnpm exec playwright test screenshots`).
+
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+  <figure style={{ margin: 0 }}>
+    <img
+      src="/screenshots/states-light.png"
+      alt="All SoroPass UI states in the light skin"
+      style={{ width: '100%', borderRadius: 8 }}
+    />
+    <figcaption>Light (default)</figcaption>
+  </figure>
+  <figure style={{ margin: 0 }}>
+    <img
+      src="/screenshots/states-dark.png"
+      alt="All SoroPass UI states in the dark skin"
+      style={{ width: '100%', borderRadius: 8 }}
+    />
+    <figcaption>Dark (`data-theme="dark"`)</figcaption>
+  </figure>
+</div>
+
 ## Theme builder
 
 Toggle light / dark and the real component re-themes live — the `:root` block updates to paste into your app.
