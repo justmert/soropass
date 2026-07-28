@@ -13,7 +13,6 @@
  */
 import {
   Address,
-  Contract,
   Keypair,
   Networks,
   Operation,
@@ -25,7 +24,7 @@ import {
 } from '@stellar/stellar-sdk';
 import { p256 } from '@noble/curves/nist';
 import { sha256 } from '@noble/hashes/sha256';
-import { signTransaction } from '../dist/index.js';
+import { buildAddSignerOperation, buildSecp256r1Signer, signTransaction } from '../dist/index.js';
 import type { AssertionResult, WebAuthnSigner } from '../dist/index.js';
 
 const RPC_URL = 'https://soroban-testnet.stellar.org';
@@ -72,29 +71,9 @@ function makeSigner(priv: Uint8Array, credId: Uint8Array): WebAuthnSigner {
   };
 }
 
-// ── v1 Signer ScVal encoders (types.rs, verified against the audited source) ──
-const NONE_TUPLE = xdr.ScVal.scvVec([xdr.ScVal.scvVoid()]); // SignerExpiration(None) / SignerLimits(None)
-const STORAGE_PERSISTENT = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Persistent')]);
-
-function secp256r1Signer(credId: Uint8Array, pubKey65: Uint8Array): xdr.ScVal {
-  return xdr.ScVal.scvVec([
-    xdr.ScVal.scvSymbol('Secp256r1'),
-    xdr.ScVal.scvBytes(Buffer.from(credId)),
-    xdr.ScVal.scvBytes(Buffer.from(pubKey65)),
-    NONE_TUPLE,
-    NONE_TUPLE,
-    STORAGE_PERSISTENT,
-  ]);
-}
-function ed25519Signer(key32: Uint8Array): xdr.ScVal {
-  return xdr.ScVal.scvVec([
-    xdr.ScVal.scvSymbol('Ed25519'),
-    xdr.ScVal.scvBytes(Buffer.from(key32)),
-    NONE_TUPLE,
-    NONE_TUPLE,
-    STORAGE_PERSISTENT,
-  ]);
-}
+// The v1 `Signer::Secp256r1(..)` ScVal encoders now live in @soropass/core
+// (soroban/signer.ts); this script dogfoods them via buildSecp256r1Signer /
+// buildAddSignerOperation below, so the proof exercises the shipped SDK code.
 
 function deployedContractId(deployerPub: string, salt: Uint8Array): string {
   const pre = xdr.HashIdPreimage.envelopeTypeContractId(
@@ -145,7 +124,7 @@ async function main(): Promise<void> {
     address: Address.fromString(source.publicKey()),
     wasmHash: Buffer.from(V1_WASM_HASH, 'hex'),
     salt: Buffer.from(salt),
-    constructorArgs: [secp256r1Signer(credId, pubKey65)],
+    constructorArgs: [buildSecp256r1Signer({ credentialId: credId, publicKey: pubKey65 })],
   });
   const acct1 = await server.getAccount(source.publicKey());
   const deployTx = new TransactionBuilder(acct1, { fee: '10000000', networkPassphrase: NETWORK })
@@ -160,8 +139,17 @@ async function main(): Promise<void> {
   async function tryAddSigner(signer: WebAuthnSigner) {
     // 2a. recording sim to discover the wallet's auth requirement.
     const acct = await server.getAccount(source.publicKey());
+    // Add a REAL second passkey signer (the multi-device recovery flow), authorized
+    // by the existing passkey — built with the shipped core buildAddSignerOperation.
+    const addOp = buildAddSignerOperation({
+      walletContractId: walletId,
+      signer: {
+        credentialId: rand(16),
+        publicKey: p256.getPublicKey(p256.utils.randomPrivateKey(), false),
+      },
+    });
     const tx = new TransactionBuilder(acct, { fee: '1000000', networkPassphrase: NETWORK })
-      .addOperation(new Contract(walletId).call('add_signer', ed25519Signer(rand(32))))
+      .addOperation(addOp)
       .setTimeout(300)
       .build();
     const sim1 = await server.simulateTransaction(tx);
