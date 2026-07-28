@@ -23,10 +23,13 @@ function asKitError(error: unknown): KitError {
       ? (error as { name?: unknown }).name
       : undefined;
   if (name === 'NotAllowedError') {
-    return new KitError('USER_CANCELLED', 'The passkey prompt was dismissed.');
+    return new KitError('USER_CANCELLED', 'The passkey prompt was dismissed.', { cause: error });
   }
   const message = error instanceof Error ? error.message : 'WebAuthn request failed';
-  return new KitError('UNSUPPORTED_AUTHENTICATOR', message);
+  // Preserve the original DOMException name (e.g. InvalidStateError / ConstraintError)
+  // in the message so diagnostics show the true cause, not just the generic bucket.
+  const detail = typeof name === 'string' ? `${name}: ${message}` : message;
+  return new KitError('UNSUPPORTED_AUTHENTICATOR', detail, { cause: error });
 }
 
 /** The browser `WebAuthnClient` backed by `navigator.credentials`. */
