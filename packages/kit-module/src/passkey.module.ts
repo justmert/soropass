@@ -3,6 +3,9 @@ import {
   connect,
   createPasskey,
   decodeChallenge,
+  defaultCredentialStorage,
+  deriveAccountAddress,
+  deriveSmartWalletAddress,
   derToCompactLowS,
   encodeChallenge,
   normalizeLowS,
@@ -14,6 +17,7 @@ import type {
   CredentialStorage,
   IndexerAdapter,
   PasskeyCredential,
+  WalletTarget,
   WebAuthnClient,
   WebAuthnSigner,
 } from '@soropass/core';
@@ -29,6 +33,23 @@ export interface PasskeyModuleOptions {
   network?: string;
   indexer: IndexerAdapter;
   deployer: AccountDeployer;
+  /**
+   * The AccountFactory C-address (our single-signer webauthn-account). When set,
+   * `getAddress` derives the address deterministically from `sha256(utf8(credentialId))`.
+   */
+  factoryContractId?: string;
+  /**
+   * The deployer account for a passkey-kit **v1 smart-wallet**. When set,
+   * `getAddress` derives the address offline via `sha256(rawCredentialId)` (the v1
+   * scheme). Pair with `walletTarget: 'smart-wallet'` so signatures use the v1 map,
+   * a `smartWalletV1Deployer` for `deployer`, and a `smartWalletV1Indexer` for `indexer`.
+   */
+  smartWalletDeployer?: string;
+  /**
+   * Which contract ABI to sign for: `single-signer` (our webauthn-account, the
+   * default) or `smart-wallet` (passkey-kit v1). Set `smart-wallet` for v1 wallets.
+   */
+  walletTarget?: WalletTarget;
   /** WebAuthn signer for signTransaction/signAuthEntry; default builds one from `webauthn`. */
   signer?: WebAuthnSigner;
   /** WebAuthn client for create/connect; default `browserWebAuthnClient()` (lazy). */
@@ -120,9 +141,42 @@ export class PasskeyModule implements ModuleInterface {
     return result;
   }
 
-  /** Returns the connected smart-account C-address (connects via the IndexerAdapter if needed). */
+  /**
+   * Returns the connected smart-account C-address. When `factoryContractId` is
+   * configured and a credential id is known, it derives the address
+   * deterministically (no deploy, no indexer round-trip); otherwise it resolves
+   * via a silent `connect` + the IndexerAdapter.
+   */
   async getAddress(): Promise<{ address: string }> {
     if (this.currentAddress) return { address: this.currentAddress };
+
+    const credentialId = this.resolveCredentialId();
+
+    // v1 smart-wallet: derive offline from the deployer + sha256(rawCredentialId).
+    if (this.options.smartWalletDeployer && credentialId) {
+      const address = deriveSmartWalletAddress({
+        deployer: this.options.smartWalletDeployer,
+        credentialId,
+        networkPassphrase: this.options.networkPassphrase,
+      });
+      this.currentAddress = address;
+      this.currentCredentialId = credentialId;
+      return { address };
+    }
+
+    // Single-signer factory: mirror the factory's on-chain salt,
+    // sha256(utf8(base64url credential id)) — same bytes the deployer sends.
+    if (this.options.factoryContractId && credentialId) {
+      const address = deriveAccountAddress({
+        factoryContractId: this.options.factoryContractId,
+        credentialId: new TextEncoder().encode(credentialId),
+        networkPassphrase: this.options.networkPassphrase,
+      });
+      this.currentAddress = address;
+      this.currentCredentialId = credentialId;
+      return { address };
+    }
+
     const connected = await connect({
       rpId: this.options.rpId,
       indexer: this.options.indexer,
@@ -137,6 +191,17 @@ export class PasskeyModule implements ModuleInterface {
     return { address: connected.contractId };
   }
 
+  /** Known credential id: the in-session one, else the per-rpId stored one. */
+  private resolveCredentialId(): string | null {
+    if (this.currentCredentialId) return this.currentCredentialId;
+    try {
+      const storage = this.options.storage ?? defaultCredentialStorage();
+      return storage.get(this.options.rpId);
+    } catch {
+      return null;
+    }
+  }
+
   async signTransaction(
     xdr: string,
     opts?: SignOpts,
@@ -144,6 +209,7 @@ export class PasskeyModule implements ModuleInterface {
     const signedTxXdr = await coreSignTransaction(xdr, {
       networkPassphrase: opts?.networkPassphrase ?? this.options.networkPassphrase,
       sign: this.signer,
+      target: this.options.walletTarget,
     });
     return { signedTxXdr, signerAddress: opts?.address ?? this.currentAddress ?? undefined };
   }
@@ -155,6 +221,7 @@ export class PasskeyModule implements ModuleInterface {
     const signedAuthEntry = await coreSignAuthEntry(authEntry, {
       networkPassphrase: opts?.networkPassphrase ?? this.options.networkPassphrase,
       sign: this.signer,
+      target: this.options.walletTarget,
     });
     return { signedAuthEntry, signerAddress: opts?.address ?? this.currentAddress ?? undefined };
   }

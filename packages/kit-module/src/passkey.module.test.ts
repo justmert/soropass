@@ -9,7 +9,13 @@ import {
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
-import { referenceCheckAuth } from '@soropass/core';
+import {
+  deriveAccountAddress,
+  deriveSmartWalletAddress,
+  referenceCheckAuth,
+  referenceSmartWalletCheckAuth,
+} from '@soropass/core';
+import type { AccountDeployer, CredentialStorage, IndexerAdapter } from '@soropass/core';
 import { createInMemoryBackend, mockAuthenticator } from '@soropass/core/testing';
 import { PASSKEY_ID, PasskeyModule } from './index';
 import type { ModuleInterface } from './kitTypes';
@@ -137,6 +143,110 @@ describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () =>
     const envelope = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64');
     const entry = envelope.v1().tx().operations()[0]!.body().invokeHostFunctionOp().auth()[0]!;
     expect(referenceCheckAuth(entry, created.publicKey, PASSPHRASE).success).toBe(true);
+  });
+
+  it('getAddress() derives the C-address from the factory + credential id, WITHOUT the indexer', async () => {
+    // The real on-chain factoryDeployProof (deployments.json): factory.deploy with
+    // credential_id "democred" produced this account. getAddress must reproduce it
+    // offline, and must NOT touch the indexer when the factory path is available.
+    const FACTORY = 'CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM';
+    const DEPLOYED = 'CAGWE36MQRWXIXS4Z4G6UYEEJMJ7XGNOE7K5PHQ6BCZYMAPAWPBHLBQV';
+
+    const map = new Map<string, string>();
+    const storage: CredentialStorage = {
+      get: (r) => map.get(r) ?? null,
+      set: (r, id) => void map.set(r, id),
+    };
+    storage.set(RP_ID, 'democred');
+    const throwingIndexer: IndexerAdapter = {
+      resolveByCredential: () => {
+        throw new Error('indexer must not be called on the deterministic path');
+      },
+    };
+    const throwingDeployer: AccountDeployer = {
+      deploy: () => Promise.reject(new Error('deploy must not be called')),
+    };
+
+    const module = new PasskeyModule({
+      rpId: RP_ID,
+      networkPassphrase: PASSPHRASE,
+      indexer: throwingIndexer,
+      deployer: throwingDeployer,
+      webauthn: mockAuthenticator({ rpId: RP_ID, seed: 'derive' }),
+      storage,
+      factoryContractId: FACTORY,
+    });
+
+    const { address } = await module.getAddress();
+    expect(address).toBe(DEPLOYED);
+    expect(address).toBe(
+      deriveAccountAddress({
+        factoryContractId: FACTORY,
+        credentialId: new TextEncoder().encode('democred'),
+        networkPassphrase: PASSPHRASE,
+      }),
+    );
+  });
+
+  it('v1: walletTarget "smart-wallet" yields a signature the smart-wallet __check_auth accepts', async () => {
+    const auth = mockAuthenticator({ rpId: RP_ID, seed: 'v1-sign' });
+    const backend = createInMemoryBackend();
+    const module = new PasskeyModule({
+      rpId: RP_ID,
+      networkPassphrase: PASSPHRASE,
+      indexer: backend.indexer,
+      deployer: backend.deployer,
+      signer: auth.sign,
+      webauthn: auth,
+      walletTarget: 'smart-wallet',
+    });
+    const created = await module.createAccount();
+    const { signedTxXdr } = await module.signTransaction(unsignedTxXdr());
+    const entry = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64')
+      .v1()
+      .tx()
+      .operations()[0]!
+      .body()
+      .invokeHostFunctionOp()
+      .auth()[0]!;
+    // The signature is the v1 Signatures(Map<SignerKey, Signature>) shape, not the bare struct.
+    expect(entry.credentials().address().signature().switch().name).toBe('scvVec');
+    const r = referenceSmartWalletCheckAuth(entry, () => created.publicKey, PASSPHRASE);
+    expect(r.success).toBe(true);
+  });
+
+  it('v1: getAddress derives offline via the smart-wallet scheme (smartWalletDeployer)', async () => {
+    const DEPLOYER = 'GCO3Q7OMYHLFWQL7EZQNF5DHXR3PQ4TFZHBZE6MMD4B3QMMCV3TZNFIT';
+    const CRED = 'Zm9vYmFy'; // "foobar" base64url
+    const map = new Map<string, string>();
+    const storage: CredentialStorage = {
+      get: (r) => map.get(r) ?? null,
+      set: (r, id) => void map.set(r, id),
+    };
+    storage.set(RP_ID, CRED);
+    const throwingIndexer: IndexerAdapter = {
+      resolveByCredential: () => {
+        throw new Error('indexer must not be called on the v1 derive path');
+      },
+    };
+    const module = new PasskeyModule({
+      rpId: RP_ID,
+      networkPassphrase: PASSPHRASE,
+      indexer: throwingIndexer,
+      deployer: { deploy: () => Promise.reject(new Error('no deploy')) },
+      webauthn: mockAuthenticator({ rpId: RP_ID, seed: 'v1-addr' }),
+      storage,
+      smartWalletDeployer: DEPLOYER,
+      walletTarget: 'smart-wallet',
+    });
+    const { address } = await module.getAddress();
+    expect(address).toBe(
+      deriveSmartWalletAddress({
+        deployer: DEPLOYER,
+        credentialId: CRED,
+        networkPassphrase: PASSPHRASE,
+      }),
+    );
   });
 
   it('signAuthEntry() verifies through the module', async () => {
