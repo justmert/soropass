@@ -1,7 +1,7 @@
 /**
  * Reference demo for the S20 styled layer. Renders:
- *   1. A static gallery of ALL 16 states (Create 5 · Sign 5 · Recover 6) — used
- *      for visual review + before/after token-swap screenshots.
+ *   1. A static gallery of ALL 22 states (Create 5 · Sign 5 · Recover 6 · Connect 1
+ *      · Add-device 5) — used for visual review + before/after token-swap screenshots.
  *   2. Three LIVE cards driving the real headless flows (mock or virtual-
  *      authenticator backed — see demoKit).
  *   3. A tweaks bar that overrides tokens on a single scope element, proving the
@@ -18,15 +18,21 @@ import {
   createView,
   signView,
   recoverView,
+  connectView,
+  addDeviceView,
   mountCreateScreen,
   mountSignScreen,
   mountRecoverScreen,
   DEFAULT_CREATE_COPY,
   DEFAULT_SIGN_COPY,
   DEFAULT_RECOVER_COPY,
+  DEFAULT_CONNECT_COPY,
+  DEFAULT_ADDDEVICE_COPY,
   type CreateCtx,
   type SignCtx,
   type RecoverCtx,
+  type ConnectCtx,
+  type AddDeviceCtx,
 } from '@soropass/ui/styled';
 import { createDemo, type Demo } from './demoKit';
 
@@ -87,6 +93,19 @@ const recoverCtx: RecoverCtx = {
   onCreateNew: noop,
   onTryDifferent: noop,
 };
+const connectCtx: ConnectCtx = {
+  copy: DEFAULT_CONNECT_COPY,
+  onCreate: noop,
+  onUseExisting: noop,
+  onHelp: noop,
+};
+const addDeviceCtx: AddDeviceCtx = {
+  copy: DEFAULT_ADDDEVICE_COPY,
+  onAdd: noop,
+  onCancel: noop,
+  onRetry: noop,
+  onDone: noop,
+};
 
 function galleryTiles(): Array<[string, HTMLElement]> {
   const firstAccount = SAMPLE_ACCOUNTS[0] ?? { contractId: 'C', credentialId: 'k' };
@@ -124,6 +143,24 @@ function galleryTiles(): Array<[string, HTMLElement]> {
     [
       'recover · error(NETWORK_ERROR)',
       recoverView({ status: 'error', code: 'NETWORK_ERROR', message: '' }, [], recoverCtx),
+    ],
+    ['connect · idle', connectView(connectCtx)],
+    ['addDevice · idle', addDeviceView({ status: 'idle' }, addDeviceCtx)],
+    ['addDevice · prompting', addDeviceView({ status: 'prompting' }, addDeviceCtx)],
+    ['addDevice · binding', addDeviceView({ status: 'binding' }, addDeviceCtx)],
+    [
+      'addDevice · success',
+      addDeviceView(
+        { status: 'success', result: { signer: SAMPLE_CRED.contractId } },
+        addDeviceCtx,
+      ),
+    ],
+    [
+      'addDevice · error(UNSUPPORTED_AUTHENTICATOR)',
+      addDeviceView(
+        { status: 'error', code: 'UNSUPPORTED_AUTHENTICATOR', message: '' },
+        addDeviceCtx,
+      ),
     ],
   ];
 }
@@ -248,7 +285,7 @@ function main(): void {
       el('div', { class: 'demo-tile' }, el('div', { class: 'demo-tile__cap' }, caption), cardEl),
     );
   }
-  scope.append(section('All 16 states (static gallery)', grid));
+  scope.append(section('All 22 states (static gallery)', grid));
 
   // 3. interactive cards driving the real headless flows
   const demo = createDemo();

@@ -18,11 +18,11 @@ async function addVirtualAuthenticator(page: Page): Promise<CDPSession> {
 }
 
 test.describe('S20 styled screens — brutal integration', () => {
-  test('static gallery renders all 16 states', async ({ page }) => {
+  test('static gallery renders all 22 states', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.demo-grid .pk-card')).toHaveCount(16);
-    // "OS sheet open" look: create/sign prompting + recover discovering
-    await expect(page.locator('.demo-grid .pk-card.is-waiting')).toHaveCount(3);
+    await expect(page.locator('.demo-grid .pk-card')).toHaveCount(22);
+    // "OS sheet open" look: create/sign prompting + recover discovering + add-device prompting
+    await expect(page.locator('.demo-grid .pk-card.is-waiting')).toHaveCount(4);
     await expect(page.locator('.demo-grid [data-pk-state="deploying"] .pk-spinner')).toBeVisible();
     await expect(page.locator('.demo-grid [data-pk-state="submitting"] .pk-spinner')).toBeVisible();
   });

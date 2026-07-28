@@ -150,11 +150,11 @@
   <body>
     <div class="oc-wrap">
       <div class="oc-head">
-        <h1>Create a Stellar passkey wallet — live on testnet</h1>
+        <h1>A Stellar passkey smart-wallet — live on testnet</h1>
         <p>
-          Real WebAuthn (your Touch ID / Windows Hello), a real smart account deployed through our
-          on-chain factory, and a real <code>secp256r1 __check_auth</code> verification. Nothing is
-          mocked.
+          Real WebAuthn (your Touch ID / Windows Hello), a real passkey-kit v1 smart-wallet deployed
+          from the audited wasm, a real passkey-signed payment, and on-chain multi-device recovery.
+          Nothing is mocked.
         </p>
       </div>
       <div class="oc-badges">
@@ -176,15 +176,26 @@
 
         <div class="oc-step" id="signpanel" data-disabled>
           <div class="oc-step__n">Step 2</div>
-          <div class="oc-step__t">Authorize a transaction on-chain</div>
+          <div class="oc-step__t">Send a passkey-signed payment</div>
           <div class="oc-mount" id="sign"></div>
           <button class="oc-wrongbtn" id="wrongkey">
-            Sign with the WRONG key → expect on-chain FAILED
+            Sign with the WRONG key → expect on-chain rejection
           </button>
           <div class="oc-links" id="resultlinks"></div>
           <p class="oc-note">
             The correct passkey signature passes <code>__check_auth</code>; a wrong key is rejected
             on-chain by <code>secp256r1_verify</code>.
+          </p>
+        </div>
+
+        <div class="oc-step" id="recoverpanel" data-disabled>
+          <div class="oc-step__n">Step 3</div>
+          <div class="oc-step__t">Recover on a second device</div>
+          <div class="oc-mount" id="adddevice"></div>
+          <div class="oc-links" id="recoverlinks"></div>
+          <p class="oc-note">
+            Enroll a second passkey as an additional signer on-chain (<code>add_signer</code>),
+            authorized by your first device — so a lost device never locks you out.
           </p>
         </div>
       </div>
