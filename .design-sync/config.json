@@ -1,0 +1,16 @@
+{
+  "pkg": "@soropass/ui-react",
+  "globalName": "SoroPassUI",
+  "projectId": "6d23a4e8-fbee-458f-b82a-ac227b1e7c99",
+  "shape": "package",
+  "buildCmd": "pnpm --filter \"@soropass/ui-react...\" build",
+  "cssEntry": "styles.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "componentSrcMap": {
+    "CreatePasskeyScreen": "src/index.tsx",
+    "SignTransactionScreen": "src/index.tsx",
+    "RecoverAccountScreen": "src/index.tsx",
+    "ConnectScreen": "src/index.tsx",
+    "AddDeviceScreen": "src/index.tsx"
+  }
+}
