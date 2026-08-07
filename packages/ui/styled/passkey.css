@@ -331,6 +331,29 @@
   0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 var(--pk-focus-halo); }
   50%      { transform: scale(1.04); box-shadow: 0 0 0 10px transparent; }
 }
+/* WORKING overlay — "we hold the signature, the network has it now". Same
+   centered geometry as the waiting overlay so prompting → submitting is one
+   continuous box, but the context behind stays readable rather than blurred out. */
+.pk-workoverlay {
+  position: absolute; inset: 0; z-index: var(--pk-z-overlay);
+  display: grid; place-items: center;
+  padding: var(--pk-space-5);
+  background: color-mix(in oklch, var(--pk-color-surface) 45%, transparent);
+  backdrop-filter: blur(3px);
+}
+.pk-workoverlay .pk-work {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--pk-space-6) var(--pk-space-5);
+  background: var(--pk-color-surface);
+  border: 1px solid var(--pk-color-border);
+  border-radius: var(--pk-radius-lg);
+  box-shadow: var(--pk-shadow-lg);
+}
+.pk-card[data-pk-state="submitting"] .pk-card__dim {
+  opacity: var(--pk-work-dim-opacity, 0.8);
+  filter: none;
+}
 /* The OS sheet metaphor: a hint of the native sheet rising from the bottom edge */
 .pk-ossheet {
   position: absolute; inset-inline: 0; inset-block-end: 0; z-index: var(--pk-z-toast);
@@ -345,7 +368,7 @@
 .pk-listbox {
   display: flex; flex-direction: column; gap: var(--pk-space-2);
   max-height: 348px; overflow-y: auto;
-  margin: 0; padding: 2px; list-style: none;
+  margin: -4px; padding: 4px; list-style: none;
   outline: none;
 }
 .pk-option {
@@ -362,19 +385,31 @@
 .pk-option[aria-selected="true"] {
   border-color: var(--pk-color-brand);
   background: var(--pk-color-brand-soft);
+  box-shadow: inset 0 0 0 1px var(--pk-color-brand);
 }
-/* roving focus look — the focused row in the listbox */
-.pk-option.is-active {
+.pk-option[aria-selected="true"]:hover { background: var(--pk-color-brand-soft); }
+/* Roving tabindex marks WHERE the keyboard is, not what is chosen — painting a
+   permanent ring on the active row made every list look mis-rendered. The ring
+   is now tied to real keyboard focus. */
+.pk-option:focus-visible {
   outline: var(--pk-focus-width) solid var(--pk-focus-color);
   outline-offset: var(--pk-focus-offset);
   box-shadow: 0 0 0 calc(var(--pk-focus-width) + 2px) var(--pk-focus-halo);
+  border-radius: var(--pk-radius-md);
 }
 .pk-option__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pk-option__addr { font-family: var(--pk-font-mono); font-size: var(--pk-text-base); }
 .pk-option__meta { font-size: var(--pk-text-xs); color: var(--pk-color-text-muted); }
-.pk-option__check { color: var(--pk-color-brand); opacity: 0; flex: none; }
-.pk-option__check svg { width: 20px; height: 20px; }
-.pk-option[aria-selected="true"] .pk-option__check { opacity: 1; }
+.pk-option__check {
+  color: var(--pk-color-brand); flex: none;
+  width: 20px; height: 20px; border-radius: var(--pk-radius-full);
+  display: grid; place-items: center;
+  box-shadow: inset 0 0 0 1px var(--pk-color-border-strong);
+  transition: box-shadow var(--pk-duration-fast) var(--pk-ease);
+}
+.pk-option__check svg { width: 20px; height: 20px; opacity: 0; }
+.pk-option[aria-selected="true"] .pk-option__check { box-shadow: none; }
+.pk-option[aria-selected="true"] .pk-option__check svg { opacity: 1; }
 
 /* ---- Centered result layout (success / done / none / error) -----------
    One consistent, perfectly-centered column so messages never look ragged. */
@@ -412,11 +447,25 @@
 .pk-banner {
   display: flex; gap: var(--pk-space-3);
   padding: var(--pk-space-3) var(--pk-space-4);
+  border: 1px solid transparent;
   border-radius: var(--pk-radius-md);
   font-size: var(--pk-text-sm);
+  line-height: var(--pk-leading-normal);
   align-items: flex-start;
+  text-wrap: pretty;
 }
-.pk-banner--error { background: var(--pk-color-error-soft); color: var(--pk-color-error); }
+.pk-banner--error {
+  background: var(--pk-color-error-soft);
+  border-color: color-mix(in oklch, var(--pk-color-error) 34%, transparent);
+  color: var(--pk-color-error);
+}
+/* Caution, not failure: a warning reads as an advisory the user must weigh,
+   so it gets its own hue instead of borrowing the error red. */
+.pk-banner--warn {
+  background: var(--pk-color-warning-soft);
+  border-color: var(--pk-color-warning-line);
+  color: var(--pk-color-warning);
+}
 .pk-banner svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
 .pk-banner__body { color: var(--pk-color-text); }
 .pk-banner__code {

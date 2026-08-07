@@ -96,14 +96,15 @@ export function signView(state: SignFlowState, ctx: SignCtx): HTMLElement {
     case 'submitting':
       return card(
         { screen: 'sign', state: 'submitting' },
-        // Dim level is token-overridable (default 0.4 keeps the summary legible
-        // while submitting — distinct from the heavier waiting-state dim).
+        // The summary stays readable behind a floating work overlay (CSS dims it
+        // to ~0.8, token-overridable via --pk-work-dim-opacity) so prompting →
+        // submitting reads as one continuous centered box.
+        h('div', { class: 'pk-card__dim' }, txSummary(ctx.tx)),
         h(
           'div',
-          { class: 'pk-card__dim', style: 'opacity: var(--pk-work-dim-opacity, 0.4)' },
-          txSummary(ctx.tx),
+          { class: 'pk-workoverlay' },
+          workBlock({ title: ctx.copy.submittingTitle, hint: ctx.copy.submittingHint }),
         ),
-        workBlock({ title: ctx.copy.submittingTitle, hint: ctx.copy.submittingHint }),
       );
     case 'done': {
       const result = state.result;

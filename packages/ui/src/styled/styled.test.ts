@@ -390,8 +390,9 @@ describe('token gate — no raw inline visual values leak into components', () =
         expect(el.getAttribute('style')).toContain('var(--pk-');
       }
     }
-    // the only inline style in the whole layer is the (token-driven) submit dim
-    expect(inlineStyles).toBe(1);
+    // the submit dim moved to a CSS rule (.pk-card[data-pk-state="submitting"]
+    // .pk-card__dim), so the styled layer now carries no inline styles at all
+    expect(inlineStyles).toBe(0);
   });
 });
 

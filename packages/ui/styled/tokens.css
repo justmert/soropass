@@ -50,6 +50,9 @@
   --pk-color-error-soft:      color-mix(in oklch, var(--pk-color-error) 13%, transparent);
   --pk-color-info:            oklch(0.62 0.13 245);   /* progress / "we're working" */
   --pk-color-info-soft:       color-mix(in oklch, var(--pk-color-info) 14%, transparent);
+  --pk-color-warning:         oklch(0.66 0.14 68);    /* cautions that are not failures */
+  --pk-color-warning-soft:    color-mix(in oklch, var(--pk-color-warning) 14%, transparent);
+  --pk-color-warning-line:    color-mix(in oklch, var(--pk-color-warning) 38%, transparent);
 
   /* -- 3. SHAPE & SPACE --------------------------------------------------- */
   --pk-radius-none:  0px;
@@ -154,6 +157,10 @@
 
   --pk-color-border:          oklch(0.32 0.012 271);
   --pk-color-border-strong:   oklch(0.40 0.014 271);
+
+  --pk-color-warning:         oklch(0.78 0.13 74);
+  --pk-color-warning-soft:    color-mix(in oklch, var(--pk-color-warning) 18%, transparent);
+  --pk-color-warning-line:    color-mix(in oklch, var(--pk-color-warning) 42%, transparent);
 
   --pk-color-success:         oklch(0.72 0.14 158);
   --pk-color-error:           oklch(0.68 0.18 25);
