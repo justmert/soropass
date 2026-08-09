@@ -192,6 +192,12 @@ function recoverEl(state: string, p: Params): HTMLElement {
       return recoverView({ status: 'discovering' }, [], recoverCtx);
     case 'resolved':
       return recoverView({ status: 'resolved', accounts: accts }, accts, recoverCtx);
+    case 'selected': {
+      const list = accts.length ? accts : SAMPLE_ACCOUNTS.slice(0, 2);
+      return recoverView({ status: 'selected', account: list[0]! }, list, recoverCtx);
+    }
+    case 'none':
+      return recoverView({ status: 'none' }, [], recoverCtx);
     case 'error':
       return recoverView({ status: 'error', code: p.errorCode, message: '' }, [], recoverCtx);
     default:
@@ -537,15 +543,27 @@ function applyTheme(scope: HTMLElement, p: Params): void {
 const scope = document.getElementById('app') as HTMLElement;
 let current = readParams();
 
+let lastPostedHeight = 0;
+let heightScheduled = false;
 function postHeight(): void {
-  const height = Math.ceil(document.body.getBoundingClientRect().height);
-  parent.postMessage({ type: 'pk-height', height }, '*');
+  // Coalesce bursts to one measurement per frame, and only notify the parent
+  // when the height actually changed — a stable card must never drive a resize
+  // loop (parent resizes iframe → ResizeObserver fires → post → parent resizes → …).
+  if (heightScheduled) return;
+  heightScheduled = true;
+  requestAnimationFrame(() => {
+    heightScheduled = false;
+    const height = Math.ceil(document.body.getBoundingClientRect().height);
+    if (Math.abs(height - lastPostedHeight) < 2) return;
+    lastPostedHeight = height;
+    parent.postMessage({ type: 'pk-height', height }, '*');
+  });
 }
 
 function render(): void {
   applyTheme(scope, current);
   scope.replaceChildren(elFor(current));
-  requestAnimationFrame(postHeight);
+  postHeight();
 }
 
 window.addEventListener('message', (e: MessageEvent) => {

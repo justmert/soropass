@@ -14,7 +14,7 @@ const DEMO_URL = 'https://demo.soropass.dev';
 const STATES: Record<string, string[]> = {
   create: ['idle', 'prompting', 'deploying', 'success', 'error'],
   sign: ['idle', 'prompting', 'submitting', 'done', 'error'],
-  recover: ['idle', 'discovering', 'resolved', 'error'],
+  recover: ['idle', 'discovering', 'resolved', 'selected', 'none', 'error'],
   adddevice: ['idle', 'prompting', 'binding', 'success', 'error'],
   connect: [],
   primitives: [],
@@ -69,7 +69,9 @@ export function Preview({
       const d = e.data as { type?: string; height?: number } | null;
       if (!d) return;
       if (d.type === 'pk-height' && typeof d.height === 'number') {
-        setH(Math.max(320, Math.round(d.height)));
+        const next = Math.max(320, Math.round(d.height));
+        // Ignore sub-2px churn so the iframe never jitters/re-lays-out on scroll.
+        setH((cur) => (Math.abs(next - cur) > 1 ? next : cur));
       } else if (d.type === 'pk-ready') {
         send();
       }
