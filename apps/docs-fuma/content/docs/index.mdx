@@ -4,37 +4,37 @@ icon: BookOpen
 description: A minimal passkey SDK plus drop-in create / sign / recover components for Stellar smart accounts, built to drop into stellar-wallets-kit.
 ---
 
-A minimal passkey SDK plus drop-in **create / sign / recover** UI for Stellar smart accounts. Wallet teams ship passkeys — Face ID, Touch ID, a security key — without hand-rolling WebAuthn, on-chain signing, or device/browser compatibility logic. It is a **layer, not a wallet**: no accounts to manage, no balances of our own.
+A minimal passkey SDK plus drop-in **create / sign / recover** UI for Stellar smart accounts. Wallet teams ship passkeys (Face ID, Touch ID, a security key) without hand-rolling WebAuthn, on-chain signing, or device/browser compatibility logic. It is a **layer, not a wallet**: no accounts to manage, no balances of its own.
 
 <Callout type="info" title="Proven, not promised">
-  The secp256r1 `__check_auth` path is **verified on testnet** — a real passkey signature authorizes
-  a smart-account call, and a wrong-key signature is rejected on-chain. See the deployed
+  The secp256r1 `__check_auth` path is **verified on testnet**. A real passkey signature authorizes
+  a smart-account call, and the chain rejects a wrong-key signature. See the deployed
   [webauthn-account contract](https://stellar.expert/explorer/testnet/contract/CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2)
   on Stellar Expert.
 </Callout>
 
 ## Three ways to adopt
 
-They stack — start at the top and add the others later. Each has a runnable example in the [Quickstart](/docs/quickstart).
+They stack: start at the top and add the others later. Each has a runnable example in the [Quickstart](/docs/quickstart).
 
 | Adopt                       | Package            | Use it when                                                                                                                                     |
 | --------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Headless SDK**            | `@soropass/core`   | You own the UI (any framework, or none) or run server-side. Four calls: create, sign, recover, add-device.                                       |
-| **+ UI components**         | `@soropass/ui`     | You want drop-in create / sign / recover / add-device screens — framework-agnostic, themed by `tokens.css`, no design system to adopt.           |
+| **+ UI components**         | `@soropass/ui`     | You want drop-in create / sign / recover / add-device screens: framework-agnostic, themed by `tokens.css`, no design system to adopt.           |
 | **Via Stellar Wallets Kit** | `PasskeyModule`    | You already use [stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit) and want passkeys in its picker next to Freighter / Lobstr, with your `getAddress` / `signTransaction` calls unchanged. |
 
 ## What makes it minimal
 
-- **ES256-only** — `pubKeyCredParams` pinned to alg −7; anything else throws `ES256_NOT_SUPPORTED`. Soroban verifies secp256r1.
-- **Always low-S** — signatures are low-S normalized client-side, so the ~50% of Apple passkeys that emit high-S still verify on-chain.
-- **~2 runtime deps** — noble `p256` + hashes. `@stellar/stellar-sdk` is a **peer** dependency, never bundled.
-- **Tree-shakeable subpaths** — import only what you use: `@soropass/core/create`, `/sign`, `/recover`.
+- **ES256-only**: `pubKeyCredParams` pinned to alg −7; anything else throws `ES256_NOT_SUPPORTED`. Soroban verifies secp256r1.
+- **Always low-S**: the SDK normalizes signatures to low-S client-side, so the ~50% of Apple passkeys that emit high-S still verify on-chain.
+- **~2 runtime deps**: noble `p256` + hashes. `@stellar/stellar-sdk` is a **peer** dependency, never bundled.
+- **Tree-shakeable subpaths**: import only what you use (`@soropass/core/create`, `/sign`, `/recover`).
 
 ## Where to go next
 
 <Cards>
   <Card icon={<Rocket />} title="Quickstart" href="/docs/quickstart">
-    Add passkeys in ~15 minutes — a runnable example for all three paths.
+    Add passkeys in ~15 minutes: a runnable example for all three paths.
   </Card>
   <Card icon={<LayoutGrid />} title="Components" href="/docs/components">
     Create / sign / recover screens, every state, drop-in.
@@ -43,7 +43,7 @@ They stack — start at the top and add the others later. Each has a runnable ex
     Tiny surface, typed errors, pluggable adapters.
   </Card>
   <Card icon={<MonitorSmartphone />} title="Compatibility" href="/docs/compatibility">
-    The living matrix — what works, what breaks, fallbacks.
+    The living matrix: what works, what breaks, fallbacks.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/security">
     Trust boundaries, replay, RP-ID, and how signing works end to end.

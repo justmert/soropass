@@ -1,14 +1,14 @@
 ---
 title: Guides
 icon: FlaskConical
-description: The full SoroPass flow on Stellar testnet — create a passkey wallet, sign a payment, watch a wrong key get rejected on-chain, add a backup device, and recover on another device.
+description: The full SoroPass flow on Stellar testnet. Create a passkey wallet, sign a payment, watch a wrong key get rejected on-chain, add a backup device, and recover on another device.
 ---
 
-The complete flow, end to end, on Stellar testnet — the same run you can try live at [demo.soropass.dev](https://demo.soropass.dev), every transaction on Stellar Expert. It uses the headless [Path A](/docs/quickstart#path-a--headless-any-framework-or-none) API throughout; the [config](/docs/quickstart#one-time-config) (`cfg`, `deployer`, `indexer`) is the one from the Quickstart.
+The complete flow, end to end, on Stellar testnet: the same run you can try live at [demo.soropass.dev](https://demo.soropass.dev), every transaction on Stellar Expert. It uses the headless [Path A](/docs/quickstart#path-a--headless-any-framework-or-none) API throughout; the [config](/docs/quickstart#one-time-config) (`cfg`, `deployer`, `indexer`) is the one from the Quickstart.
 
 ## 1 · Create a wallet
 
-A passkey becomes the first signer of a freshly deployed smart-account contract. No seed phrase, nothing to write down — the private key never leaves the device.
+A passkey becomes the first signer of a freshly deployed smart-account contract. No seed phrase, nothing to write down. The private key never leaves the device.
 
 ```ts
 import { createPasskey } from '@soropass/core/create';
@@ -46,20 +46,20 @@ const res = await sendSmartWalletTx({
 
 ## 3 · Reject a wrong key
 
-The safety proof: a signature from the **wrong key** is rejected by the contract itself, on-chain — not by the UI. `sendSmartWalletTx` re-simulates enforcing `__check_auth`, which runs `secp256r1_verify` against the stored signer and fails.
+The safety proof: the contract itself rejects a signature from the **wrong key**, on-chain, not the UI. `sendSmartWalletTx` re-simulates enforcing `__check_auth`, which runs `secp256r1_verify` against the stored signer and fails.
 
 ```ts
 // Same call, but `sign` is a random software key that is NOT a registered signer.
 try {
   await sendSmartWalletTx({ operation: transfer, ...cfg, sourceSecret, sign: wrongKeySigner });
 } catch (err) {
-  // Rejected on-chain during the enforcing re-simulation — exactly as intended. No funds move.
+  // Rejected on-chain during the enforcing re-simulation, exactly as intended. No funds move.
 }
 ```
 
 ## 4 · Add a backup device
 
-Register a second passkey as an additional signer with an on-chain `add_signer`, authorized by the first passkey — so a lost device never locks the user out.
+Register a second passkey as an additional signer with an on-chain `add_signer`, authorized by the first passkey, so a lost device never locks you out.
 
 ```ts
 import { registerPasskey } from '@soropass/core/create';
@@ -74,23 +74,23 @@ await addSigner({
   sourceSecret: FEE_SOURCE_SECRET,
   sign: browserPasskeySigner({ rpId: cfg.rpId, allowCredentials: [account.credentialId] }),
 });
-// The wallet is now multi-signer — both passkeys work.
+// The wallet is now multi-signer: both passkeys work.
 ```
 
 ## 5 · Recover on another device
 
-On a fresh device with nothing stored, a discoverable passkey sign-in plus the on-chain indexer resolves the wallet(s) that passkey controls — no seed phrase, no local state.
+On a fresh device with nothing stored, a discoverable passkey sign-in plus the on-chain indexer resolves the wallet(s) that passkey controls. No seed phrase, no local state.
 
 ```ts
 import { recover } from '@soropass/core/recover';
 
 const wallets = await recover({ rpId: cfg.rpId, indexer });
-// wallets: { contractId, credentialId }[] — resolved from on-chain signer_added events.
+// wallets: { contractId, credentialId }[], resolved from on-chain signer_added events.
 ```
 
 ## Surfaces & the OS sheet
 
-The same components adapt across surfaces. The native passkey sheet (Face ID / Touch ID) is the OS — our card stays calm behind it, never a competing spinner.
+The same components adapt across surfaces. The native passkey sheet (Face ID / Touch ID) is the OS. The card stays calm behind it, never a competing spinner.
 
 <Tabs items={['Web (desktop)', 'Mobile-web', 'Cross-device']}>
 <Tab value="Web (desktop)">
@@ -109,13 +109,13 @@ Works from 360px; ≥44–48px touch targets; a bottom-edge OS-sheet hint bar; s
 </Tab>
 <Tab value="Cross-device">
 
-Desktop initiates, the phone that holds the passkey approves (hybrid / caBLE / QR). `hybrid_transport` is a documented, sourced surface — [see the matrix row](/docs/compatibility) — with a dedicated component on the roadmap.
+Desktop initiates, the phone that holds the passkey approves (hybrid / caBLE / QR). `hybrid_transport` is a documented, sourced surface ([see the matrix row](/docs/compatibility)), with a dedicated component on the roadmap.
 
 </Tab>
 </Tabs>
 
 <Callout type="info">
-  Previews run in **mock mode** (no network, no authenticator) — browsers restrict WebAuthn inside
+  Previews run in **mock mode** (no network, no authenticator) because browsers restrict WebAuthn inside
   cross-origin iframes. The real ceremonies run at [demo.soropass.dev](https://demo.soropass.dev),
   every transaction linked to Stellar Expert.
 </Callout>

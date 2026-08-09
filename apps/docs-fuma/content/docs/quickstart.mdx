@@ -1,10 +1,10 @@
 ---
 title: Quickstart
 icon: Rocket
-description: Add passkey sign-in for Stellar smart accounts three ways — headless SDK, drop-in UI components, or inside Stellar Wallets Kit — each with a runnable example.
+description: Add passkey sign-in for Stellar smart accounts three ways (headless SDK, drop-in UI components, or inside Stellar Wallets Kit), each with a runnable example.
 ---
 
-Three ways to adopt, one runnable example each. **Path A (headless) runs today with only `@soropass/core`** — start there. Add the UI (Path B) or the kit module (Path C) when you need them.
+Three ways to adopt, one runnable example each. **Path A (headless) runs today with only `@soropass/core`**. Start there. Add the UI (Path B) or the kit module (Path C) when you need them.
 
 ## Install
 
@@ -15,18 +15,18 @@ The SDK is the only required dependency; `@stellar/stellar-sdk` is a peer you al
   <Tab value="npm">```bash npm i @soropass/core @stellar/stellar-sdk ```</Tab>
 </Tabs>
 
-Add `@soropass/ui` for Path B. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them) — most bundlers do this with a one-liner.
+Add `@soropass/ui` for Path B. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
 
 ## One-time config
 
-Pick your network, an RP id, and a **deployer** (a stable, funded classic account that deploys new wallets and pays fees — it holds no user value):
+Pick your network, an RP id, and a **deployer** (a stable, funded classic account that deploys new wallets and pays fees, holding no user value):
 
 ```ts
 import { Networks } from '@stellar/stellar-sdk';
 import { smartWalletV1Deployer, smartWalletV1Indexer } from '@soropass/core';
 
 const cfg = {
-  rpId: location.hostname, // passkeys are origin-bound — must be your real domain
+  rpId: location.hostname, // passkeys are origin-bound, must be your real domain
   rpName: 'Example',
   rpcUrl: 'https://soroban-testnet.stellar.org',
   networkPassphrase: Networks.TESTNET,
@@ -36,7 +36,7 @@ const deployer = smartWalletV1Deployer({ ...cfg, deployerSecret: DEPLOYER_SECRET
 const indexer = smartWalletV1Indexer({ rpcUrl: cfg.rpcUrl });
 ```
 
-## Path A — headless (any framework, or none)
+## Path A: headless (any framework, or none) [#path-a--headless-any-framework-or-none]
 
 Four calls cover the whole lifecycle. This is the runnable core.
 
@@ -45,11 +45,11 @@ import { createPasskey } from '@soropass/core/create';
 import { sendSmartWalletTx, browserPasskeySigner } from '@soropass/core/sign';
 import { recover } from '@soropass/core/recover';
 
-// 1. Create — mint an ES256 passkey and deploy its smart account.
+// 1. Create: mint an ES256 passkey and deploy its smart account.
 const account = await createPasskey({ ...cfg, userName: 'alice', deployer });
 //   account.contractId · account.credentialId · account.publicKey  → persist credentialId
 
-// 2. Sign + submit — any Soroban operation, authorized by the passkey.
+// 2. Sign + submit: any Soroban operation, authorized by the passkey.
 const res = await sendSmartWalletTx({
   operation, // build with @stellar/stellar-sdk (a SAC transfer, a contract call, …)
   rpcUrl: cfg.rpcUrl,
@@ -59,19 +59,19 @@ const res = await sendSmartWalletTx({
 });
 //   res.status · res.hash  → on Stellar Expert
 
-// 3. Recover — on a new device, resolve the wallets this passkey controls.
+// 3. Recover: on a new device, resolve the wallets this passkey controls.
 const wallets = await recover({ rpId: cfg.rpId, indexer });
 
-// 4. Add a backup device — a second passkey signer, on-chain (see /docs/sdk/accounts#addsigner).
+// 4. Add a backup device: a second passkey signer, on-chain (see /docs/sdk/accounts#addsigner).
 ```
 
 <Callout type="tip">
-  Every failure throws a typed `KitError` with one of 10 frozen `code`s — see [errors](/docs/sdk#error-taxonomy).
+  Every failure throws a typed `KitError` with one of 10 frozen `code`s. See [errors](/docs/sdk#error-taxonomy).
   For CI, `@soropass/core/testing`'s `createPasskeyKit({ mode: 'mock' })` runs the same shape with no
   network and no authenticator; swap to `mode: 'live'` in production.
 </Callout>
 
-## Path B — with the UI components
+## Path B: with the UI components [#path-b--with-the-ui-components]
 
 Wrap a core call in a headless **flow** (a state machine: `idle → prompting → deploying → success | error`) and mount the styled screen. Framework-agnostic, themed by `tokens.css`.
 
@@ -91,11 +91,11 @@ const flow = createCreatePasskeyFlow({
 const { unmount } = mountCreateScreen(document.getElementById('slot'), { flow });
 ```
 
-The same shape gives you `mountSignScreen`, `mountRecoverScreen`, and `mountAddDeviceScreen`. Every visual value is a `--pk-*` token — re-skin without touching component code. See [Components](/docs/components) and [Theming](/docs/theming). React? A ~20-line wrapper adopts the styled layer with no runtime dependency ([details](/docs/components#framework-decision)).
+The same shape gives you `mountSignScreen`, `mountRecoverScreen`, and `mountAddDeviceScreen`. Every visual value is a `--pk-*` token. Re-skin without touching component code. See [Components](/docs/components) and [Theming](/docs/theming). For React, a ~20-line wrapper adopts the styled layer with no runtime dependency ([details](/docs/components#framework-decision)).
 
-## Path C — via Stellar Wallets Kit
+## Path C: via Stellar Wallets Kit [#path-c--via-stellar-wallets-kit]
 
-Register a `PasskeyModule` and passkey becomes one more wallet in `@creit.tech/stellar-wallets-kit` — your existing `getAddress` / `signTransaction` calls are unchanged.
+Register a `PasskeyModule` and passkey becomes one more wallet in `@creit.tech/stellar-wallets-kit`. Your existing `getAddress` / `signTransaction` calls are unchanged.
 
 ```ts
 import { PasskeyModule, PASSKEY_ID } from '@soropass/wallets-kit-module';
@@ -111,10 +111,10 @@ const { address } = await StellarWalletsKit.getAddress();
 const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, { networkPassphrase });
 ```
 
-<Callout type="warn">
-  The `PasskeyModule` (`@soropass/wallets-kit-module`) is being upstreamed into stellar-wallets-kit
-  via an open PR and is **not yet published to npm**. Until it lands, consume it from the workspace
-  (`packages/kit-module`). Paths A and B run today with published packages.
+<Callout type="info">
+  The `PasskeyModule` (`@soropass/wallets-kit-module`) implements the `@creit.tech/stellar-wallets-kit`
+  `ModuleInterface` (v2.2.0) and runs from the workspace (`packages/kit-module`). It is **not yet
+  published to npm**, so consume it from the workspace. Paths A and B use published packages.
 </Callout>
 
 ## Next

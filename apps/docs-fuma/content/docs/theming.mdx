@@ -1,14 +1,14 @@
 ---
 title: Theming
 icon: Palette
-description: Restyle the entire SoroPass UI through one OKLCH token file — pick a skin or override tokens, while the components never change.
+description: Restyle the entire SoroPass UI through one OKLCH token file, picking a skin or overriding tokens, while the components never change.
 ---
 
-One OKLCH token file is the only styling surface for every [SoroPass UI component](/docs/components). Pick a skin, override tokens, done — the components never change.
+One OKLCH token file is the only styling surface for every [SoroPass UI component](/docs/components). Pick a skin, override tokens, done. The components never change.
 
 ## Skins
 
-Two skins ship by default — light (the default `:root`) and dark. Set `[data-theme="dark"]` on any wrapping element; dark overrides only the values that change.
+Two skins ship by default: light (the default `:root`) and dark. Set `[data-theme="dark"]` on any wrapping element; dark overrides only the values that change.
 
 ```html
 <div data-theme="dark">…</div>
@@ -16,11 +16,11 @@ Two skins ship by default — light (the default `:root`) and dark. Set `[data-t
 
 ## Theme builder
 
-The same `data-theme` swap re-themes **every** screen and state — no component code changes. Toggle light / dark below and the real component re-themes live; the `:root` block updates to paste straight into your app. Each preview on the [Components](/docs/components) page carries its own light / dark toggle too.
+The same `data-theme` swap re-themes **every** screen and state. No component code changes. Toggle light / dark below and the real component re-themes live; the `:root` block updates to paste straight into your app. Each preview on the [Components](/docs/components) page carries its own light / dark toggle too.
 
 <Preview screen="create" stepper={false} />
 
-The builder exposes four axes — skin (`light` / `dark`), brand accent (indigo, teal, violet, …), corner radius, and density — and emits a `:root` override like the following:
+The builder exposes four axes: skin (`light` / `dark`), brand accent (indigo, teal, violet, …), corner radius, and density. It emits a `:root` override like the following:
 
 ```css
 :root {
@@ -47,14 +47,14 @@ The builder exposes four axes — skin (`light` / `dark`), brand accent (indigo,
 | Type      | `--pk-font-sans / -mono, --pk-text-xs … -xl, --pk-weight-*`                | Family, size, weight, leading                                |
 | Focus     | `--pk-focus-color / -width / -offset / -halo`                              | Visible focus ring                                           |
 | Busy      | `--pk-busy-opacity, --pk-scrim, --pk-disabled-opacity`                     | OS-sheet dim + scrim                                         |
-| Spinner   | `--pk-spinner-* , --pk-progress-* (--pk-progress-duration 1400ms)`         | We're-working looks                                          |
+| Spinner   | `--pk-spinner-* , --pk-progress-* (--pk-progress-duration 1400ms)`         | Working-state looks                                          |
 | Elevation | `--pk-shadow-sm/md/lg, --pk-z-card/overlay/toast`                          | Layers under the OS sheet                                    |
 | Motion    | `--pk-ease, --pk-duration-fast/base/slow, --pk-pulse-duration`             | Transitions + reduced-motion fallback                        |
 
 ## The token gate
 
 <Callout type="tip">
-  A machine-enforced CI gate means `passkey.css` references only `var()` tokens — restyle the whole
+  A machine-enforced CI gate means `passkey.css` references only `var()` tokens. Restyle the whole
   set by overriding tokens, never by editing components.
 </Callout>
 

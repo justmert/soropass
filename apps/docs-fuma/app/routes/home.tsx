@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 
 export function meta(_args: Route.MetaArgs) {
   return [
-    { title: 'SoroPass — Passkeys for Stellar smart accounts' },
+    { title: 'SoroPass: Passkeys for Stellar smart accounts' },
     {
       name: 'description',
       content:

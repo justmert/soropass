@@ -500,7 +500,7 @@ function YourDevice({ caps }: { caps: DeviceCaps | null }) {
       <div className="mb-2 flex flex-wrap items-center gap-2 font-medium">
         <MonitorSmartphone className="h-4 w-4 text-fd-primary" /> On your device
         <span className="font-normal text-fd-muted-foreground">
-          — detected live in this browser, not from the dataset
+          detected live in this browser, not from the dataset
         </span>
       </div>
       {caps === null ? (
@@ -599,7 +599,7 @@ function CiGrid({ ci }: { ci: CiSnapshot }) {
   return (
     <div className="overflow-x-auto rounded-xl border bg-fd-card">
       <div className="border-b bg-fd-muted/40 px-4 py-2 text-sm font-medium">
-        CI grid — combinatorial proof{' '}
+        CI grid: combinatorial proof{' '}
         <span className="font-normal text-fd-muted-foreground">
           ({ci.runnerOs}, {ci.pulledAt})
         </span>

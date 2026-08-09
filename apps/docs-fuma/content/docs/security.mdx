@@ -1,12 +1,12 @@
 ---
 title: Security
 icon: ShieldCheck
-description: How a passkey signs and a smart account verifies on-chain, plus the threat model for @soropass/core — low-S, challenge binding, RP-ID/origin, and recovery, each backed by a test or a real on-chain proof.
+description: How a passkey signs and a smart account verifies on-chain, plus the threat model for @soropass/core. Low-S, challenge binding, RP-ID/origin, and recovery, each backed by a test or a real on-chain proof.
 ---
 
-The threat model for `@soropass/core`, and how signing actually works. Each mitigation is backed by a concrete test or living-matrix row, and the verification path is proven against a real `__check_auth` on Stellar testnet — not a JS model.
+The threat model for `@soropass/core`, and how signing actually works. Each mitigation is backed by a concrete test or living-matrix row, and the verification path is proven against a real `__check_auth` on Stellar testnet, not a JS model.
 
-Trust flows left to right. The authenticator, the browser, your relayer and your indexer are all **outside** the trust boundary — the deployed contract's `__check_auth` is the ultimate authority and verifies the signature and its challenge-binding regardless of how every layer before it behaved.
+Trust flows left to right. The authenticator, the browser, your relayer and your indexer are all **outside** the trust boundary. The deployed contract's `__check_auth` is the ultimate authority and verifies the signature and its challenge-binding regardless of how every layer before it behaved.
 
 ```
 Authenticator → Browser · RP JS → @soropass/core → Submission / indexer → __check_auth
@@ -16,9 +16,9 @@ Authenticator → Browser · RP JS → @soropass/core → Submission / indexer �
 
 ## How signing works
 
-A passkey signs your transaction; the smart account verifies it on-chain — no seed phrase, no server. The whole trust model is one digest, computed in the browser and re-derived on-chain.
+A passkey signs your transaction; the smart account verifies it on-chain (no seed phrase, no server). The whole trust model is one digest, computed in the browser and re-derived on-chain.
 
-**1 · WebAuthn ceremony.** `navigator.credentials.get()` returns an assertion — `authenticatorData` (rpIdHash + flags + counter), `clientDataJSON` (type, challenge, origin), and a DER `signature` over:
+**1 · WebAuthn ceremony.** `navigator.credentials.get()` returns an assertion containing `authenticatorData` (rpIdHash + flags + counter), `clientDataJSON` (type, challenge, origin), and a DER `signature` over:
 
 ```
 payload = SHA256( authenticatorData ‖ SHA256(clientDataJSON) )
@@ -26,7 +26,7 @@ payload = SHA256( authenticatorData ‖ SHA256(clientDataJSON) )
 
 **2 · ES256-only + low-S.** The SDK requests `{ alg: -7 }` only, and low-S normalizes every signature client-side (see [Low-S enforcement](#low-s-enforcement)).
 
-**3 · Challenge binding.** The WebAuthn `challenge` **is** the Soroban auth-entry preimage hash (see [Challenge & replay](#challenge--replay)) — so a captured signature cannot be replayed for a different transaction, nonce, or network.
+**3 · Challenge binding.** The WebAuthn `challenge` **is** the Soroban auth-entry preimage hash (see [Challenge & replay](#challenge--replay)), so a captured signature cannot be replayed for a different transaction, nonce, or network.
 
 **4 · The wire shape.** The assertion maps 1:1 to the contract's `Secp256r1Signature` (map keys sorted, `signature` a 64-byte low-S `BytesN<64>`):
 
@@ -38,13 +38,13 @@ pub struct Secp256r1Signature {
 }
 ```
 
-**5 · `__check_auth`.** On-chain, the contract asserts `clientDataJSON.challenge == base64url(payload)`, reconstructs `authenticatorData ‖ SHA256(clientDataJSON)`, and calls the host `secp256r1_verify(publicKey, SHA256(message), signature)` — which traps on an invalid signature. The same digest computed in step 1 is re-derived here; that identity is the whole model.
+**5 · `__check_auth`.** On-chain, the contract asserts `clientDataJSON.challenge == base64url(payload)`, reconstructs `authenticatorData ‖ SHA256(clientDataJSON)`, and calls the host `secp256r1_verify(publicKey, SHA256(message), signature)`, which traps on an invalid signature. The same digest computed in step 1 is re-derived here; that identity is the whole model.
 
 ## Low-S enforcement
 
-ECDSA signatures are malleable: for `(r, s)`, the reflected `(r, n−s)` verifies just as well. Roughly **50% of Apple Touch ID / Face ID assertions are high-S**, and Soroban's `secp256r1_verify` does **not** reject high-S — so canonicality is the SDK's responsibility.
+ECDSA signatures are malleable: for `(r, s)`, the reflected `(r, n−s)` verifies just as well. Roughly **50% of Apple Touch ID / Face ID assertions are high-S**, and Soroban's `secp256r1_verify` does **not** reject high-S, so canonicality is the SDK's responsibility.
 
-Invariant #2: the SDK low-S normalizes the DER assertion client-side (`S > n/2 → n−S`, `derToCompactLowS`) before assembling the authorization entry. A verifier that _does_ enforce low-S still accepts our signatures, and any replay logic keyed on the signature bytes stays stable. We additionally recommend the contract reject non-canonical S as defense-in-depth.
+Invariant #2: the SDK low-S normalizes the DER assertion client-side (`S > n/2 → n−S`, `derToCompactLowS`) before assembling the authorization entry. A verifier that _does_ enforce low-S still accepts the SDK's signatures, and any replay logic keyed on the signature bytes stays stable. SoroPass additionally recommends the contract reject non-canonical S as defense-in-depth.
 
 ```
 DER ECDSA → R‖S (64 bytes) → if S > n/2 then S = n−S    // derToCompactLowS
@@ -55,13 +55,13 @@ Proven both directions in `anchors.test.ts` (anchor `low-s-normalization`): high
 
 ## Challenge & replay
 
-The WebAuthn `challenge` is not a random nonce — it **is** the Soroban auth-entry preimage hash, binding every assertion to a single network, nonce, expiration ledger and exact invocation:
+The WebAuthn `challenge` is not a random nonce. It **is** the Soroban auth-entry preimage hash, binding every assertion to a single network, nonce, expiration ledger and exact invocation:
 
 ```
 challenge = base64url( SHA256( XDR( SorobanAuthorization{ networkId, nonce, sigExpLedger, invocation } ) ) )
 ```
 
-`__check_auth` re-derives the same preimage and asserts `clientDataJSON.challenge == base64url(payload)`. On mismatch it fails closed with `CHALLENGE_MISMATCH`. The reference verifier `referenceCheckAuth` mirrors the contract; `soroban.test.ts` proves a signature over the wrong challenge — or under the wrong network passphrase — is rejected.
+`__check_auth` re-derives the same preimage and asserts `clientDataJSON.challenge == base64url(payload)`. On mismatch it fails closed with `CHALLENGE_MISMATCH`. The reference verifier `referenceCheckAuth` mirrors the contract; `soroban.test.ts` proves a signature over the wrong challenge (or under the wrong network passphrase) is rejected.
 
 <Callout type="info">
   `signCount` is parsed but **never** hard-gated. Synced passkeys (iCloud Keychain, Google Password
@@ -71,28 +71,28 @@ challenge = base64url( SHA256( XDR( SorobanAuthorization{ networkId, nonce, sigE
 
 ## RP-ID & origin binding
 
-Passkeys are scoped to an eTLD+1 — the RP-ID. Two independent checks pin an assertion to your origin:
+Passkeys are scoped to an eTLD+1, the RP-ID. Two independent checks pin an assertion to your origin:
 
 | Check               | What it verifies                                                                                             | Error code        |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `verifyRpIdHash`    | `authData.rpIdHash === SHA256(rpId)` — the authenticator signed for your RP-ID, not a spoofed one.           | `RP_ID_MISMATCH`  |
-| `origin allow-list` | `clientDataJSON.origin` is checked against the allowed origins — the assertion came from a page you control. | `ORIGIN_MISMATCH` |
+| `verifyRpIdHash`    | `authData.rpIdHash === SHA256(rpId)`: the authenticator signed for your RP-ID, not a spoofed one.           | `RP_ID_MISMATCH`  |
+| `origin allow-list` | `clientDataJSON.origin` matches an allowed origin: the assertion came from a page you control. | `ORIGIN_MISMATCH` |
 
-Multi-origin products use **Related Origin Requests** — a `/.well-known/webauthn` document listing allowed `origins`. Its browser support is tracked as a verified row (`related_origin_requests`) in the [living compatibility matrix](/docs/compatibility) rather than assumed. The residual risk is structural: a passkey bound to a single domain becomes unusable if that domain is lost — which is why recovery recommends a second signer on a different domain or device.
+Multi-origin products use **Related Origin Requests**, a `/.well-known/webauthn` document listing allowed `origins`. The [living compatibility matrix](/docs/compatibility) tracks its browser support as a verified row (`related_origin_requests`) rather than assuming it. The residual risk is structural: a passkey bound to a single domain becomes unusable if that domain is lost, which is why recovery recommends a second signer on a different domain or device.
 
 ## Recovery model
 
-There is no seed phrase to back up — so recovery is about finding the accounts a credential already controls, and adding signers safely. `recover()` performs a **discoverable-credential** assertion (no stored credential id) and resolves the credential through an indexer to every account it controls.
+There is no seed phrase to back up, so recovery is about finding the accounts a credential already controls, and adding signers safely. `recover()` performs a **discoverable-credential** assertion (no stored credential id) and resolves the credential through an indexer to every account it controls.
 
 | Credential type  | Survives device loss?        | Trade-off                                                                    |
 | ---------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| Synced (default) | Yes — via the platform cloud | You trust the platform provider (iCloud Keychain / Google Password Manager). |
-| Device-bound     | No — lost with the device    | Stronger isolation, but requires a backup signer.                            |
-| Multi-signer     | Yes — any one signer recovers | Add a second passkey on-chain (`add_signer`); the v1 smart-wallet is multi-signer. |
+| Synced (default) | Yes, via the platform cloud | You trust the platform provider (iCloud Keychain / Google Password Manager). |
+| Device-bound     | No, lost with the device    | Stronger isolation, but requires a backup signer.                            |
+| Multi-signer     | Yes, any one signer recovers | Add a second passkey on-chain (`add_signer`); the v1 smart-wallet is multi-signer. |
 
 <Callout type="warn">
-  **Add-device is an account-takeover path.** A new signer can authorize the account, so add-device
-  must be gated behind a fresh re-authentication with an existing signer — never an unauthenticated
+  **Add-device is an account-takeover path.** A new signer can authorize the account, so you must
+  gate add-device behind a fresh re-authentication with an existing signer, never an unauthenticated
   mutation. `addSigner` requires the existing passkey to sign the `add_signer` call; the styled
   add-device screen surfaces the trust warning.
 </Callout>
@@ -110,12 +110,12 @@ Every row maps to a backing test (`security.test.ts` fails the build if a cited 
 | Origin spoofing                              | `clientDataJSON.origin` allow-list (`ORIGIN_MISMATCH`).                                                              | `clientData.test.ts · matrix related_origin_requests` |
 | Ceremony auto-trigger / Safari silent reject | User-activation guard (`USER_CANCELLED`).                                                                            | `anchors.test.ts · anchor apple-user-gesture`         |
 | Lost device / cleared storage                | Discoverable-credential `recover()` → indexer resolution.                                                            | `ceremonies.test.ts · matrix conditional_mediation`   |
-| Malicious relayer / indexer                  | Untrusted, pluggable adapters — cannot forge an authorization; at most they delay submission or mis-report a lookup. | submission / indexer adapters                          |
+| Malicious relayer / indexer                  | Untrusted, pluggable adapters cannot forge an authorization; at most they delay submission or mis-report a lookup. | submission / indexer adapters                          |
 
 <Callout type="tip">
-  Not just a JS model. A `SorobanAuthorizationEntry` assembled and signed by `@soropass/core` was
-  accepted by a real deployed `__check_auth` on Stellar testnet — the **positive** run (the account's
-  registered P-256 key) succeeded and the **negative** run (a different key) was trapped by the host
-  `secp256r1_verify`. See the [on-chain proof contract](https://stellar.expert/explorer/testnet/contract/CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2)
+  Not just a JS model. A real deployed `__check_auth` on Stellar testnet accepted a
+  `SorobanAuthorizationEntry` assembled and signed by `@soropass/core`: the **positive** run (the account's
+  registered P-256 key) succeeded and the host `secp256r1_verify` trapped the **negative** run (a
+  different key). See the [on-chain proof contract](https://stellar.expert/explorer/testnet/contract/CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2)
   and tx [`f256288c…`](https://stellar.expert/explorer/testnet/tx/f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418) on stellar.expert. Real hashes come from `scripts/onchain-e2e.ts`, never fabricated.
 </Callout>
