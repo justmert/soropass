@@ -3,16 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Soropass — styled reference (S20)</title>
+    <title>SoroPass — passkey wallet demo (Stellar testnet)</title>
+    <meta
+      name="description"
+      content="Try SoroPass on Stellar testnet, one use case at a time: create a passkey smart account, sign a payment, watch a wrong key rejected on-chain, back up a device, and recover on another device. Every transaction links to Stellar Expert."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
   </head>
   <body>
-    <!--
-      S20 styled reference demo. The headless flows (S18) carry all logic + a11y;
-      the styled layer (S20) is pure DOM + token-driven CSS. Re-theme by
-      overriding tokens — see the tweaks bar. ?mode=webauthn drives a real
-      WebAuthn ceremony (virtual authenticator / Touch ID); default is mock.
-    -->
-    <main id="app"></main>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
