@@ -1,0 +1,65 @@
+---
+title: Theming
+icon: Palette
+description: Restyle the entire SoroPass UI through one OKLCH token file — pick a skin or override tokens, while the components never change.
+---
+
+One OKLCH token file is the only styling surface for every [SoroPass UI component](/docs/components). Pick a skin, override tokens, done — the components never change.
+
+## Skins
+
+Two skins ship by default — light (the default `:root`) and dark. Set `[data-theme="dark"]` on any wrapping element; dark overrides only the values that change.
+
+```html
+<div data-theme="dark">…</div>
+```
+
+## Theme builder
+
+The same `data-theme` swap re-themes **every** screen and state — no component code changes. Toggle light / dark below and the real component re-themes live; the `:root` block updates to paste straight into your app. Each preview on the [Components](/docs/components) page carries its own light / dark toggle too.
+
+<Preview screen="create" stepper={false} />
+
+The builder exposes four axes — skin (`light` / `dark`), brand accent (indigo, teal, violet, …), corner radius, and density — and emits a `:root` override like the following:
+
+```css
+:root {
+  --pk-color-brand: oklch(0.55 0.18 264);
+  --pk-radius-lg: 16px;
+  --pk-radius-md: 12px;
+  --pk-space-6: 24px;
+}
+```
+
+## Token reference
+
+~70 tokens across these groups. The shipped `tokens.css` is canonical (note `--pk-progress-duration: 1400ms`).
+
+| Group     | Tokens                                                                    | Purpose                                                       |
+| --------- | ------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Color     | `--pk-color-brand / -hover / -active / -on-brand / -soft`                  | Primary button, focus, accents                               |
+| Color     | `--pk-color-background / -surface / -surface-sunken`                       | Page, card, wells                                            |
+| Color     | `--pk-color-text / -muted / -faint`                                        | Text scale                                                   |
+| Color     | `--pk-color-border / -border-strong`                                       | Hairlines, inputs                                           |
+| Status    | `--pk-color-success / -error / -info / -warning (+ -soft, -warning-line)`  | Distinct: errors assertive, warnings advisory, progress calm |
+| Shape     | `--pk-radius-none … -full`                                                 | Corner scale                                                 |
+| Space     | `--pk-space-0 … -10`                                                       | Spacing scale                                                |
+| Type      | `--pk-font-sans / -mono, --pk-text-xs … -xl, --pk-weight-*`                | Family, size, weight, leading                                |
+| Focus     | `--pk-focus-color / -width / -offset / -halo`                              | Visible focus ring                                           |
+| Busy      | `--pk-busy-opacity, --pk-scrim, --pk-disabled-opacity`                     | OS-sheet dim + scrim                                         |
+| Spinner   | `--pk-spinner-* , --pk-progress-* (--pk-progress-duration 1400ms)`         | We're-working looks                                          |
+| Elevation | `--pk-shadow-sm/md/lg, --pk-z-card/overlay/toast`                          | Layers under the OS sheet                                    |
+| Motion    | `--pk-ease, --pk-duration-fast/base/slow, --pk-pulse-duration`             | Transitions + reduced-motion fallback                        |
+
+## The token gate
+
+<Callout type="tip">
+  A machine-enforced CI gate means `passkey.css` references only `var()` tokens — restyle the whole
+  set by overriding tokens, never by editing components.
+</Callout>
+
+<Cards>
+  <Card title="Components" href="/docs/components">
+    The screens and primitives these tokens style.
+  </Card>
+</Cards>

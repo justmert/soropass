@@ -1,12 +1,3 @@
 {
-  "pages": [
-    "index",
-    "quickstart",
-    "components",
-    "sdk",
-    "compatibility",
-    "how-it-works",
-    "security",
-    "examples"
-  ]
+  "pages": ["index", "quickstart", "examples", "existing-wallets", "components", "theming", "sdk", "compatibility", "security"]
 }

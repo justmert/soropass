@@ -1,0 +1,209 @@
+---
+title: Components
+icon: Boxes
+description: Drop-in, token-driven create, sign, recover, connect, and add-device screens for Stellar smart-account passkeys — framework-agnostic vanilla DOM.
+---
+
+Drop-in, token-driven screens for the passkey moments of a Stellar smart account — create, sign, recover, connect, and add-device. Framework-agnostic, restyled entirely through tokens, and driven by headless state machines you can also use on their own.
+
+## Two layers
+
+The UI ships in two layers, both with zero framework runtime dependency:
+
+| Layer       | Import                | What it owns                                                        |
+| ----------- | --------------------- | ------------------------------------------------------------------ |
+| **Headless** | `@soropass/ui/headless` | State machines, a11y prop-getters, and i18n keys — logic, no DOM.   |
+| **Styled**   | `@soropass/ui/styled`   | Vanilla-DOM `mount*Screen(root, opts)` renderers + `tokens.css`.    |
+
+Adopt the styled screens as-is, or drive your own UI from the headless flow controllers — your call. Every visual value comes from CSS custom properties, so you restyle by overriding tokens, never by editing a component. See [Theming](/docs/theming) for the token system.
+
+<Callout type="info">
+  **Logic stays headless.** You pass each screen a `flow` object (state events) from the SDK; the
+  component renders and manages a11y but never touches the network itself.
+</Callout>
+
+<Callout type="tip">
+  **Using Stellar Wallets Kit?** Every screen maps to a kit seam — `createAccount`,
+  `signTransaction`, and `recover` on `PasskeyModule`. The kit path (register the module, drive the
+  screens from its modal) is covered end-to-end in [Quickstart](/docs/quickstart).
+</Callout>
+
+## Shared behavior
+
+Three things are true of every screen, so they are stated once here rather than repeated per screen.
+
+- **Two busy looks.** While the native OS passkey sheet is up (`prompting` / `discovering`), the card dims to a calm opaque scrim with a gently pulsing glyph — never a spinner competing with the OS. While the SDK is working on-chain (`deploying` / `submitting` / `binding`), a spinner plus indeterminate progress bar shows.
+- **One error view.** Every failure renders through a single error layout; the copy swaps by code against the frozen 10-code `KitError` taxonomy, always with a Try again action.
+- **Accessible by default.** Polite `role=status` for busy states, assertive `role=alert` for errors; focus moves to the status paragraph on terminal states (`tabIndex=-1`, `preventScroll`); a visible focus ring and full Tab order on every interactive element; RTL via CSS logical properties and a reduced-motion variant that freezes pulses and spins.
+
+## Create
+
+Creates a brand-new Stellar smart-account wallet from a passkey — the button press is the WebAuthn gesture, so the biometric sheet opens straight from the trigger, then the smart account deploys on-chain.
+
+<Preview screen="create" />
+
+Five states: `idle`, `prompting`, `deploying`, `success`, `error`. A **funding** affordance rides inside `deploying` as a sub-state (friendbot or a sponsor adapter tops up a zero-balance account) with its own insufficient-balance error branch — no separate screen.
+
+```ts
+import { mountCreateScreen } from '@soropass/ui/styled';
+import '@soropass/ui/styled.css';
+
+const handle = mountCreateScreen(root, {
+  flow,
+  onContinue(credential) {
+    router.push('/home'); // account is live on-chain
+  },
+});
+```
+
+| Prop           | Type                             | Default               | Description                              |
+| -------------- | -------------------------------- | --------------------- | ---------------------------------------- |
+| `flow` **req** | `CreateFlow`                     | —                     | Headless controller; drives transitions. |
+| `copy`         | `Partial<CreateCopy>`            | `DEFAULT_CREATE_COPY` | Override any UI string for i18n / brand. |
+| `input`        | `{ userName? }`                  | `undefined`           | Optional hint for the passkey ceremony.  |
+| `onContinue`   | `(c: PasskeyCredential) => void` | `undefined`           | Fires on the success Continue button.    |
+| `onHelp`       | `() => void`                     | `undefined`           | "What's a passkey?" link.                |
+
+Key copy defaults: `idleTitle` "Create your wallet" · `createLabel` "Create passkey" · `deployingTitle` "Setting up your account…" · `successTitle` "Wallet ready".
+
+## Sign
+
+Approves a specific transaction with the passkey. The summary — amount, destination, and a function name — is a pure prop supplied by the host app, so any wallet can drive it, and it stays legible as it dims into the OS-sheet wait.
+
+<Preview screen="sign" />
+
+Five states: `idle`, `prompting`, `submitting`, `done`, `error`. Success shows the transaction hash as a copyable row with a one-tap explorer link.
+
+| Prop           | Type                        | Default             | Description                        |
+| -------------- | --------------------------- | ------------------- | ---------------------------------- |
+| `flow` **req** | `SignFlow`                  | —                   | Headless sign controller.          |
+| `tx` **req**   | `TxSummaryData`             | —                   | Host-supplied summary (see below). |
+| `copy`         | `Partial<SignCopy>`         | `DEFAULT_SIGN_COPY` | i18n / brand voice.                |
+| `onCancel`     | `() => void`                | `undefined`         | Secondary action on idle.          |
+| `onDone`       | `(r: SubmitResult) => void` | `undefined`         | Fires on the done screen.          |
+| `onExplorer`   | `(hash: string) => void`    | `undefined`         | Explorer link click.               |
+
+`TxSummaryData`: `amountValue` (e.g. "250.00 USDC", host-formatted) · `amountFiat?` (optional secondary line) · `destination` (address, middle-truncated) · `action` (function name, rendered as a tag).
+
+Key copy defaults: `idleTitle` "Approve transaction" · `signLabel` "Sign" · `submittingTitle` "Submitting transaction…" · `doneTitle` "Transaction sent".
+
+## Recover
+
+Returns on a new device and finds the accounts a passkey controls — no seed phrase. This is **discover-only**; to enroll a new credential see [Add device](#add-device).
+
+<Preview screen="recover" />
+
+Six states: `idle`, `discovering`, `resolved`, `selected`, `none`, `error`. The resolved list is a real `role="listbox"` with roving focus (Up/Down wrap, Home/End jump, Enter/Space select) built to the APG pattern. A single account skips straight to `selected`; `none` routes the user to create a brand-new passkey instead.
+
+| Prop           | Type                         | Default                | Description                    |
+| -------------- | ---------------------------- | ---------------------- | ------------------------------ |
+| `flow` **req** | `RecoverFlow`                | —                      | Headless discovery controller. |
+| `copy`         | `Partial<RecoverCopy>`       | `DEFAULT_RECOVER_COPY` | i18n / brand voice.            |
+| `accountMeta`  | `(a, i) => string`           | `undefined`            | Secondary line per row.        |
+| `onContinue`   | `(a: RecoverResult) => void` | `undefined`            | Selected account confirmed.    |
+| `onCreateNew`  | `() => void`                 | `undefined`            | Empty-state CTA.               |
+
+Key copy defaults: `idleTitle` "Find your account" · `recoverLabel` "Recover" · `manyTitle(count)` "\{count} accounts found" (a function) · `noneTitle` "No accounts found".
+
+## Connect
+
+One tiny entry surface that forks **"Create a new passkey wallet"** vs **"Use an existing passkey"** — the glue that makes create and recover reachable from a single front door. "Use existing" hands off to the kit's own modal.
+
+<Preview screen="connect" />
+
+A single `idle` state with two choices that route out — deliberately minimal, no flow state.
+
+| Prop            | Type                   | Description                                                        |
+| --------------- | ---------------------- | ----------------------------------------------------------------- |
+| `onCreate`      | `() => void`           | Opens the Create flow.                                            |
+| `onUseExisting` | `() => void`           | Hands off to the kit modal (getAddress → discoverable credential). |
+| `onHelp`        | `() => void`           | "What's a passkey?" link.                                         |
+| `copy`          | `Partial<ConnectCopy>` | Override any string for i18n.                                     |
+
+```ts
+mountConnectScreen(root, {
+  onCreate: () => mountCreateScreen(root, { flow }),
+  onUseExisting: () => StellarWalletsKit.authModal(),
+});
+```
+
+## Add device
+
+Registers a **new passkey as an additional signer** on an existing smart account — "add this device" / "set up a backup key." Recover only discovers accounts; this enrolls a new credential, completing the lost-device story. Mounted from the wallet's account / settings surface, not the connect modal.
+
+<Preview screen="adddevice" />
+
+States: `idle → prompting → binding → success` / `error`. It reuses the same building blocks as the other screens — the wait overlay, the work block, the result layout, and the single error view.
+
+<Callout type="warn">
+  An add-signer path is also an account-takeover path if misused — the UI says so on the idle state.
+  Surface the trade-off; don't hide it.
+</Callout>
+
+| Prop           | Type                     | Description                                                  |
+| -------------- | ------------------------ | ----------------------------------------------------------- |
+| `flow` **req** | `AddDeviceFlow`          | From `createAddDeviceFlow`; drives idle → binding → success. |
+| `onDone`       | `() => void`             | Fires on the success screen (shows the new signer).         |
+| `onCancel`     | `() => void`             | Secondary action on idle.                                   |
+| `copy`         | `Partial<AddDeviceCopy>` | i18n / brand voice.                                         |
+
+## Primitives
+
+The token-driven building blocks the screens compose from — each individually usable.
+
+| Primitive     | Signature / notes                                                 |
+| ------------- | ----------------------------------------------------------------- |
+| `Card`        | max-width 384px · `.is-waiting` · dir                             |
+| `Button`      | variant: primary / secondary / ghost · busy · 48px min            |
+| `AddressChip` | `{ address, label, showIdenticon }` · copy-with-feedback          |
+| `Identicon`   | `{ seed, size }` · deterministic 5×5 symmetric, OKLCH from FNV-1a |
+| `TxSummary`   | host-supplied `{ amountValue, amountFiat?, destination, action }` |
+| `RecoverList` | listbox · roving focus · Up/Down/Home/End                         |
+| `WaitOverlay` | calm OS-sheet look + `.pk-ossheet` peek bar · NO spinner          |
+| `WorkBlock`   | spinner + indeterminate progress                                  |
+| `StatusLine`  | polite `role=status` or assertive `role=alert`                    |
+| `errorView`   | single layout, copy by `KitError` code                            |
+
+Icons are a thin-line set (1.75px stroke, `currentColor`, 24px grid): `passkey`, `key`, `shield`, `copy`, `check`, `checkCircle`, `alert`, `external`, `refresh`, `plus`, `chevron`, `help`, `arrowLeft`.
+
+<Callout type="info">
+  Promote-to-standalone candidates (AccountChip, Skeleton, Empty / Success / Error) carry **ROADMAP**
+  badges.
+</Callout>
+
+## Framework decision
+
+SoroPass UI is **framework-agnostic at every layer** — there is no React, Vue, or Svelte runtime dependency anywhere in `@soropass/ui`. Because the headless layer already owns all logic, state, accessibility, and i18n, a framework wrapper is ~20 lines, not a re-implementation.
+
+Why not "React first":
+
+- **Minimal API surface.** A React/React-DOM peer dependency is the single heaviest thing we could add to a minimal, headless SDK. Staying lean is the point.
+- **No design-system lock-in.** "Looks great out of the box, re-theme by tokens" lives in `tokens.css`, not in a component framework.
+- **Prop-getters compose everywhere.** A `{ role, 'aria-live', onClick, … }` object spreads onto a React element, a Vue template, or a DOM node identically.
+- **Widest adoption surface.** A wallet team on Svelte, Lit, or vanilla adopts the styled layer as-is; a React team adds the wrapper below. A React-only package would exclude everyone else.
+
+**Considered and declined.** A React component package as the _default_ was rejected (heaviest dependency, narrows adoption). A thin `@soropass/ui-react` adapter does ship — it wraps the same styled `*View` renderers and adds **no** runtime dependency to `@soropass/ui`; it exists to feed design tooling, and production apps still adopt the wrapper below or the styled layer directly. Web Components were also declined — a registration / shadow-DOM model complicates token inheritance and testing for no fidelity gain over plain `mount`.
+
+**React adopters** drop in a thin wrapper — no package needed:
+
+```tsx
+function CreatePasskey(props: CreateScreenOptions) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => mountCreateScreen(ref.current!, props).unmount, []);
+  return <div ref={ref} className="pk" />;
+}
+```
+
+**Vue** uses the same shape in `onMounted` / `onUnmounted`; **Lit / Web Component** calls `mount*` in `connectedCallback` and returns the handle's `unmount` from `disconnectedCallback`.
+
+<Cards>
+  <Card title="Theming" href="/docs/theming">
+    The OKLCH token system, light / dark screenshots, and the token reference.
+  </Card>
+  <Card title="Quickstart" href="/docs/quickstart">
+    The Stellar Wallets Kit path, end to end.
+  </Card>
+  <Card title="SDK reference" href="/docs/sdk">
+    The headless flows and `@soropass/core` primitives underneath.
+  </Card>
+</Cards>

@@ -1,101 +1,121 @@
 ---
-title: Examples
+title: Guides
 icon: FlaskConical
-description: SoroPass create, sign, and recover components across desktop web, mobile-web, and cross-device passkey surfaces.
+description: The full SoroPass flow on Stellar testnet — create a passkey wallet, sign a payment, watch a wrong key get rejected on-chain, add a backup device, and recover on another device.
 ---
 
-The same create / sign / recover components across desktop, mobile-web, and the desktop-initiates-on-phone case — shown live where we can, and as honest guidance where the platform takes over.
+The complete flow, end to end, on Stellar testnet — the same run you can try live at [demo.soropass.dev](https://demo.soropass.dev), every transaction on Stellar Expert. It uses the headless [Path A](/docs/quickstart#path-a--headless-any-framework-or-none) API throughout; the [config](/docs/quickstart#one-time-config) (`cfg`, `deployer`, `indexer`) is the one from the Quickstart.
 
-<Callout type="info">
-  **Live today:** desktop web + mobile-web (real vanilla-DOM mount, mock mode, zero network).
-  **Guidance + roadmap:** native bottom-sheet container + cross-device caBLE/QR. Real ceremonies and
-  on-chain proof live on the Security & How-it-works pages — embeds run in mock mode because
-  browsers restrict WebAuthn inside cross-origin iframes.
-</Callout>
+## 1 · Create a wallet
 
-## Surfaces
+A passkey becomes the first signer of a freshly deployed smart-account contract. No seed phrase, nothing to write down — the private key never leaves the device.
 
-| Surface       | Status   |
-| ------------- | -------- |
-| Web (desktop) | LIVE     |
-| Mobile-web    | LIVE     |
-| Cross-device  | GUIDANCE |
+```ts
+import { createPasskey } from '@soropass/core/create';
 
-## Web (desktop)
+const account = await createPasskey({ ...cfg, userName: 'alice', deployer });
+// Touch ID / Windows Hello → ES256 passkey → v1 smart-wallet deployed + funded.
+// Persist account.credentialId (and account.contractId) for fast reconnects.
+```
+
+## 2 · Sign a payment
+
+The wallet sends value; the passkey signs the exact Soroban auth entry (challenge bound to the auth preimage, low-S normalized) that the contract's `__check_auth` re-derives.
+
+```ts
+import { sendSmartWalletTx, browserPasskeySigner } from '@soropass/core/sign';
+import { Contract, Address, nativeToScVal } from '@stellar/stellar-sdk';
+
+// A native-asset (SAC) transfer FROM the smart wallet.
+const transfer = new Contract(NATIVE_SAC).call(
+  'transfer',
+  Address.fromString(account.contractId).toScVal(),
+  Address.fromString(destination).toScVal(),
+  nativeToScVal(amount, { type: 'i128' }),
+);
+
+const res = await sendSmartWalletTx({
+  operation: transfer,
+  rpcUrl: cfg.rpcUrl,
+  networkPassphrase: cfg.networkPassphrase,
+  sourceSecret: FEE_SOURCE_SECRET,
+  sign: browserPasskeySigner({ rpId: cfg.rpId, allowCredentials: [account.credentialId] }),
+});
+// res.status === 'SUCCESS' · res.hash → on Stellar Expert
+```
+
+## 3 · Reject a wrong key
+
+The safety proof: a signature from the **wrong key** is rejected by the contract itself, on-chain — not by the UI. `sendSmartWalletTx` re-simulates enforcing `__check_auth`, which runs `secp256r1_verify` against the stored signer and fails.
+
+```ts
+// Same call, but `sign` is a random software key that is NOT a registered signer.
+try {
+  await sendSmartWalletTx({ operation: transfer, ...cfg, sourceSecret, sign: wrongKeySigner });
+} catch (err) {
+  // Rejected on-chain during the enforcing re-simulation — exactly as intended. No funds move.
+}
+```
+
+## 4 · Add a backup device
+
+Register a second passkey as an additional signer with an on-chain `add_signer`, authorized by the first passkey — so a lost device never locks the user out.
+
+```ts
+import { registerPasskey } from '@soropass/core/create';
+import { addSigner } from '@soropass/core/recover';
+
+const backup = await registerPasskey({ ...cfg, userName: 'backup' }); // register WITHOUT deploying
+await addSigner({
+  walletContractId: account.contractId,
+  newSigner: backup,
+  rpcUrl: cfg.rpcUrl,
+  networkPassphrase: cfg.networkPassphrase,
+  sourceSecret: FEE_SOURCE_SECRET,
+  sign: browserPasskeySigner({ rpId: cfg.rpId, allowCredentials: [account.credentialId] }),
+});
+// The wallet is now multi-signer — both passkeys work.
+```
+
+## 5 · Recover on another device
+
+On a fresh device with nothing stored, a discoverable passkey sign-in plus the on-chain indexer resolves the wallet(s) that passkey controls — no seed phrase, no local state.
+
+```ts
+import { recover } from '@soropass/core/recover';
+
+const wallets = await recover({ rpId: cfg.rpId, indexer });
+// wallets: { contractId, credentialId }[] — resolved from on-chain signer_added events.
+```
+
+## Surfaces & the OS sheet
+
+The same components adapt across surfaces. The native passkey sheet (Face ID / Touch ID) is the OS — our card stays calm behind it, never a competing spinner.
+
+<Tabs items={['Web (desktop)', 'Mobile-web', 'Cross-device']}>
+<Tab value="Web (desktop)">
 
 <Preview screen="sign" stepper={false} />
 
-<Tabs items={['Standalone', 'Via Wallets Kit', 'React (coming)']}>
-<Tab value="Standalone">
-
-```ts
-mountSignScreen(root, { flow, tx });
-```
+Calm opaque panel + pulsing glyph behind the native sheet.
 
 </Tab>
-<Tab value="Via Wallets Kit">
+<Tab value="Mobile-web">
 
-```ts
-await kit.signTransaction(xdr);
-```
+<Preview screen="create" stepper={false} />
+
+Works from 360px; ≥44–48px touch targets; a bottom-edge OS-sheet hint bar; safe-area aware.
 
 </Tab>
-<Tab value="React (coming)">
+<Tab value="Cross-device">
 
-```tsx
-useEffect(() => {
-  const h = mountSignScreen(ref.current, { flow, tx });
-  return () => h.unmount();
-}, []);
-```
+Desktop initiates, the phone that holds the passkey approves (hybrid / caBLE / QR). `hybrid_transport` is a documented, sourced surface — [see the matrix row](/docs/compatibility) — with a dedicated component on the roadmap.
 
 </Tab>
 </Tabs>
 
-## Mobile-web
-
-<Preview screen="create" stepper={false} />
-
-Works from 360px; ≥44–48px touch targets; calm opaque OS-sheet waiting (no spinner); bottom-edge OS-sheet hint bar; safe-area aware.
-
-Scan to open the live mobile-web demo on your device (mock mode, no wallet needed).
-
 <Callout type="info">
-  On a real phone, the passkey sheet (Face ID / Touch ID) is the OS — our card stays calm behind it.
-</Callout>
-
-## Cross-device (hybrid / caBLE / QR)
-
-A recorded desktop → phone hybrid flow (captioned device/OS/date) demonstrates the intended experience.
-
-**ROADMAP** — Intended UX; component on roadmap:
-
-<Cards>
-  <Card title="1 · Offer" />
-  <Card title="2 · QR" />
-  <Card title="3 · Approve" />
-  <Card title="4 · Success" />
-</Cards>
-
-- **1 · Offer** — Connect modal: "Use a passkey on another device."
-- **2 · QR** — CrossDeviceConnect QR + calm hybrid-transport waiting (no spinner).
-- **3 · Approve** — "Approve on the phone that has your passkey."
-- **4 · Success** — Account chip.
-
-<Callout type="warn">
-  `hybrid_transport` is sourced from MDN BCD + `getClientCapabilities()`, not yet machine-probed in
-  CI (which covers internal + usb). It's a documented, sourced surface — the dedicated component is
-  the next build. [See the matrix row →](/docs/compatibility)
-</Callout>
-
-## How the OS sheet behaves on each surface
-
-| Surface      | Behavior                                                                 |
-| ------------ | ------------------------------------------------------------------------ |
-| Desktop      | Calm opaque panel + pulsing glyph behind the native sheet.               |
-| Phone        | Same + bottom-edge OS-sheet hint bar, ≥48px targets.                     |
-| Cross-device | Longer wait → leans on calm + "approve on your phone," still no spinner. |
-
-<Callout type="tip">
-  Two busy looks: WaitOverlay (OS sheet up) vs WorkBlock (spinner + progress) — never both at once.
+  Previews run in **mock mode** (no network, no authenticator) — browsers restrict WebAuthn inside
+  cross-origin iframes. The real ceremonies run at [demo.soropass.dev](https://demo.soropass.dev),
+  every transaction linked to Stellar Expert.
 </Callout>

@@ -39,11 +39,12 @@ The eight platforms tracked in each snapshot are:
 
 ## Provenance
 
-Every cell is tagged with where it came from. A snapshot's cells break down by source, and the source mix is shown as live counts. The three source-badge styles are:
+Every cell is tagged with where it came from. A snapshot's cells break down by source, and the source mix is shown as live counts straight from the snapshot. Current sources:
 
 - **ci** — probed by the virtual-authenticator CI (also covers live feature-detection probes).
 - **bcd** — MDN browser-compat-data.
-- **curated** — cross-referenced from sources such as `passkeys.dev` and `caniuse`.
+- **passkeys.dev** — the community passkeys.dev support tables.
+- **curated** — hand-cross-referenced entries (e.g. `caniuse`).
 
 <Callout type="tip">
   The page links the actual snapshot file produced by `apps/matrix` from MDN BCD merged with the
@@ -62,12 +63,12 @@ Every cell is tagged with where it came from. A snapshot's cells break down by s
 
 Each cell also carries a source badge:
 
-| Badge   | Source                          |
-| ------- | ------------------------------- |
-| ci      | virtual-authenticator CI        |
-| bcd     | MDN BCD                         |
-| curated | cross-referenced                |
-| manual  | hand-logged real-device session |
+| Badge        | Source                      |
+| ------------ | --------------------------- |
+| ci           | virtual-authenticator CI    |
+| bcd          | MDN BCD                     |
+| passkeys.dev | passkeys.dev support tables |
+| curated      | hand-cross-referenced       |
 
 A cell is **tier-1-automated** only when it was machine-verified on that run (`ci`); everything else — BCD/curated cross-references and real-device sessions — is **tier-2-manual**. So Edge shows tier-1 only on a run that actually had it, and Safari/WebKit or Firefox evidence comes from dated real-device sessions rather than a fabricated green.
 
@@ -106,5 +107,5 @@ If the page cannot load `/matrix/index.json`, regenerate and re-export the snaps
 
 ```bash
 pnpm --filter @soropass/matrix matrix:build
-DOCS_PUBLIC_DIR=apps/site/public pnpm --filter @soropass/matrix docs:export
+DOCS_PUBLIC_DIR=apps/docs-fuma/public pnpm --filter @soropass/matrix docs:export
 ```
