@@ -52,12 +52,12 @@
       "note": "Multi-device recovery (Tranche 2 D1): deploy a passkey-kit v1 smart-wallet with passkey A, then enroll a SECOND passkey via @soropass/core addSigner (authorized by A), PERSISTED on testnet (txSuccess, invokeHostFunctionSuccess). Reproduce: pnpm --filter @soropass/core exec tsx scripts/add-signer-e2e.ts"
     },
     "demoRunProof": {
-      "wallet": "CBX7RC2U5C3JEDM2H5JAHFW4PW3FWE6SPSIZJZPRNFAEOQMR7FJPAAFO",
-      "deployTx": "c9e034b5218acfddb94d2c9024675fe6c7714916298c13a87f671aff4761710c",
-      "fundTx": "baaaaee08c9531632bfabbc7ac5eb1ae9cbf9491de49a19b00090b036277c75a",
-      "paymentTx": "979b823c61e7e352a4cdb37bead81faf40e2138213c0462b147d1c907550f3f4",
-      "addDeviceTx": "488a78867711cdf5e6ce0725b04bde9b015da076d51f00e193cc2ae2daeefe8e",
-      "date": "2026-07-24",
+      "wallet": "CD26L3LCCPWMGR4WGN2TWO3JUUHH4ZYRU7P7WEVLXE2QYIOECDBAIBR3",
+      "deployTx": "a69891ac23aba499cee229693be4251629ecb1abce338c2ec609ae419bcff801",
+      "fundTx": "b78812bc41851f9e6169ede8b3d91ec77902f60281934dd7c963da3da3d26607",
+      "paymentTx": "d51ba733a9af93f2b9ba424bf166458e4b01d00bf6f2ca778cca9bc3e859430e",
+      "addDeviceTx": "c76f4727f291d740dc97bae7c06b35f09905d314a1949e6cfcdf9e5afa8bde31",
+      "date": "2026-08-09",
       "note": "Full Tranche 2 D3 demo run on a passkey-kit v1 smart-wallet, all persisted: deploy -> fund -> passkey-signed payment (10 XLM via native SAC, sendSmartWalletTx) -> wrong-key payment REJECTED on-chain -> add second device (addSigner). Everything after deploy driven by @soropass/core. Reproduce: pnpm --filter @soropass/core exec tsx scripts/demo-run-e2e.ts"
     },
     "removeSignerProof": {
@@ -68,11 +68,11 @@
       "note": "remove_signer proven against passkey-kit v1 on testnet: deploy wallet with A, add B, then remove B (all authorized by A, all persisted). Reproduce: pnpm --filter @soropass/core exec tsx scripts/remove-signer-e2e.ts"
     },
     "v1LifecycleProof": {
-      "wallet": "CDIUAXCB37ZLQRPHLPE3Q7Z4UGMMAVLHBSTGK22ZLUCUYZFFBU3W7NQ4",
-      "deployTx": "11dc14efab4d5cc91b6ccd6ab76be6ad414e92baf8cfb911b37d2f289ca0ebc9",
-      "addSignerTx": "95f05b54d73254b0dbc7b8b882edfc360cd35bad75dbbcc1cdaa6fa7eb390621",
-      "date": "2026-07-28",
-      "note": "Full v1 account-lifecycle via SDK adapters (smartWalletV1Deployer + smartWalletV1Indexer): deterministic deploy -> deriveSmartWalletAddress (offline) === deployed address -> resolveByCredential(founding) -> wallet -> add second device -> resolveByCredential(second) -> SAME wallet. This makes connect/recover/getAddress v1-native. v0.13.0 event schema captured empirically (topic[0]=Symbol('signer_added'), topic[1]=SignerKey::Secp256r1(rawCredId), wallet=emitting contract) via scripts/v1-events-probe.ts. Reproduce: pnpm --filter @soropass/core exec tsx scripts/v1-lifecycle-e2e.ts"
+      "wallet": "CCKKF4H7I6FBJABMRZST5VC64KLLCWLGOMGJ2RADFQT23YDOAWCMYSJR",
+      "deployTx": "49f45feecaa1b2cc44b1daa4e0f327edb3cb5fd4eb77faddf2074925861f3d2c",
+      "addSignerTx": "48041873256882593309305a1fd856c37d705647c9551be682a9e148adaad565",
+      "date": "2026-08-09",
+      "note": "Full v1 account-lifecycle via SDK adapters (smartWalletV1Deployer + smartWalletV1Indexer): deterministic deploy -> deriveSmartWalletAddress (offline) === deployed address -> resolveByCredential(founding) -> wallet -> add second device -> resolveByCredential(second) -> SAME wallet. This makes connect/recover/getAddress v1-native. Re-verifies the paginated indexer (collectEventsToTip) that resolves recent wallets across the RPC event window. v0.13.0 event schema captured empirically (topic[0]=Symbol('signer_added'), topic[1]=SignerKey::Secp256r1(rawCredId), wallet=emitting contract) via scripts/v1-events-probe.ts. Reproduce: pnpm --filter @soropass/core exec tsx scripts/v1-lifecycle-e2e.ts"
     }
   }
 }
