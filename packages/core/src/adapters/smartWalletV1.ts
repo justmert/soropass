@@ -5,6 +5,7 @@ import { decodeChallenge } from '../webauthn/clientData';
 import { buildSecp256r1Signer } from '../soroban/signer';
 import { buildSignerKeyScVal } from '../soroban/smartWallet';
 import { deriveSmartWalletAddress } from '../soroban/address';
+import { collectEventsToTip } from './eventsPaging';
 import type { AccountDeployer } from '../ceremonies/types';
 import type { IndexerAdapter, ResolvedAccount } from './types';
 
@@ -101,8 +102,13 @@ export interface SmartWalletV1IndexerOptions {
  * and the wallet is the EMITTING contract. Works for BOTH the founding credential
  * (deploy emits `signer_added`) and signers added later via `add_signer`.
  *
- * soroban-rpc retains only a limited event window, so this is the zero-infra
- * default for recent wallets; use a persistent indexer (Mercury) for older ones.
+ * A single `getEvents` call only scans a bounded ledger slice from `startLedger`
+ * (not the whole window) and returns a cursor, so a naive one-shot query misses
+ * events near the tip — the exact reason recovery of a just-created wallet found
+ * nothing. We therefore PAGINATE by cursor from `startLedger` to the tip,
+ * accumulating every wallet the credential signs for. soroban-rpc retains only a
+ * limited window, so this is the zero-infra default for recent wallets; use a
+ * persistent indexer (Mercury) for older ones.
  */
 export function smartWalletV1Indexer(options: SmartWalletV1IndexerOptions): IndexerAdapter {
   const server = new rpc.Server(options.rpcUrl, {
@@ -111,23 +117,26 @@ export function smartWalletV1Indexer(options: SmartWalletV1IndexerOptions): Inde
   return {
     async resolveByCredential(credentialId: string): Promise<ResolvedAccount[]> {
       const raw = decodeChallenge(credentialId);
+      // Filter directly on the two topics: the event name + this credential's SignerKey.
+      const filters = [
+        {
+          type: 'contract' as const,
+          topics: [
+            [
+              xdr.ScVal.scvSymbol('signer_added').toXDR('base64'),
+              buildSignerKeyScVal(raw).toXDR('base64'),
+            ],
+          ],
+        },
+      ];
       const startLedger =
         options.startLedger ??
         Math.max(1, (await server.getLatestLedger()).sequence - LEDGERS_PER_DAY);
-      // Filter directly on the two topics: the event name + this credential's SignerKey.
-      const topics = [
-        [
-          xdr.ScVal.scvSymbol('signer_added').toXDR('base64'),
-          buildSignerKeyScVal(raw).toXDR('base64'),
-        ],
-      ];
-      const response = await server.getEvents({
-        startLedger,
-        filters: [{ type: 'contract', topics }],
-      });
+
+      const events = await collectEventsToTip(server, filters, startLedger);
       const seen = new Set<string>();
       const accounts: ResolvedAccount[] = [];
-      for (const event of response.events) {
+      for (const event of events) {
         const contractId = event.contractId?.toString();
         if (contractId && !seen.has(contractId)) {
           seen.add(contractId);

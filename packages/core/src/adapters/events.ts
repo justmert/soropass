@@ -1,4 +1,5 @@
 import { rpc, scValToNative } from '@stellar/stellar-sdk';
+import { collectEventsToTip } from './eventsPaging';
 import type { IndexerAdapter, ResolvedAccount } from './types';
 
 function decodeNative(scv: unknown): unknown {
@@ -73,12 +74,15 @@ export function eventsIndexer(options: EventsIndexerOptions): IndexerAdapter {
       const startLedger =
         options.startLedger ??
         Math.max(1, (await server.getLatestLedger()).sequence - LEDGERS_PER_DAY);
-      const response = await server.getEvents({
+      // Paginate to the tip: a single getEvents scans only a bounded slice, so a
+      // one-shot query misses factory deploys near the latest ledger.
+      const events = await collectEventsToTip(
+        server,
+        [{ type: 'contract', contractIds: [options.factoryContractId] }],
         startLedger,
-        filters: [{ type: 'contract', contractIds: [options.factoryContractId] }],
-      });
+      );
       const accounts: ResolvedAccount[] = [];
-      for (const event of response.events) {
+      for (const event of events) {
         const resolved = match(event, credentialId);
         if (resolved) accounts.push(resolved);
       }
