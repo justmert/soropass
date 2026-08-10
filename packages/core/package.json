@@ -100,11 +100,11 @@
     }
   },
   "dependencies": {
-    "@noble/curves": "^1.6.0",
-    "@noble/hashes": "^1.5.0"
+    "@noble/curves": "^2.3.0",
+    "@noble/hashes": "^2.3.0"
   },
   "devDependencies": {
-    "@stellar/stellar-sdk": "^15.1.0",
+    "@stellar/stellar-sdk": "^16.2.0",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "tsup": "^8.0.0",
