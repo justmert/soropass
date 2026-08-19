@@ -9,3 +9,4 @@ export { mockAuthenticator } from './mockAuthenticator';
 export type { MockAuthenticator, MockAuthenticatorOptions } from './mockAuthenticator';
 export { createInMemoryBackend } from './inMemory';
 export type { InMemoryBackend } from './inMemory';
+export { sampleAuthEntry } from './sampleAuthEntry';
