@@ -98,9 +98,9 @@ The same shape gives you `mountSignScreen`, `mountRecoverScreen`, and `mountAddD
 Register a `PasskeyModule` and passkey becomes one more wallet in `@creit.tech/stellar-wallets-kit`. Your existing `getAddress` / `signTransaction` calls are unchanged.
 
 ```ts
-import { PasskeyModule, PASSKEY_ID } from '@soropass/wallets-kit-module';
+import { PasskeyModule, PASSKEY_ID } from '@creit.tech/stellar-wallets-kit/modules/passkey';
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
-import { Networks } from '@creit.tech/stellar-wallets-kit';
+import { Networks } from '@creit.tech/stellar-wallets-kit/types';
 
 const passkey = new PasskeyModule({ ...cfg, indexer, deployer });
 StellarWalletsKit.init({ network: Networks.TESTNET, modules: [passkey] });
@@ -112,9 +112,9 @@ const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, { network
 ```
 
 <Callout type="info">
-  The `PasskeyModule` (`@soropass/wallets-kit-module`) implements the `@creit.tech/stellar-wallets-kit`
-  `ModuleInterface` (v2.2.0) and runs from the workspace (`packages/kit-module`). It is **not yet
-  published to npm**, so consume it from the workspace. Paths A and B use published packages.
+  The `PasskeyModule` implements the `@creit.tech/stellar-wallets-kit` `ModuleInterface` (v2.5.0) and is
+  proposed to the kit as a pull request. Until it merges, the `./modules/passkey` export is not on the
+  published kit, so install it from the PR branch. Paths A and B use published packages.
 </Callout>
 
 ## Next
