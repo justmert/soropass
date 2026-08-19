@@ -1,6 +1,6 @@
-import { xdr } from '@stellar/stellar-sdk';
+import { Address, xdr } from '@stellar/stellar-sdk';
 import { KitError } from '../errors';
-import { derToCompactLowS } from '../webauthn/signature';
+import { derToCompactLowS, normalizeLowS } from '../webauthn/signature';
 import { parseClientDataJSON, verifyClientDataJSON, type ClientData } from '../webauthn/clientData';
 import { parseAuthenticatorData, verifyRpIdHash } from '../webauthn/authData';
 import { verifyAssertionSignature } from '../webauthn/verify';
@@ -58,6 +58,14 @@ export interface SignVerifyOptions {
 export interface SorobanSignOptions {
   networkPassphrase: string;
   sign: WebAuthnSigner;
+  /**
+   * Restrict `signTransaction` to auth entries whose credential address equals this
+   * C-address. When set, only the connected account's entries are signed and any other
+   * authorizer's entries are left untouched, so the passkey never signs on behalf of, or
+   * prompts for, accounts that are not the signer. Omit to sign every address-credential
+   * entry.
+   */
+  signerAddress?: string;
   /** Contract ABI to assemble for. Defaults to `single-signer` (our account). */
   target?: WalletTarget;
   /** Opt-in pre-flight assertion validation. Omit to skip. */
@@ -151,8 +159,11 @@ async function signEntryInPlace(
   const challenge = authEntryChallenge(entry, options.networkPassphrase);
   const assertion = await options.sign(challenge);
   if (options.verify) preflightAssertion(assertion, challenge, options.verify);
+  // Always low-S normalize (invariant #2), on BOTH branches: an already-compact
+  // 64-byte signature from a custom signer can still be high-S, which the on-chain
+  // secp256r1 verifier rejects.
   const signature =
-    assertion.signature.length === 64 ? assertion.signature : derToCompactLowS(assertion.signature);
+    assertion.signature.length === 64 ? normalizeLowS(assertion.signature) : derToCompactLowS(assertion.signature);
   const normalized = {
     credentialId: assertion.credentialId,
     authenticatorData: assertion.authenticatorData,
@@ -217,6 +228,12 @@ export async function signTransaction(txXdr: string, options: SorobanSignOptions
     const entries = op.body().invokeHostFunctionOp().auth();
     for (const entry of entries) {
       if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') continue;
+      if (
+        options.signerAddress !== undefined &&
+        Address.fromScAddress(entry.credentials().address().address()).toString() !== options.signerAddress
+      ) {
+        continue;
+      }
       await signEntryInPlace(entry, options);
     }
   }
