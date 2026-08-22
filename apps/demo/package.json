@@ -21,7 +21,7 @@
     "buffer": "^6.0.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.0",
+    "@playwright/test": "^1.62.1",
     "vite": "^5.4.0"
   }
 }
