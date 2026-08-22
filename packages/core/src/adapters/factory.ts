@@ -39,6 +39,12 @@ export function factoryDeployer(options: FactoryDeployerOptions): AccountDeploye
   const source = Keypair.fromSecret(options.sourceSecret);
   return {
     async deploy(input) {
+      if (input.publicKey.length !== 65) {
+        throw new KitError(
+          'CONTRACT_AUTH_FAILED',
+          `factory deploy: public key must be 65-byte SEC-1 (got ${String(input.publicKey.length)})`,
+        );
+      }
       const pk = nativeToScVal(Buffer.from(input.publicKey), { type: 'bytes' });
       const cred = nativeToScVal(Buffer.from(new TextEncoder().encode(input.credentialId)), {
         type: 'bytes',

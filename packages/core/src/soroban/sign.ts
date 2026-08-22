@@ -28,6 +28,13 @@ export interface AssertionResult {
   signature: Uint8Array;
   /** base64url credential id → the SignerKey. */
   credentialId: Uint8Array;
+  /**
+   * SEC-1 (65-byte) public key of the signing passkey. The v0.2 single-signer
+   * account verifies against this exact key, so the signer must supply it here
+   * (or the caller passes it via `SorobanSignOptions.publicKey`). Not used by
+   * the smart-wallet target, which resolves the key on-chain by credential id.
+   */
+  publicKey?: Uint8Array;
 }
 
 /** Produce a WebAuthn assertion over the base64url `challenge` (e.g. navigator.credentials.get). */
@@ -66,6 +73,14 @@ export interface SorobanSignOptions {
    * entry.
    */
   signerAddress?: string;
+  /**
+   * SEC-1 (65-byte) public key of the signing passkey, for the `single-signer`
+   * target: the v0.2 `webauthn-account` carries the signer's key inline and
+   * verifies against it. Takes precedence over any `publicKey` the signer
+   * returns on its `AssertionResult`. Required for `single-signer` when the
+   * signer does not return one; ignored by the `smart-wallet` target.
+   */
+  publicKey?: Uint8Array;
   /** Contract ABI to assemble for. Defaults to `single-signer` (our account). */
   target?: WalletTarget;
   /** Opt-in pre-flight assertion validation. Omit to skip. */
@@ -163,7 +178,9 @@ async function signEntryInPlace(
   // 64-byte signature from a custom signer can still be high-S, which the on-chain
   // secp256r1 verifier rejects.
   const signature =
-    assertion.signature.length === 64 ? normalizeLowS(assertion.signature) : derToCompactLowS(assertion.signature);
+    assertion.signature.length === 64
+      ? normalizeLowS(assertion.signature)
+      : derToCompactLowS(assertion.signature);
   const normalized = {
     credentialId: assertion.credentialId,
     authenticatorData: assertion.authenticatorData,
@@ -173,7 +190,14 @@ async function signEntryInPlace(
   if (options.target === 'smart-wallet') {
     applyAssertionToSmartWalletEntry(entry, normalized);
   } else {
-    applyAssertionToEntry(entry, normalized);
+    const publicKey = options.publicKey ?? assertion.publicKey;
+    if (publicKey === undefined) {
+      throw new KitError(
+        'CONTRACT_AUTH_FAILED',
+        'single-signer signing requires the signer public key: set SorobanSignOptions.publicKey or return publicKey from the signer',
+      );
+    }
+    applyAssertionToEntry(entry, normalized, publicKey);
   }
 }
 
@@ -230,7 +254,8 @@ export async function signTransaction(txXdr: string, options: SorobanSignOptions
       if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') continue;
       if (
         options.signerAddress !== undefined &&
-        Address.fromScAddress(entry.credentials().address().address()).toString() !== options.signerAddress
+        Address.fromScAddress(entry.credentials().address().address()).toString() !==
+          options.signerAddress
       ) {
         continue;
       }

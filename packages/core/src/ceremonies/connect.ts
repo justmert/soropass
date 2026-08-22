@@ -9,6 +9,16 @@ export interface ConnectOptions {
   storage?: CredentialStorage;
   /** Override silent-mediation detection (default: probe isConditionalMediationAvailable). */
   silentMediationSupported?: boolean;
+  /**
+   * SEC-1 (65-byte) public key of this passkey. When set, `connect` returns the
+   * account whose factory `deployed` event names this exact key, ignoring any
+   * other candidate for the same credential id. Because `deploy` is
+   * permissionless, a credential id can resolve to more than one account; pass
+   * the founding key (persisted at create time) so a poisoned candidate is never
+   * selected. When omitted, `connect` returns the first resolved account and you
+   * MUST verify enrollment yourself before trusting it with funds.
+   */
+  publicKey?: Uint8Array;
 }
 
 export interface ConnectResult {
@@ -57,6 +67,30 @@ export async function connect(options: ConnectOptions): Promise<ConnectResult | 
   }
 
   const accounts = await options.indexer.resolveByCredential(credentialId);
-  const contractId = accounts[0]?.contractId;
-  return contractId ? { contractId, credentialId } : null;
+  const selected = selectAccount(accounts, options.publicKey);
+  return selected ? { contractId: selected.contractId, credentialId } : null;
+}
+
+/** True if two byte arrays are equal. */
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/**
+ * Pick the resolved account. With an expected public key, return only the
+ * candidate whose factory-reported founding key matches it (poison-resistant);
+ * without one, fall back to the first candidate (see the `publicKey` doc on
+ * ConnectOptions for why that is a trust decision the caller must back up).
+ */
+function selectAccount(
+  accounts: { contractId: string; publicKey?: Uint8Array }[],
+  publicKey?: Uint8Array,
+): { contractId: string } | null {
+  if (publicKey) {
+    const match = accounts.find((a) => a.publicKey && bytesEqual(a.publicKey, publicKey));
+    return match ? { contractId: match.contractId } : null;
+  }
+  return accounts[0] ?? null;
 }

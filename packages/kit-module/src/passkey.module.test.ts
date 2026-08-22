@@ -147,10 +147,12 @@ describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () =>
 
   it('getAddress() derives the C-address from the factory + credential id, WITHOUT the indexer', async () => {
     // The real on-chain factoryDeployProof (deployments.json): factory.deploy with
-    // credential_id "democred" produced this account. getAddress must reproduce it
-    // offline, and must NOT touch the indexer when the factory path is available.
+    // With the founding public key configured, getAddress derives the v0.2
+    // factory address offline (salt binds the key, F1) and must NOT touch the
+    // indexer. The on-chain match is proven in contracts/deployments.json after
+    // the testnet redeploy; here we assert the module reproduces the derivation.
     const FACTORY = 'CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM';
-    const DEPLOYED = 'CAGWE36MQRWXIXS4Z4G6UYEEJMJ7XGNOE7K5PHQ6BCZYMAPAWPBHLBQV';
+    const auth = mockAuthenticator({ rpId: RP_ID, seed: 'derive' });
 
     const map = new Map<string, string>();
     const storage: CredentialStorage = {
@@ -172,20 +174,22 @@ describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () =>
       networkPassphrase: PASSPHRASE,
       indexer: throwingIndexer,
       deployer: throwingDeployer,
-      webauthn: mockAuthenticator({ rpId: RP_ID, seed: 'derive' }),
+      webauthn: auth,
       storage,
       factoryContractId: FACTORY,
+      foundingPublicKey: auth.publicKey,
     });
 
     const { address } = await module.getAddress();
-    expect(address).toBe(DEPLOYED);
     expect(address).toBe(
       deriveAccountAddress({
         factoryContractId: FACTORY,
         credentialId: new TextEncoder().encode('democred'),
+        publicKey: auth.publicKey,
         networkPassphrase: PASSPHRASE,
       }),
     );
+    expect(address).toMatch(/^C[A-Z2-7]{55}$/);
   });
 
   it('v1: walletTarget "smart-wallet" yields a signature the smart-wallet __check_auth accepts', async () => {

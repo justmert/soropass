@@ -15,6 +15,7 @@ import {
   Networks,
   TransactionBuilder,
   nativeToScVal,
+  scValToNative,
   xdr,
 } from '@stellar/stellar-sdk';
 import { p256 } from '@noble/curves/nist';
@@ -29,8 +30,8 @@ const SAC = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'; // nativ
 const SOURCE = Keypair.fromSecret(required('SOURCE_SECRET'));
 const deployments = JSON.parse(
   readFileSync(new URL('../../../contracts/deployments.json', import.meta.url), 'utf8'),
-) as { testnet: { accountFactory: { contractId: string } } };
-const FACTORY_ID = process.env.FACTORY_ID ?? deployments.testnet.accountFactory.contractId;
+) as { testnetV02: { accountFactory: { contractId: string } } };
+const FACTORY_ID = process.env.FACTORY_ID ?? deployments.testnetV02.accountFactory.contractId;
 const RP_ID = 'passkey.localhost';
 const ORIGIN = 'https://passkey.localhost';
 const server = new rpc.Server(RPC_URL);
@@ -51,6 +52,7 @@ function concat(...arrays: Uint8Array[]): Uint8Array {
   return out;
 }
 function makeSigner(privateKey: Uint8Array): WebAuthnSigner {
+  const publicKey = p256.getPublicKey(privateKey, false); // 65-byte SEC-1
   return (challenge: string): AssertionResult => {
     const rpIdHash = sha256(new TextEncoder().encode(RP_ID));
     const authenticatorData = concat(rpIdHash, Uint8Array.of(0x05), Uint8Array.of(0, 0, 0, 1));
@@ -64,8 +66,21 @@ function makeSigner(privateKey: Uint8Array): WebAuthnSigner {
       clientDataJSON,
       signature: der,
       credentialId: new Uint8Array(16).fill(1),
+      publicKey, // v0.2 single-signer account verifies against the inline key
     };
   };
+}
+
+/** Read a native-SAC balance (i128 stroops) for an address via simulation. */
+async function sacBalance(who: string): Promise<bigint> {
+  const account = await server.getAccount(SOURCE.publicKey());
+  const tx = new TransactionBuilder(account, { fee: '1000000', networkPassphrase: NETWORK })
+    .addOperation(new Contract(SAC).call('balance', addr(who)))
+    .setTimeout(60)
+    .build();
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim) || !sim.result) return -1n;
+  return BigInt(scValToNative(sim.result.retval) as bigint);
 }
 
 const i128 = (n: bigint) => nativeToScVal(n, { type: 'i128' });
@@ -161,6 +176,7 @@ async function main(): Promise<void> {
   await new Promise((r) => setTimeout(r, 1500));
   console.log(`✅ destination account: ${dest.publicKey()}`);
 
+  const destBefore = await sacBalance(dest.publicKey());
   const positive = await transferFromWallet(
     wallet,
     dest.publicKey(),
@@ -168,6 +184,7 @@ async function main(): Promise<void> {
     makeSigner(priv),
     'TRANSFER correct key (25 XLM)',
   );
+  const destAfter = await sacBalance(dest.publicKey());
   const negative = await transferFromWallet(
     wallet,
     dest.publicKey(),
@@ -177,12 +194,20 @@ async function main(): Promise<void> {
   );
 
   console.log('');
-  const ok = positive.status === 'SUCCESS' && negative.status !== 'SUCCESS';
+  const moved = destAfter - destBefore;
+  console.log(`destination balance delta: ${moved.toString()} stroops (expect 250000000)`);
+  const ok =
+    positive.status === 'SUCCESS' && negative.status !== 'SUCCESS' && moved === 250_000_000n;
   if (ok) {
     console.log('✅ PASSKEY TRANSFER PROOF — passkey moved 25 XLM on-chain; wrong key → FAILED.');
+    console.log(`   wallet:      ${wallet}`);
     console.log(`   transfer tx: https://stellar.expert/explorer/testnet/tx/${positive.hash}`);
   } else {
-    console.error('❌ unexpected result', { positive: positive.status, negative: negative.status });
+    console.error('❌ unexpected result', {
+      positive: positive.status,
+      negative: negative.status,
+      moved: moved.toString(),
+    });
   }
   process.exit(ok ? 0 : 1);
 }

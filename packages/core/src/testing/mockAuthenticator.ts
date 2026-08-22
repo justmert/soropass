@@ -131,6 +131,7 @@ export function mockAuthenticator(options: MockAuthenticatorOptions): MockAuthen
         clientDataJSON: a.clientDataJSON,
         signature: a.signatureDer,
         credentialId: credIdBytes,
+        publicKey,
       };
     },
   };

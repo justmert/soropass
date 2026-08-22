@@ -15,6 +15,13 @@ export interface BrowserPasskeySignerOptions {
   userVerification?: 'discouraged' | 'preferred' | 'required';
   /** Inject a custom client (tests / non-browser). Defaults to `browserWebAuthnClient()`. */
   webauthn?: WebAuthnClient;
+  /**
+   * SEC-1 (65-byte) public key of this passkey (from `create` / `connect`).
+   * WebAuthn assertions do not return the public key, so pass it here to sign
+   * for the v0.2 single-signer account; it is echoed onto the `AssertionResult`.
+   * You can instead supply it once via `SorobanSignOptions.publicKey`.
+   */
+  publicKey?: Uint8Array;
 }
 
 /**
@@ -38,13 +45,16 @@ export function browserPasskeySigner(options: BrowserPasskeySignerOptions): WebA
       rpId: options.rpId,
       challenge: base64UrlToBytes(challenge),
       allowCredentials: options.allowCredentials ?? [],
-      userVerification: options.userVerification ?? 'preferred',
+      // The v0.2 account requires the User-Verified flag, so default to
+      // 'required'; a signature without UV fails on-chain.
+      userVerification: options.userVerification ?? 'required',
     });
     return {
       authenticatorData: assertion.authenticatorData,
       clientDataJSON: assertion.clientDataJSON,
       signature: assertion.signature,
       credentialId: assertion.rawId,
+      publicKey: options.publicKey,
     };
   };
 }

@@ -22,6 +22,14 @@ export interface SubmissionAdapter {
 export interface ResolvedAccount {
   /** Soroban smart-account C-address. */
   contractId: string;
+  /**
+   * SEC-1 (65-byte) public key the factory's `deployed` event reported as this
+   * account's founding signer, when available. `deploy` is permissionless and a
+   * credential id is not exclusive, so a credential can resolve to more than one
+   * candidate; compare this against the user's own key (or re-derive the address
+   * with `deriveAccountAddress`) before trusting a resolved account with funds.
+   */
+  publicKey?: Uint8Array;
 }
 
 /** credentialId → smart-account address lookup. */

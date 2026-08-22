@@ -28,7 +28,13 @@ function makeSigner(priv: Uint8Array, credentialId: Uint8Array): WebAuthnSigner 
     );
     const payload = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, priv).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId,
+      publicKey: p256.getPublicKey(priv, false),
+    };
   };
 }
 

@@ -45,7 +45,13 @@ function makeSigner(
     );
     const payload = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, PRIV).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: CRED_ID };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: CRED_ID,
+      publicKey: PUB,
+    };
   };
 }
 

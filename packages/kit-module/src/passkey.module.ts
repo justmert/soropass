@@ -39,6 +39,14 @@ export interface PasskeyModuleOptions {
    */
   factoryContractId?: string;
   /**
+   * SEC-1 (65-byte) public key of the founding passkey, for offline single-signer
+   * `getAddress` with `factoryContractId`. The v0.2 factory binds the key into the
+   * deploy salt (F1), so the address cannot be derived from the credential id
+   * alone. When omitted and no account was created this session, `getAddress`
+   * resolves through `connect` + the indexer instead.
+   */
+  foundingPublicKey?: Uint8Array;
+  /**
    * The deployer account for a passkey-kit **v1 smart-wallet**. When set,
    * `getAddress` derives the address offline via `sha256(rawCredentialId)` (the v1
    * scheme). Pair with `walletTarget: 'smart-wallet'` so signatures use the v1 map,
@@ -77,6 +85,7 @@ export class PasskeyModule implements ModuleInterface {
   private cachedWebauthn?: WebAuthnClient;
   private cachedSigner?: WebAuthnSigner;
   private currentAddress: string | null = null;
+  private currentPublicKey: Uint8Array | null = null;
   private currentCredentialId: string | null = null;
 
   constructor(private readonly options: PasskeyModuleOptions) {
@@ -138,6 +147,7 @@ export class PasskeyModule implements ModuleInterface {
     });
     this.currentAddress = result.contractId;
     this.currentCredentialId = result.credentialId;
+    this.currentPublicKey = result.publicKey;
     return result;
   }
 
@@ -165,11 +175,14 @@ export class PasskeyModule implements ModuleInterface {
     }
 
     // Single-signer factory: mirror the factory's on-chain salt,
-    // sha256(utf8(base64url credential id)) — same bytes the deployer sends.
-    if (this.options.factoryContractId && credentialId) {
+    // sha256(utf8(base64url credential id) ‖ public_key). The founding key is
+    // required (F1); when it is unknown this session, fall through to connect.
+    const foundingKey = this.currentPublicKey ?? this.options.foundingPublicKey;
+    if (this.options.factoryContractId && credentialId && foundingKey) {
       const address = deriveAccountAddress({
         factoryContractId: this.options.factoryContractId,
         credentialId: new TextEncoder().encode(credentialId),
+        publicKey: foundingKey,
         networkPassphrase: this.options.networkPassphrase,
       });
       this.currentAddress = address;

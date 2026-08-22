@@ -1,8 +1,11 @@
 {
   "name": "@soropass/ui",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Headless-first UI primitives for passkey create/sign/recover; styling is optional and token-driven.",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "sideEffects": [
     "**/*.css"

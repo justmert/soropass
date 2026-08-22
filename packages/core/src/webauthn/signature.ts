@@ -44,9 +44,10 @@ export function isLowS(compactSignature: Uint8Array): boolean {
 /**
  * Normalize a 64-byte compact signature to canonical low-S: if S > n/2, replace
  * S with n − S (anchor LOW_S_NORMALIZATION, invariant #2). ~50% of Apple Touch
- * ID / Face ID assertions are high-S and Soroban's `secp256r1_verify` does not
- * enforce low-S, so the SDK MUST emit low-S before a signature reaches a
- * contract. Idempotent: low-S input is returned unchanged.
+ * ID / Face ID assertions are high-S, and Soroban's `secp256r1_verify` REJECTS a
+ * high-S signature at decode, so the SDK MUST emit low-S or roughly half of real
+ * assertions would fail on-chain. Low-S is a validity requirement here, not just
+ * malleability hygiene. Idempotent: low-S input is returned unchanged.
  */
 export function normalizeLowS(compactSignature: Uint8Array): Uint8Array {
   assertCompactLength(compactSignature);

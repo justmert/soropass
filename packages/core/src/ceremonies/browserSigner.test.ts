@@ -33,7 +33,7 @@ describe('browserPasskeySigner', () => {
     expect(seen?.rpId).toBe('wallet.example.com');
     expect([...(seen?.challenge ?? [])]).toEqual([...challengeBytes]);
     expect(seen?.allowCredentials).toEqual(['cred-id']);
-    expect(seen?.userVerification).toBe('preferred');
+    expect(seen?.userVerification).toBe('required');
 
     // the assertion maps to the AssertionResult the auth assembler consumes
     expect([...result.credentialId]).toEqual([9, 9, 9]);

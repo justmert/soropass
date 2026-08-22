@@ -32,27 +32,45 @@ function contractIdFromDeployerSalt(
 export interface DeriveAccountAddressOptions {
   /** The AccountFactory contract C-address — the deployer. */
   factoryContractId: string;
-  /** The credential-id bytes the factory salts by SHA-256 (utf-8 of the base64url id in our factory). */
+  /** The credential-id bytes the factory salts (utf-8 of the base64url id in our factory). */
   credentialId: Uint8Array;
+  /**
+   * SEC-1 (65-byte) public key of the founding passkey. The v0.2 factory binds
+   * it into the deploy salt (`sha256(credential_id ‖ public_key)`) so a public
+   * credential id alone cannot be used to squat a derived address.
+   */
+  publicKey: Uint8Array;
   networkPassphrase: string;
 }
 
 /**
  * Derive the deterministic C-address of the `webauthn-account` our AccountFactory
- * deploys for a passkey — with NO network round-trip. The factory salts by
- * `sha256(credential_id)` and deploys with `deployer().with_current_contract(salt)`.
- * Verified against the on-chain `factoryDeployProof` in `contracts/deployments.json`
- * (credential `democred` → `CAGWE36M…`). For the passkey-kit v1 smart-wallet, use
- * {@link deriveSmartWalletAddress} instead (different deployer + salt-input scheme).
+ * deploys for a passkey — with NO network round-trip. The v0.2 factory salts by
+ * `sha256(credential_id ‖ public_key)` and deploys with
+ * `deployer().with_current_contract(salt)`. Binding the public key is the F1
+ * fix: a credential id is public (the factory emits it), so salting by it alone
+ * let anyone pre-deploy at a victim's address with their own key. For the
+ * passkey-kit v1 smart-wallet, use {@link deriveSmartWalletAddress} instead
+ * (different deployer + salt-input scheme).
  */
 export function deriveAccountAddress(options: DeriveAccountAddressOptions): string {
-  const { factoryContractId, credentialId, networkPassphrase } = options;
+  const { factoryContractId, credentialId, publicKey, networkPassphrase } = options;
   if (credentialId.length === 0) {
     throw new KitError('CONTRACT_AUTH_FAILED', 'deriveAccountAddress: empty credential id');
   }
+  if (publicKey.length !== 65) {
+    throw new KitError(
+      'CONTRACT_AUTH_FAILED',
+      `deriveAccountAddress: public key must be 65-byte SEC-1 (got ${String(publicKey.length)})`,
+    );
+  }
+  // salt = sha256(credential_id ‖ public_key), matching account-factory deploy().
+  const saltInput = new Uint8Array(credentialId.length + publicKey.length);
+  saltInput.set(credentialId, 0);
+  saltInput.set(publicKey, credentialId.length);
   return contractIdFromDeployerSalt(
     factoryContractId,
-    hash(Buffer.from(credentialId)), // e.crypto().sha256(credential_id)
+    hash(Buffer.from(saltInput)),
     networkPassphrase,
   );
 }

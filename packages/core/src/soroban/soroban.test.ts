@@ -39,7 +39,13 @@ function makeSigner(overrideChallenge?: string): WebAuthnSigner {
     );
     const payload = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
     const der = p256.sign(payload, PRIV).toDERRawBytes(); // may be high-S → pipeline low-S normalizes
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: CRED_ID };
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: CRED_ID,
+      publicKey: PUB,
+    };
   };
 }
 
@@ -111,6 +117,27 @@ describe('Soroban auth assembly (S11)', () => {
     const signedEntry = envelope.v1().tx().operations()[0]?.body().invokeHostFunctionOp().auth()[0];
     expect(signedEntry).toBeDefined();
     expect(referenceCheckAuth(signedEntry!, PUB, Networks.TESTNET).success).toBe(true);
+  });
+
+  it('reference model rejects a high-S signature, matching the host (F-A2)', async () => {
+    // The Soroban host REJECTS high-S at decode, so referenceCheckAuth models it
+    // with lowS:true. The low-S signature the SDK emits verifies; its high-S
+    // mirror (n - s) must not, or the model would accept what the chain rejects.
+    const entryXdr = buildUnsignedEntry().toXDR('base64');
+    const signed = await signAuthEntry(entryXdr, {
+      networkPassphrase: Networks.TESTNET,
+      sign: makeSigner(),
+    });
+    const entry = xdr.SorobanAuthorizationEntry.fromXDR(signed, 'base64');
+    expect(referenceCheckAuth(entry, PUB, Networks.TESTNET).signatureValid).toBe(true);
+
+    const map = entry.credentials().address().signature().map()!;
+    const sigField = map.find((e) => e.key().sym().toString() === 'signature')!;
+    const low = new Uint8Array(sigField.val().bytes());
+    const s = p256.Signature.fromCompact(low);
+    const high = new p256.Signature(s.r, p256.CURVE.n - s.s).toCompactRawBytes();
+    sigField.val(xdr.ScVal.scvBytes(Buffer.from(high)));
+    expect(referenceCheckAuth(entry, PUB, Networks.TESTNET).signatureValid).toBe(false);
   });
 
   it('challenge-binding: a signature over the wrong challenge is rejected', async () => {

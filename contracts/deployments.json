@@ -1,4 +1,61 @@
 {
+  "build": {
+    "note": "Source-provenance for the v0.2.1 contracts (F1 key-bound salt + native multi-signer recovery + OZ-hardened __check_auth + audit-hardening: soroban-sdk 27, mainnet TTL, credential-id cap, public_key in the deployed event, protected() removed). Reproduce: contracts/build.sh on the pinned toolchain (un-optimized, so cargo build reproduces the exact hash with no wasm-opt dependency). On-chain wasm hashes match per-network below.",
+    "toolchain": "rustc 1.97.1 (pinned in contracts/rust-toolchain.toml, target wasm32v1-none)",
+    "sorobanSdk": "27.0.6",
+    "wasm": {
+      "webauthnAccount": {
+        "version": "0.2.1",
+        "sha256": "9a4ada31cdbc10d08dda3bba573f0140187d5bbf041b059f5802c9864ab4a7bc",
+        "bytes": 30978
+      },
+      "accountFactory": {
+        "version": "0.2.1",
+        "sha256": "98e405f8991eac0a7330514053028a4f6b310a55e4996874282bfec7422f1c0d",
+        "bytes": 6939
+      }
+    },
+    "status": "BUILT + unit-tested + DEPLOYED and e2e-proven on testnet (see testnetV02, incl. a real passkey-signed payment). Internal 3-lens review done (security/deploy/tests); NO external audit yet. Mainnet is human-gated and pending external audit."
+  },
+  "testnetV02": {
+    "network": "testnet",
+    "networkPassphrase": "Test SDF Network ; September 2015",
+    "rpcUrl": "https://soroban-testnet.stellar.org",
+    "deployer": "GCFRAUUKGPNZYBKW7TYY5IOMGJWWEK2VBB2ME7XUYO25VDRYTCN4AYAP",
+    "date": "2026-08-22",
+    "note": "The v0.2.1 audit-hardened contracts (soroban-sdk 27, mainnet TTL, credential-id cap, public_key bound into the deployed event, protected() removed). On-chain wasm hashes MATCH the local build (reproducible). Supersedes the earlier v0.2.0 testnet deployment (factory CDBOW57Z...) and the v0.1 proofs below.",
+    "accountFactory": {
+      "contractId": "CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH",
+      "wasmHash": "98e405f8991eac0a7330514053028a4f6b310a55e4996874282bfec7422f1c0d"
+    },
+    "webauthnAccount": {
+      "wasmHash": "9a4ada31cdbc10d08dda3bba573f0140187d5bbf041b059f5802c9864ab4a7bc",
+      "note": "Multi-signer secp256r1 account; __constructor(public_key), add_signer/remove_signer/is_signer/signer_count, OZ-hardened __check_auth. Signature struct { authenticator_data, client_data_json, public_key, signature }."
+    },
+    "transferProof": {
+      "wallet": "CAUNNVDLXNHXKQWNA4NTYRJX4ASBG6HYPZR3FRN3UMOH3VPCGHLBTYO4",
+      "fundTx": "cf115257a01ff250077d9a9e88ff2d4000c79a5f7545944d4cd40412c5ee329e",
+      "transferSuccessTx": "fdeb2829089bf65fe650cc2b94f5a3fc6a329cca4f8bdf6812f5b803b35d20fa",
+      "transferFailTx": "d982dab7fc3a8c77011cf17e5507cd8a716963be80ab9b924c5f289dfa7c9ae5",
+      "note": "REAL passkey-signed XLM PAYMENT (the deliverable's 'passkey-signed payment'): fresh passkey -> factory deploy -> fund 100 XLM -> passkey authorizes a 25-XLM transfer via the native SAC (correct key SUCCESS, destination balance delta = 250000000 stroops verified; wrong key FAILED on-chain). Reproduce: scripts/transfer-e2e.ts"
+    },
+    "factoryProof": {
+      "account": "CAP6XFNYCUJZ3D2TCBMEKXGHENIAHNCWUSEZ3YAVGZ5RY6QVMRHNDDI3",
+      "note": "Factory deploys a working account enrolling EXACTLY the founding key: is_signer(founding)=true, is_signer(other)=false, signer_count()=1 (simulation reads). Reproduce: scripts/factory-e2e.ts"
+    },
+    "recoveryProof": {
+      "account": "CD5LY5LSDO63GZZFVC2XKZPUCRKVNFDEFWIPE7Z5ZDM3BPFTO5LLOYX5",
+      "addSignerTx": "6d5d582a9964b519a3d0332136b89dde242c98b44deddfc1eadb29941768c723",
+      "newDeviceSignTx": "6ceb38c16063a224d405982d0d2b99e760d67b15c1e2772f4d298557c8ad3890",
+      "removeSignerTx": "d5230d59ad56525f0db75b884b7bd14472a59c546afc83adb6fa82e7e41d5add",
+      "revokedDeviceFailTx": "45d12adb443eeb7b514b93c87fa83a2d5ceeb8d4d45fa9cd14c7b4f166dc45af",
+      "note": "NATIVE multi-device recovery on OUR contract (F2 fix, no passkey-kit v1): deploy with A -> add_signer(B) by A SUCCESS -> add_signer(C) by B SUCCESS (new device signs) -> remove_signer(A) by B SUCCESS -> add_signer(D) by A FAILED (A revoked). Reproduce: scripts/recovery-e2e.ts"
+    },
+    "deriveMatchProof": {
+      "account": "CDV7JHYBQYDGV7QONHHPTJMZELOY225BLY5USSGITWCVWOE2672IGAFY",
+      "note": "Offline deriveAccountAddress({ credentialId, publicKey }) === the factory-deployed address, proving getAddress works offline under the key-bound salt. Reproduce: scripts/derive-check-e2e.ts"
+    }
+  },
   "testnet": {
     "network": "testnet",
     "networkPassphrase": "Test SDF Network ; September 2015",
@@ -42,7 +99,7 @@
     },
     "smartWalletV1": {
       "wasmHash": "84924c53a413318df2ce753e30de53ec651404c916d30e861718ad155c94b319",
-      "note": "passkey-kit v1 (v0.13.0, Protocol 27, audited) canonical testnet smart-wallet wasm. SoroPass targets its Signatures(Map<SignerKey, Signature>) ABI via signTransaction({ target: 'smart-wallet' }); shape confirmed by kalepail in issue #32."
+      "note": "passkey-kit v1 (v0.13.0, Protocol 27) canonical testnet smart-wallet wasm. NOT audited: kalepail/passkey-kit's own README states it is demo material, not audited, and must not be used to hold or secure value. Used ONLY for testnet compatibility proofs of the Signatures(Map<SignerKey, Signature>) ABI via signTransaction({ target: 'smart-wallet' }); shape confirmed by kalepail in issue #32. Not a mainnet substrate; the v0.2 webauthn-account provides native multi-device recovery for mainnet."
     },
     "addSignerProof": {
       "wallet": "CBMQFHQYB6SYRKJFUGZX57FTNGCNNN6LNO6YRB37IUIOECWULLM4F4CU",

@@ -53,23 +53,36 @@ function verifySecp256r1StructMap(
   } catch {
     challengeBound = false;
   }
-  // Host fn semantics: no low-S enforcement (lowS:false), compact format.
+  // Host fn semantics: the Soroban secp256r1 host REQUIRES low-S. It rejects a
+  // high-S signature at decode, so the reference model must too (lowS:true).
+  // Modeling it as lowS:false would accept signatures the chain rejects and
+  // could mask a missing client-side normalization in a signer path.
   const digest = sha256(concatBytes(authenticatorData, sha256(clientDataJSON)));
   const signatureValid = p256.verify(signature, digest, publicKey, {
-    lowS: false,
+    lowS: true,
     format: 'compact',
   });
   return { ok: challengeBound && signatureValid, challengeBound, signatureValid };
 }
 
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 /**
- * A faithful JavaScript model of the on-chain `__check_auth` (kalepail
- * `webauthn-wallet` `verify.rs`): reconstruct `SHA256(authenticator_data ‖
- * SHA256(client_data_json))`, run `secp256r1_verify` (which does NOT enforce
- * low-S — hence the client-side normalization), and assert challenge-binding
- * (`clientDataJSON.challenge === base64url(signature_payload)`). Lets us prove
- * the assembly without a live Soroban RPC; the real on-chain run is exercised
- * by the kit integration (S17) and the demo (S21).
+ * A faithful JavaScript model of the on-chain v0.2 `__check_auth`
+ * (`contracts/webauthn-account`): read the inline `public_key`, require it to be
+ * an enrolled signer (here, equal to `publicKey`), reconstruct
+ * `SHA256(authenticator_data ‖ SHA256(client_data_json))`, run `secp256r1_verify`
+ * (which REQUIRES low-S and rejects high-S at decode, so the model verifies with
+ * lowS:true — the client-side normalization is what makes real assertions pass),
+ * and assert challenge-binding (`clientDataJSON.challenge ===
+ * base64url(signature_payload)`). Lets us prove the assembly without a live
+ * Soroban RPC; the real on-chain run is exercised by the kit integration and the
+ * demo. A 3-field struct with no inline key still verifies against `publicKey`
+ * for back-compat with the smart-wallet reference.
  */
 export function referenceCheckAuth(
   entry: xdr.SorobanAuthorizationEntry,
@@ -80,9 +93,15 @@ export function referenceCheckAuth(
     return fail('no address credentials');
   }
   // The signature is the Secp256r1Signature struct directly: a sorted ScMap
-  // { authenticator_data, client_data_json, signature } (see assemble.ts).
+  // { authenticator_data, client_data_json, public_key, signature } (assemble.ts).
   const structMap = entry.credentials().address().signature().map();
   if (!structMap) return fail('signature is not a Secp256r1Signature map');
+
+  // Enrollment: the contract rejects a key it does not hold before any crypto.
+  const inline = structMap.find((x) => x.key().sym().toString() === 'public_key');
+  if (inline && !bytesEqual(new Uint8Array(inline.val().bytes()), publicKey)) {
+    return fail('unknown signer: inline public_key is not the enrolled key');
+  }
 
   const signaturePayload = authEntryChallengeBytes(entry, networkPassphrase);
   const r = verifySecp256r1StructMap(structMap, publicKey, signaturePayload);

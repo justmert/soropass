@@ -59,7 +59,9 @@ export function buildCreateOptions(
     authenticatorSelection: {
       residentKey,
       requireResidentKey: residentKey === 'required',
-      userVerification: input.userVerification ?? 'preferred',
+      // The v0.2 account requires the User-Verified flag at sign time, so
+      // register with 'required' to enroll authenticators that can produce it.
+      userVerification: input.userVerification ?? 'required',
     },
     attestation: 'none',
     timeout: input.timeout ?? 60_000,

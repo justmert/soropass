@@ -20,8 +20,8 @@ export interface EventsIndexerOptions {
   /**
    * Map a factory event → resolved account when it concerns `credentialId`.
    * Defaults to the deployed `AccountFactory` schema (see contracts/account-factory):
-   * topics `[symbol "deployed", bytes credentialId]`, value = the deployed C-address.
-   * Override only for a different factory event shape.
+   * topics `[symbol "deployed", bytes credentialId, bytes publicKey]`, value = the
+   * deployed C-address. Override only for a different factory event shape.
    */
   matchEvent?: (event: rpc.Api.EventResponse, credentialId: string) => ResolvedAccount | null;
 }
@@ -44,7 +44,12 @@ function defaultMatch(event: rpc.Api.EventResponse, credentialId: string): Resol
         credRaw instanceof Uint8Array ? new TextDecoder().decode(credRaw) : String(credRaw ?? '');
       if (tag === 'deployed' && cred === credentialId) {
         const addr = decodeNative(event.value);
-        if (typeof addr === 'string' && addr.startsWith('C')) return { contractId: addr };
+        // Third topic (v0.2) is the founding public key; carry it so a consumer
+        // can verify enrollment before trusting this candidate (see M1).
+        const pkRaw = topics.length >= 3 ? decodeNative(topics[2]) : undefined;
+        const publicKey = pkRaw instanceof Uint8Array ? pkRaw : undefined;
+        if (typeof addr === 'string' && addr.startsWith('C'))
+          return { contractId: addr, publicKey };
       }
     }
     // Fallback: scan the raw XDR for the credential id; prefer the deployed

@@ -1,6 +1,6 @@
 [package]
 name = "webauthn-account"
-version = "0.0.0"
+version = "0.2.1"
 edition = "2021"
 publish = false
 
@@ -9,10 +9,13 @@ crate-type = ["cdylib", "rlib"]
 doctest = false
 
 [dependencies]
-soroban-sdk = "23"
+soroban-sdk = "27.0.6"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde-json-core = { version = "0.6.0", default-features = false }
 
 [dev-dependencies]
-soroban-sdk = { version = "23", features = ["testutils"] }
+soroban-sdk = { version = "27.0.6", features = ["testutils"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
 
 [profile.release]
 opt-level = "z"
