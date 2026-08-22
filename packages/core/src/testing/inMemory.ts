@@ -39,7 +39,12 @@ export function createInMemoryBackend(): InMemoryBackend {
     indexer: {
       resolveByCredential(credentialId) {
         const account = registry.get(credentialId);
-        return Promise.resolve(account ? [{ contractId: account.contractId }] : []);
+        // Carry the founding public key the same way the real `eventsIndexer` reads it
+        // off the factory `deployed` event, so mock-mode connect/recover can verify
+        // enrollment and recover the signing key (no mock/live divergence).
+        return Promise.resolve(
+          account ? [{ contractId: account.contractId, publicKey: account.publicKey }] : [],
+        );
       },
     },
     submission: {
