@@ -12,41 +12,56 @@ A passkey account is a Soroban contract (a `C...` address). The account's `__che
 ## Install
 
 ```bash
-npm install @soropass/core @stellar/stellar-sdk
+npm install @soropass/core "@stellar/stellar-sdk@>=12 <17"
 ```
 
-`@stellar/stellar-sdk` is a required peer dependency (the package declares `>=12`). These examples are verified against `@soropass/core@0.1.2` with `@stellar/stellar-sdk` v16 on Node 18+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
+`@stellar/stellar-sdk` is a required peer dependency. Install `>=12 <17`: stellar-sdk 17 reworked the XDR API (int64 fields became native bigints and the `toXDR`/`fromXDR` instance methods changed) that `@soropass/core@0.2.0` builds against, so a plain `npm install @stellar/stellar-sdk` (which resolves to 17) makes the create+sign example throw a `TypeError`. These examples are verified against `@soropass/core@0.2.0` with `@stellar/stellar-sdk` 16 on Node 20+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
+
+Version note. `npm install @soropass/core` installs `0.2.0`, the published `latest`. In 0.2.0: `deriveAccountAddress` and single-signer signing require the signer's 65-byte SEC-1 `publicKey` (the deploy salt and the signature struct both bind it), `userVerification` defaults to `'required'`, and the account contract is multi-signer with native `add_signer` / `remove_signer` recovery.
 
 Two guarantees the SDK enforces so you do not have to:
+
 - Registration is ES256 only (secp256r1, COSE algorithm `-7`). Any other algorithm throws `KitError("ES256_NOT_SUPPORTED")`.
-- Every signature is normalized to low-S. About half of Apple passkeys produce high-S signatures, and the on-chain verifier rejects those.
+- Every signature is normalized to low-S. About half of Apple passkeys produce high-S signatures, which are malleable and which strict verifiers reject; the SDK makes every signature canonical client-side.
 
 ## Reproduce create + sign in Node (no browser)
 
 This is the fastest way to confirm the SDK works and to run a create + sign in CI or any environment without WebAuthn hardware. `@soropass/core/testing` provides `createPasskeyKit({ mode: "mock" })`, which wires a deterministic in-process authenticator and an in-memory backend. The mock path has the same shape as the live path, so the same calls work against real adapters later.
 
 ```js
-// verify.mjs  —  run with: node verify.mjs
-import { createPasskeyKit, sampleAuthEntry } from "@soropass/core/testing";
-import { referenceCheckAuth } from "@soropass/core";
-import { xdr } from "@stellar/stellar-sdk";
+// verify.mjs. Run with: node verify.mjs
+import { createPasskeyKit, sampleAuthEntry } from '@soropass/core/testing';
+import { referenceCheckAuth } from '@soropass/core';
+import { xdr } from '@stellar/stellar-sdk';
 
-const NETWORK = "Test SDF Network ; September 2015";
+const NETWORK = 'Test SDF Network ; September 2015';
 
 // 1. CREATE a passkey and deploy its smart account (in-memory, no browser).
-const kit = createPasskeyKit({ mode: "mock", rpId: "example.com", rpName: "Example" });
-const account = await kit.createPasskey({ userName: "alice" });
-console.log("account:", account.contractId, "| key bytes:", account.publicKey.length);
+const kit = createPasskeyKit({ mode: 'mock', rpId: 'example.com', rpName: 'Example' });
+const account = await kit.createPasskey({ userName: 'alice' });
+console.log('account:', account.contractId, '| key bytes:', account.publicKey.length);
 
 // 2. SIGN a ready-made demo authorization entry with the passkey.
 const signedXdr = await kit.signAuthEntry(sampleAuthEntry(account.contractId));
 
 // 3. VERIFY the signature is accepted by __check_auth, and a wrong key is not.
-const signed = xdr.SorobanAuthorizationEntry.fromXDR(signedXdr, "base64");
-console.log(referenceCheckAuth(signed, account.publicKey, NETWORK).success ? "PASS: create + sign verified" : "FAIL");
+const signed = xdr.SorobanAuthorizationEntry.fromXDR(signedXdr, 'base64');
+console.log(
+  referenceCheckAuth(signed, account.publicKey, NETWORK).success
+    ? 'PASS: create + sign verified'
+    : 'FAIL',
+);
 
-const other = await createPasskeyKit({ mode: "mock", rpId: "example.com", seed: "other" }).createPasskey();
-console.log(!referenceCheckAuth(signed, other.publicKey, NETWORK).success ? "OK: wrong key rejected" : "UNEXPECTED: wrong key accepted");
+const other = await createPasskeyKit({
+  mode: 'mock',
+  rpId: 'example.com',
+  seed: 'other',
+}).createPasskey();
+console.log(
+  !referenceCheckAuth(signed, other.publicKey, NETWORK).success
+    ? 'OK: wrong key rejected'
+    : 'UNEXPECTED: wrong key accepted',
+);
 ```
 
 Save the script with a `.mjs` extension (or set `"type": "module"` in `package.json`): the top-level `import` and `await` require ES modules, and a plain `.js` file in a default project errors with "Cannot use import statement outside a module".
@@ -62,25 +77,25 @@ OK: wrong key rejected
 
 `sampleAuthEntry(contractId)` returns a ready-to-sign demo entry, so this check does not depend on hand-built XDR. For real transactions you build your own and sign it (see "Sign a Soroban transaction in the browser" below).
 
-`createPasskeyKit(options)`: `mode` is `"mock"` (in-process, no network) or `"live"` (supply real `deployer`, `indexer`, `submission`, and `signer`); `rpId` is required; `rpName` and `seed` are optional, and `seed` makes the mock deterministic; `forceHighS: true` forces a high-S signature to exercise the low-S normalizer, and the result stays `PASS`.
+`createPasskeyKit(options)`: `mode` is `"mock"` (in-process, no network) or `"live"` (supply real `webauthn`, `deployer`, `indexer`, and `signer`); `rpId` is required; `rpName` and `seed` are optional, and `seed` makes the mock deterministic; `forceHighS: true` forces a high-S signature to exercise the low-S normalizer, and the result stays `PASS`.
 
 ## Create a passkey account in the browser
 
-In a browser, `createPasskey` runs the real WebAuthn registration and deploys the account through a factory. Use `factoryDeployer` for a real network. The testnet `AccountFactory` is `CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM`.
+In a browser, `createPasskey` runs the real WebAuthn registration and deploys the account through a factory. Use `factoryDeployer` for a real network. The v0.2 testnet `AccountFactory`, which deploys the multi-signer account, is `CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH` (used below).
 
 ```ts
-import { createPasskey, factoryDeployer } from "@soropass/core";
-import { Networks } from "@stellar/stellar-sdk";
+import { createPasskey, factoryDeployer } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
 
 const account = await createPasskey({
-  rpId: location.hostname,          // your site's registrable domain
-  rpName: "My Stellar App",
-  userName: "alice",
+  rpId: location.hostname, // your site's registrable domain
+  rpName: 'My Stellar App',
+  userName: 'alice',
   deployer: factoryDeployer({
-    rpcUrl: "https://soroban-testnet.stellar.org",
+    rpcUrl: 'https://soroban-testnet.stellar.org',
     networkPassphrase: Networks.TESTNET,
-    factoryContractId: "CBVGSJEIKGQ6MYFOWCBNV2NLLPJJV757UP6QQV6FDTI4S3N72OZ676TM",
-    sourceSecret,                   // a funded G-account secret that pays the deploy fee
+    factoryContractId: 'CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH',
+    sourceSecret, // a funded G-account secret that pays the deploy fee
   }),
 });
 
@@ -89,21 +104,34 @@ const account = await createPasskey({
 // account.publicKey     SEC-1 (65-byte) secp256r1 public key
 ```
 
-`createPasskey` uses `browserWebAuthnClient()` by default. `sourceSecret` funds the one-time deploy; in production a relayer or sponsor pays instead.
+`createPasskey` uses `browserWebAuthnClient()` by default. `sourceSecret` funds the one-time deploy; in production a relayer or sponsor pays instead. Registration defaults `userVerification` to `'required'`, because the v0.2 account requires the User-Verified flag in `__check_auth`: a signature without UV fails on-chain.
 
-To resolve an existing account without deploying, use `deriveAccountAddress({ factoryContractId, credentialId, networkPassphrase })` (offline, where `credentialId` is the raw credential bytes, `Uint8Array`) or `connect({ rpId, indexer })`.
+To resolve an existing account without deploying, use `deriveAccountAddress` (synchronous and offline: it returns the C-address string directly, no `await` and no RPC) or `connect({ rpId, indexer })`. Note the encoding bridge: `createPasskey` returns `credentialId` as a base64url string, but `deriveAccountAddress` takes `Uint8Array` bytes. Pass the same bytes the factory received, which for `factoryDeployer` is the UTF-8 encoding of the base64url string, not its base64url-decoding. The options also require `publicKey`, the account's 65-byte SEC-1 key, because the v0.2 factory salts the deployed address by `sha256(credential_id ‖ public_key)`; binding the key fixes address squatting (credential ids are public, so a credential-only salt would let anyone pre-deploy at a victim's derived address with their own key).
+
+```ts
+import { deriveAccountAddress } from '@soropass/core';
+
+const address = deriveAccountAddress({
+  factoryContractId: 'CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH',
+  credentialId: new TextEncoder().encode(account.credentialId), // UTF-8 bytes of the base64url id
+  publicKey: account.publicKey, // 65-byte SEC-1 key, part of the v0.2 salt
+  networkPassphrase: Networks.TESTNET,
+});
+// address === account.contractId
+```
 
 ## Sign a Soroban transaction in the browser
 
 A `C...` account cannot be a transaction's source, so build the transaction with a separate funded source account. The passkey authorizes the Soroban auth entry inside it, which `__check_auth` verifies. `browserPasskeySigner` adapts `navigator.credentials.get` into the signer `signTransaction` expects.
 
 ```ts
-import { signTransaction, signAuthEntry, browserPasskeySigner } from "@soropass/core";
-import { Networks } from "@stellar/stellar-sdk";
+import { signTransaction, signAuthEntry, browserPasskeySigner } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
 
 const sign = browserPasskeySigner({
   rpId: location.hostname,
   allowCredentials: [account.credentialId], // offer the right passkey
+  publicKey: account.publicKey, // echoed onto the assertion; required for the single-signer target
 });
 
 const signedTxXdr = await signTransaction(unsignedTxXdr, {
@@ -117,27 +145,71 @@ const signedTxXdr = await signTransaction(unsignedTxXdr, {
 
 `signTransaction` signs every Soroban address-credential auth entry in the envelope and leaves other operations untouched; a transaction that carries no Soroban auth entry comes back unchanged. Pass `signerAddress` to sign only that account's entries and leave any co-authorizer's entries alone. To sign a single entry, use `signAuthEntry(entryXdr, { networkPassphrase, sign })`. (The stellar-wallets-kit `PasskeyModule` below wraps `signTransaction` to reject a classic, no-Soroban-entry transaction loudly, since a passkey account can never be a classic source.)
 
+The default `single-signer` target requires the signer's 65-byte SEC-1 public key: the assembled signature struct has four fields (`authenticator_data`, `client_data_json`, `public_key`, `signature`), and the v0.2 account verifies against the exact enrolled key named in it. Supply the key either as the `publicKey` option of `browserPasskeySigner` (echoed onto each assertion, shown above) or once as `SorobanSignOptions.publicKey` (which takes precedence); with neither, signing throws a `KitError`. `browserPasskeySigner` defaults `userVerification` to `'required'` because the v0.2 contract enforces the UV flag on-chain. The `target: 'smart-wallet'` path (passkey-kit v1) uses a three-field struct and resolves the key on-chain by credential id.
+
 ## Recover on a second device
 
-An account can hold more than one passkey signer, so a lost device never locks the user out. On the new device, register a passkey without deploying, then authorize it from an existing device.
+### Native recovery on the v0.2 account
+
+The v0.2 `webauthn-account` is multi-signer: the contract itself exposes `add_signer(public_key)`, `remove_signer(public_key)`, `is_signer(public_key)`, and `signer_count()`. Each add or remove is authorized by the account's own `__check_auth`, so an existing enrolled device signs the change, and the last signer can never be removed. A lost device is retired by signing `remove_signer` for it from any remaining device. The full sequence (add device B by A, sign by B, remove A by B, A rejected) is proven on testnet.
 
 ```ts
-import { registerPasskey, addSigner, browserPasskeySigner } from "@soropass/core";
-import { Networks } from "@stellar/stellar-sdk";
+import { registerPasskey, signTransaction, browserPasskeySigner } from '@soropass/core';
+import { Contract, nativeToScVal, Networks } from '@stellar/stellar-sdk';
 
-// New device: register a passkey (no deploy), producing its signer material.
-const device2 = await registerPasskey({ rpId: location.hostname, rpName: "My Stellar App", userName: "alice" });
+// New device: register a passkey (no deploy), producing { credentialId, publicKey }.
+const device2 = await registerPasskey({
+  rpId: location.hostname,
+  rpName: 'My Stellar App',
+  userName: 'alice',
+});
 
-// Existing device: authorize adding device2 as a signer on-chain.
-await addSigner({
-  walletContractId: account.contractId,
-  newSigner: { credentialId: device2.credentialId, publicKey: device2.publicKey },
+// The account-authorized add_signer invocation:
+const operation = new Contract(account.contractId).call(
+  'add_signer',
+  nativeToScVal(device2.publicKey, { type: 'bytes' }),
+);
+
+// Build a transaction around `operation` with a funded classic source, simulate
+// and assemble it (a standard Soroban invoke), then sign the account's auth
+// entry with the EXISTING device and submit:
+const signedXdr = await signTransaction(assembledTxXdr, {
   networkPassphrase: Networks.TESTNET,
-  rpcUrl: "https://soroban-testnet.stellar.org",
-  sourceSecret,   // funded classic G-account that pays the fee
-  sign: browserPasskeySigner({ rpId: location.hostname, allowCredentials: [account.credentialId] }),
+  sign: browserPasskeySigner({
+    rpId: location.hostname,
+    allowCredentials: [account.credentialId],
+    publicKey: account.publicKey,
+  }),
 });
 ```
+
+`remove_signer(public_key)` works the same way, authorized by any remaining enrolled device.
+
+### Recovery on a passkey-kit v1 smart-wallet
+
+For a passkey-kit v1 smart-wallet, `addSigner` wraps the whole enroll-a-device flow (build `add_signer`, sign with the existing device, enforcing re-simulation, submit):
+
+```ts
+import { registerPasskey, addSigner, browserPasskeySigner } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
+
+const device2 = await registerPasskey({
+  rpId: location.hostname,
+  rpName: 'My Stellar App',
+  userName: 'alice',
+});
+
+await addSigner({
+  walletContractId, // a passkey-kit v1 smart-wallet C-address
+  newSigner: { credentialId: device2.credentialId, publicKey: device2.publicKey },
+  networkPassphrase: Networks.TESTNET,
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  sourceSecret, // funded classic G-account that pays the fee
+  sign: browserPasskeySigner({ rpId: location.hostname, allowCredentials: [walletCredentialId] }),
+});
+```
+
+`addSigner` and `removeSigner` target the v1 smart-wallet ABI only; they do not drive the v0.2 account (use the native flow above for it).
 
 `connect({ rpId, indexer })` resolves an account from a remembered credential id. `recover({ rpId, indexer })` prompts for any passkey and returns the accounts that credential controls, as `{ contractId, credentialId }[]`. Both take an `indexer` (for example `eventsIndexer({ rpcUrl, factoryContractId })`). See the full second-device flow at https://docs.soropass.dev/docs/sdk/accounts.
 
@@ -146,26 +218,30 @@ await addSigner({
 SoroPass ships a `PasskeyModule` that implements the kit's `ModuleInterface` (`getAddress`, `signTransaction`, `signAuthEntry`, `isAvailable`), so a passkey wallet appears in the kit's own picker next to Freighter and Lobstr and signs through the kit modal.
 
 ```ts
-import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
-import { Networks } from "@creit.tech/stellar-wallets-kit/types";
-import { PasskeyModule } from "@creit.tech/stellar-wallets-kit/modules/passkey";
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
+import { Networks } from '@creit.tech/stellar-wallets-kit/types';
+import { PasskeyModule, PASSKEY_ID } from '@creit.tech/stellar-wallets-kit/modules/passkey';
 
-const kit = new StellarWalletsKit({
+StellarWalletsKit.init({
   network: Networks.TESTNET,
   modules: [
-    new PasskeyModule({ rpId, networkPassphrase, factoryContractId }),
+    // deployer + indexer come from @soropass/core (factoryDeployer / eventsIndexer).
+    // With a deployer set, getAddress creates the account on first connect.
+    new PasskeyModule({ rpId, networkPassphrase, factoryContractId, deployer, indexer }),
     /* ...other modules */
   ],
 });
-kit.setWallet("passkey");
-const { address } = await kit.getAddress();
+StellarWalletsKit.setWallet(PASSKEY_ID); // PASSKEY_ID === "passkey"
+const { address } = await StellarWalletsKit.getAddress();
 ```
 
-The kit's npm package is `@creit.tech/stellar-wallets-kit` (note the dot). The `PasskeyModule` is proposed to `Creit-Tech/Stellar-Wallets-Kit` as a pull request; until it merges, the `./modules/passkey` export is not on the published kit, so install it from the PR branch. See https://docs.soropass.dev/docs/quickstart for configuration.
+The kit's API is static: call `StellarWalletsKit.init(...)` once, then the static methods. The kit's npm package is `@creit.tech/stellar-wallets-kit` (note the dot). The `PasskeyModule` is proposed to the `Creit-Tech/Stellar-Wallets-Kit` maintainers (issue #95); the published kit (v2.5.0) does not include the `./modules/passkey` export yet, so this snippet runs once the module lands in a kit release. Until then, call the `@soropass/core` functions above directly; the module wraps exactly those calls. See https://docs.soropass.dev/docs/quickstart for configuration.
 
 ## Errors
 
 Every failure is a typed `KitError` with a stable `code`. Detect it with `isKitError(err)` and branch on `err.code`. The full frozen set (`KIT_ERROR_CODES`) is: `USER_CANCELLED`, `ES256_NOT_SUPPORTED`, `RP_ID_MISMATCH`, `ORIGIN_MISMATCH`, `CHALLENGE_MISMATCH`, `INVALID_SIGNATURE_DER`, `INVALID_PUBLIC_KEY`, `CONTRACT_AUTH_FAILED`, `NETWORK_ERROR`, `UNSUPPORTED_AUTHENTICATOR`.
+
+The v0.2 account contract defines its own numeric contract errors, returned on-chain from `__check_auth` and the signer methods (for example `UnknownSigner`, `UserVerifiedFlagMissing`, `LastSignerRemoval`). Those are Soroban contract errors, separate from the ten `KitError` codes above; do not treat one set as the other.
 
 ## Full reference
 

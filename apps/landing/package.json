@@ -5,8 +5,8 @@
   "type": "module",
   "description": "soropass.dev landing — what it is, a live testnet passkey demo, on-chain proof, and links to the docs.",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/copy-skill.mjs && vite",
+    "build": "node scripts/copy-skill.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
