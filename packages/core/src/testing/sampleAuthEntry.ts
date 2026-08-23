@@ -5,6 +5,9 @@ import { Address, xdr } from '@stellar/stellar-sdk';
  * `contractId`. A convenience for smoke tests and examples, so you do not hand-
  * build auth-entry XDR just to have something to sign. The nonce and expiration
  * are fixed placeholders, so this is for local verification, not production.
+ *
+ * Requires `@stellar/stellar-sdk >=12 <17` (the package's peer range): version 17
+ * reworked the XDR API this builds against.
  */
 export function sampleAuthEntry(contractId: string, functionName = 'protected'): string {
   const address = new Address(contractId).toScAddress();

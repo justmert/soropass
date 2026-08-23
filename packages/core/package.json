@@ -1,8 +1,29 @@
 {
   "name": "@soropass/core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Minimal, headless, ES256-only passkey SDK for Stellar smart accounts.",
   "license": "Apache-2.0",
+  "keywords": [
+    "passkey",
+    "passkeys",
+    "webauthn",
+    "es256",
+    "secp256r1",
+    "stellar",
+    "soroban",
+    "smart-account",
+    "smart-wallet",
+    "sdk"
+  ],
+  "homepage": "https://docs.soropass.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justmert/soropass.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/justmert/soropass/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -95,7 +116,7 @@
     "lint": "eslint src"
   },
   "peerDependencies": {
-    "@stellar/stellar-sdk": ">=12"
+    "@stellar/stellar-sdk": ">=12 <17"
   },
   "peerDependenciesMeta": {
     "@stellar/stellar-sdk": {
