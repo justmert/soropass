@@ -15,7 +15,41 @@
         "bytes": 6939
       }
     },
-    "status": "BUILT + unit-tested + DEPLOYED and e2e-proven on testnet (see testnetV02, incl. a real passkey-signed payment). Internal 3-lens review done (security/deploy/tests); NO external audit yet. Mainnet is human-gated and pending external audit."
+    "status": "BUILT + unit-tested + e2e-proven on testnet (see testnetV02) and DEPLOYED to mainnet (see mainnet block) with on-chain wasm hashes matching this reproducible build. Internal 3-lens review done (security/deploy/tests); NO external audit. Mainnet was deployed at the owner's explicit direction ahead of an external audit."
+  },
+  "mainnet": {
+    "network": "public",
+    "networkPassphrase": "Public Global Stellar Network ; September 2015",
+    "rpcUrl": "https://mainnet.sorobanrpc.com",
+    "deployer": "GCQH2J64UQ4MM4E6VKXCYSSE6Q4NOVP4AZVU77XMXVRFG23X73JYM2DJ",
+    "date": "2026-08-23",
+    "note": "v0.2.1 contracts deployed to Stellar mainnet (public). On-chain wasm hashes MATCH the local reproducible build (contracts/build.sh); the CLI-returned upload hashes equal build.wasm. NO external audit; deployed at the owner's explicit direction. The webauthn-account wasm CODE entry has its own TTL the account cannot self-extend, so extend it (and the factory instance) per contracts/MAINNET-RUNBOOK.md Step 3b.",
+    "accountFactory": {
+      "contractId": "CCCNRWMICVEMMUSBI7DL3IKB566QEOOQOLVDOAM5SLFDZ2KGUSRR3JVF",
+      "wasmHash": "98e405f8991eac0a7330514053028a4f6b310a55e4996874282bfec7422f1c0d",
+      "uploadTx": "99f5e645ef7ef4ba9d636cebc4ddf39797d674b7565d222adeaa7792b046f956",
+      "deployTx": "b7d8f28422e420ae44bd4ad7254c4bcfa80feb22b1d7fe49b6f9ced477c27c8e"
+    },
+    "webauthnAccount": {
+      "wasmHash": "9a4ada31cdbc10d08dda3bba573f0140187d5bbf041b059f5802c9864ab4a7bc",
+      "uploadTx": "fd50edee9cbaacca06d876c23ad48b9f3e17d6d6e68bc40feb55575802078311",
+      "note": "Multi-signer secp256r1 account; __constructor(public_key), add_signer/remove_signer/is_signer/signer_count, OZ-hardened __check_auth. Deployed per passkey by the factory. Signature struct { authenticator_data, client_data_json, public_key, signature }."
+    },
+    "transferProof": {
+      "wallet": "CDITI5XIV3WW6XT6PHV6OOQVCMORZPZDQXCXOGZBPJKJQJ3UO7OGHFCX",
+      "fundTx": "587344fea010ded2c54536024106ab59aa0349cd7b69f430f2e7598d84c7a9af",
+      "transferSuccessTx": "6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1",
+      "transferFailTx": "6841ae73bfa37a7be2b6c309a8968c5eeb32534a05a9525a225ed69b4b3d795f",
+      "note": "REAL passkey-signed 0.2 XLM PAYMENT on MAINNET via the native SAC: fresh passkey -> factory deploy -> fund 0.3 XLM -> passkey authorizes a 0.2 XLM transfer. Correct key SUCCESS (Horizon successful=true, ledger 64092090). A wrong key is REJECTED on-chain by __check_auth (transferFailTx, Horizon successful=false). Reproduce: packages/core/scripts/transfer-e2e-mainnet.ts (payment) and scripts/wrongkey-reject-mainnet.ts (rejection)."
+    },
+    "ttlExtend": {
+      "date": "2026-08-23",
+      "newLiveUntilLedger": 67202408,
+      "accountCodeTx": "abd955bf028ed87f5f0cc0c5d430ec79e5fb8e76275272c8b5706c0f03cedb70",
+      "factoryCodeTx": "d993c7cb5420f9bef6a7d88ef367f61bdf6659c3e48669ac1aaf78c82022a1e2",
+      "factoryInstanceTx": "ecbba3dcc1a782d7e86f6e872676b51edff1cfab19b3937e15f57f88fe7194a0",
+      "note": "Both wasm CODE entries and the factory instance extended to ~180 days (network max_entry_ttl is 3110400 ledgers; target 3110000, just under the boundary the extend op rejects). A contract cannot self-extend the shared CODE entry, so re-run contracts/extend-ttl.sh before the TTL drops under ~90 days (rent ~27 XLM to re-max)."
+    }
   },
   "testnetV02": {
     "network": "testnet",
