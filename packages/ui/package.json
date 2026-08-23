@@ -3,6 +3,26 @@
   "version": "0.2.0",
   "description": "Headless-first UI primitives for passkey create/sign/recover; styling is optional and token-driven.",
   "license": "Apache-2.0",
+  "keywords": [
+    "passkey",
+    "passkeys",
+    "webauthn",
+    "stellar",
+    "soroban",
+    "smart-account",
+    "ui",
+    "components",
+    "headless-ui"
+  ],
+  "homepage": "https://docs.soropass.dev/docs/components",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justmert/soropass.git",
+    "directory": "packages/ui"
+  },
+  "bugs": {
+    "url": "https://github.com/justmert/soropass/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
