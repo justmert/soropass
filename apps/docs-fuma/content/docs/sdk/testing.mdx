@@ -1,0 +1,169 @@
+---
+title: Testing
+icon: TestTube
+description: The @soropass/core/testing entry, covering createPasskeyKit mock mode, the deterministic mockAuthenticator, the zero-IO in-memory backend, and sampleAuthEntry for ready-made auth entries.
+---
+
+`@soropass/core/testing` runs the create, connect, recover, and sign flows with no browser, no authenticator hardware, and no network: in CI, in Node scripts, and in your own test suite. It ships as a separate subpath entry so none of it lands in production bundles.
+
+```ts
+import {
+  createPasskeyKit,
+  mockAuthenticator,
+  createInMemoryBackend,
+  sampleAuthEntry,
+} from '@soropass/core/testing';
+```
+
+The mock pieces are deterministic but real: the authenticator synthesizes a genuine attestation object and COSE key, so `createPasskey` runs the exact production extraction path, and the signatures are real P-256 signatures that verify against `__check_auth` semantics.
+
+## createPasskeyKit
+
+One factory that wires the whole lifecycle. `mode: 'mock'` assembles a deterministic in-process authenticator plus an in-memory backend (zero network IO); `mode: 'live'` takes your real adapters. Both return the same `PasskeyKit` surface, so a demo written against mock stays green when you swap to live.
+
+```ts
+createPasskeyKit(options: CreatePasskeyKitOptions): PasskeyKit
+```
+
+### CreatePasskeyKitOptions
+
+| Field                 | Type                | Description                                                                                     |
+| --------------------- | ------------------- | ----------------------------------------------------------------------------------------------- |
+| `mode` **(required)** | `'mock' \| 'live'`  | Mock wires the deterministic authenticator + in-memory backend; live takes your dependencies.   |
+| `rpId` **(required)** | `string`            | Relying Party ID for the ceremonies.                                                            |
+| `rpName`              | `string`            | RP name for registration. Defaults to `rpId`.                                                   |
+| `networkPassphrase`   | `string`            | Bound into every `signAuthEntry` challenge. Defaults to the testnet passphrase.                 |
+| `seed`                | `string`            | Mock mode: makes the keypair, credential id, and derived address deterministic.                 |
+| `forceHighS`          | `boolean`           | Mock mode: the authenticator emits high-S signatures, exercising the low-S normalization guard. |
+| `webauthn`            | `WebAuthnClient`    | Live mode (required): the WebAuthn client that runs `create` / `get`.                           |
+| `deployer`            | `AccountDeployer`   | Live mode (required): deploys the smart account.                                                |
+| `indexer`             | `IndexerAdapter`    | Live mode (required): resolves credential ids to accounts for `connect` / `recover`.            |
+| `signer`              | `WebAuthnSigner`    | Live mode (required): produces assertions for `signAuthEntry`.                                  |
+| `storage`             | `CredentialStorage` | Live mode: where the credential id persists. Defaults to an in-memory map.                      |
+
+Live mode throws when `webauthn`, `deployer`, `indexer`, or `signer` is missing.
+
+### PasskeyKit
+
+| Member                         | Returns                          | Description                                                                             |
+| ------------------------------ | -------------------------------- | --------------------------------------------------------------------------------------- |
+| `mode`, `rpId`                 | `'mock' \| 'live'`, `string`     | The configuration the kit was built with.                                               |
+| `createPasskey({ userName? })` | `Promise<PasskeyCredential>`     | Registers a passkey and deploys its account: `{ contractId, credentialId, publicKey }`. |
+| `connect()`                    | `Promise<ConnectResult \| null>` | Silent reconnect from the stored credential id; `null` when nothing is stored.          |
+| `recover()`                    | `Promise<RecoverResult[]>`       | Discoverable-credential recovery: every account the passkey controls.                   |
+| `signAuthEntry(entryXdr)`      | `Promise<string>`                | Signs a base64 `SorobanAuthorizationEntry` with the kit's signer.                       |
+
+## Reproduce create + sign in Node
+
+The complete loop against `@soropass/core@0.2.0` (with `@stellar/stellar-sdk` `>=12 <17`; version 17 reworked the XDR API `sampleAuthEntry` relies on): create an account, sign a ready-made auth entry, check the signature the way `__check_auth` does, and confirm a wrong key fails.
+
+```js title="verify.mjs"
+import { createPasskeyKit, sampleAuthEntry } from '@soropass/core/testing';
+import { referenceCheckAuth } from '@soropass/core';
+import { xdr } from '@stellar/stellar-sdk';
+
+const NETWORK = 'Test SDF Network ; September 2015';
+
+const kit = createPasskeyKit({ mode: 'mock', rpId: 'example.com' });
+const account = await kit.createPasskey({ userName: 'alice' });
+
+const signedXdr = await kit.signAuthEntry(sampleAuthEntry(account.contractId));
+const signed = xdr.SorobanAuthorizationEntry.fromXDR(signedXdr, 'base64');
+
+console.log(referenceCheckAuth(signed, account.publicKey, NETWORK).success); // true
+
+const other = await createPasskeyKit({
+  mode: 'mock',
+  rpId: 'example.com',
+  seed: 'other',
+}).createPasskey();
+console.log(referenceCheckAuth(signed, other.publicKey, NETWORK).success); // false: wrong key
+```
+
+Run it with `node verify.mjs`. Three properties worth testing in your own suite, each verified by the SDK's tests as well:
+
+- **Determinism.** Two kits built with the same `seed` produce the same `contractId` and `credentialId`.
+- **The low-S guard.** With `forceHighS: true` the authenticator emits high-S signatures, the SDK normalizes them, and `referenceCheckAuth` still passes.
+- **Wrong-key rejection.** A signature checked against a different account's public key fails.
+
+## mockAuthenticator
+
+The deterministic in-memory authenticator behind mock mode, exported on its own so you can drive any core function with it. It implements `WebAuthnClient` (`create` / `get`) and additionally exposes the raw key material plus a ready-made `WebAuthnSigner`.
+
+```ts
+mockAuthenticator(options: MockAuthenticatorOptions): MockAuthenticator
+```
+
+| Option                | Type      | Description                                                         |
+| --------------------- | --------- | ------------------------------------------------------------------- |
+| `rpId` **(required)** | `string`  | RP ID hashed into `authenticatorData`.                              |
+| `origin`              | `string`  | Origin written into `clientDataJSON`. Defaults to `https://<rpId>`. |
+| `seed`                | `string`  | Deterministic seed for the keypair and credential id.               |
+| `forceHighS`          | `boolean` | Emit high-S signatures to exercise the low-S normalizer.            |
+
+| Returned member   | Type             | Description                                                                                                                                                                   |
+| ----------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `publicKey`       | `Uint8Array`     | 65-byte SEC-1 public key.                                                                                                                                                     |
+| `credentialId`    | `string`         | base64url credential id.                                                                                                                                                      |
+| `privateKey`      | `Uint8Array`     | The P-256 scalar, for cross-checking signatures in tests.                                                                                                                     |
+| `create`, `get`   | `WebAuthnClient` | The registration and assertion ceremonies.                                                                                                                                    |
+| `sign(challenge)` | `WebAuthnSigner` | Pass it straight to `signAuthEntry` / `signTransaction` as `sign`. Each assertion carries the mock's `publicKey`, so the single-signer struct assembles with no extra option. |
+
+```ts title="sign-with-mock.ts"
+import { mockAuthenticator, sampleAuthEntry } from '@soropass/core/testing';
+import { signAuthEntry, referenceCheckAuth } from '@soropass/core';
+import { xdr } from '@stellar/stellar-sdk';
+
+const auth = mockAuthenticator({ rpId: 'example.com', seed: 'demo' });
+const signed = await signAuthEntry(sampleAuthEntry('C...'), {
+  networkPassphrase: 'Test SDF Network ; September 2015',
+  sign: auth.sign,
+});
+const entry = xdr.SorobanAuthorizationEntry.fromXDR(signed, 'base64');
+referenceCheckAuth(entry, auth.publicKey, 'Test SDF Network ; September 2015'); // { success: true, ... }
+```
+
+## createInMemoryBackend
+
+A deterministic, zero-IO implementation of the three adapter seams, sharing one registry so create, connect, and recover agree with each other.
+
+```ts
+createInMemoryBackend(): InMemoryBackend
+```
+
+| Field        | Type                                                         | Behavior                                                                               |
+| ------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `deployer`   | `AccountDeployer`                                            | Derives a stable C-address from the credential id and records it in the registry.      |
+| `indexer`    | `IndexerAdapter`                                             | Resolves from the same registry; an unknown credential resolves to `[]`.               |
+| `submission` | `SubmissionAdapter`                                          | A no-op that resolves `{ status: 'SUCCESS', hash: 'mock-tx' }`.                        |
+| `registry`   | `Map<string, { contractId: string; publicKey: Uint8Array }>` | credentialId to account, shared by the deployer and indexer; inspect it in assertions. |
+
+The deployed address is a real StrKey contract id (checksummed, decodable), so a mock account feeds straight into `new Address(...)` and auth-entry XDR the same way a deployed one does. It is deterministic but arbitrary: it is not the address the on-chain factory deploys for that credential. For the factory-accurate offline derivation, use [`deriveAccountAddress`](/docs/sdk#address-derivation).
+
+```ts title="backend.ts"
+import { createInMemoryBackend } from '@soropass/core/testing';
+
+const backend = createInMemoryBackend();
+const { contractId } = await backend.deployer.deploy({ publicKey, credentialId: 'cred-1' });
+await backend.indexer.resolveByCredential('cred-1'); // [{ contractId }]
+await backend.submission.send(signedTxXdr); // { status: 'SUCCESS', hash: 'mock-tx' }
+```
+
+## sampleAuthEntry
+
+A ready-to-sign `SorobanAuthorizationEntry` (base64 XDR) for a demo call on `contractId`, so a smoke test does not hand-build auth-entry XDR just to have something to sign.
+
+```ts
+sampleAuthEntry(contractId: string, functionName?: string): string
+```
+
+`functionName` defaults to `'protected'`. The nonce and expiration ledger are fixed placeholders, so the entry is for local verification (signing plus `referenceCheckAuth`), not for on-chain submission. For a real transaction, build the operation with `@stellar/stellar-sdk` and sign through [`signTransaction`](/docs/sdk#signtransaction) or [`sendSmartWalletTx`](/docs/sdk/accounts#sendsmartwallettx).
+
+<Cards>
+  <Card title="SDK core" href="/docs/sdk">
+    createPasskey, signing, and the error taxonomy the mocks throw from.
+  </Card>
+  <Card title="Accounts, recovery & adapters" href="/docs/sdk/accounts">
+    The live counterparts of the mock deployer, indexer, and submission seams.
+  </Card>
+</Cards>

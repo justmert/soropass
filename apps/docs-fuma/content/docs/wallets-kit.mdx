@@ -1,0 +1,230 @@
+---
+title: Stellar Wallets Kit
+icon: Puzzle
+description: How the SoroPass PasskeyModule plugs passkey smart accounts into stellar-wallets-kit, its full configuration and error contract, and how you wire the same flows with @soropass/core today.
+---
+
+SoroPass ships a `PasskeyModule` for [stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit) that implements the kit's `ModuleInterface`, so a passkey wallet appears in the kit's own picker next to Freighter, LOBSTR and xBull, and your existing `StellarWalletsKit.getAddress()` / `signTransaction()` calls work unchanged. The module is a thin adapter: every ceremony, the ES256 enforcement, the DER to compact low-S conversion, and the Soroban auth-entry assembly come from [`@soropass/core`](/docs/sdk).
+
+<Callout type="info" title="Where the module lives">
+  The module is built inside the kit codebase (kit v2.5.0, Deno-native, 31 kit-side tests) and ships
+  with a reference app (`examples/passkey-vite`) that registers it in the real kit modal and drives
+  the whole flow, connect, sign, add-device, and disconnect, covered by an 18-run cross-browser
+  suite (Chromium, Firefox, WebKit). It is proposed to the Creit Tech maintainers in
+  [Stellar-Wallets-Kit issue #95](https://github.com/Creit-Tech/Stellar-Wallets-Kit/issues/95). The
+  published `@creit.tech/stellar-wallets-kit@2.5.0` package does not include a `./modules/passkey`
+  export, so the registration snippets on this page run once the module lands in a kit release.
+  Everything else you need is published today: `@soropass/core` is on npm, and the [Integrate
+  today](#integrate-today-with-soropasscore) section shows the same flows through the core SDK
+  directly.
+</Callout>
+
+SoroPass is not a wallet. It is the layer your wallet integrates: you keep your brand, your UI, your users, and your fee policy, and gain passkey accounts by registering one module. The passkey option in the picker carries your wallet's own name and icon (see `productName` below), so it reads as part of your wallet, not a separate product.
+
+## Install
+
+```bash
+npm install @soropass/core "@stellar/stellar-sdk@>=12 <17"
+```
+
+Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.0` does not yet support. The kit package that carries the module is `@creit.tech/stellar-wallets-kit` (note the dot).
+
+## Integration walkthrough
+
+Six steps take a wallet from install to a passkey account that signs through the kit modal. Every ceremony underneath is `@soropass/core`; the kit calls stay the ones you already use.
+
+### 1. Build the adapters
+
+Two seams connect the module to the chain, both from `@soropass/core`. The `deployer` creates a smart account and pays that one-time deploy fee; the `indexer` resolves a returning user's credential back to their account address.
+
+```ts
+import { factoryDeployer, eventsIndexer } from '@soropass/core';
+import { Networks } from '@stellar/stellar-sdk';
+
+const cfg = {
+  rpcUrl: 'https://soroban-testnet.stellar.org',
+  networkPassphrase: Networks.TESTNET,
+  factoryContractId: 'C...', // your deployed AccountFactory
+};
+
+const deployer = factoryDeployer({ ...cfg, sourceSecret: DEPLOYER_SECRET }); // funded G-account that pays the deploy
+const indexer = eventsIndexer({ rpcUrl: cfg.rpcUrl, factoryContractId: cfg.factoryContractId });
+```
+
+`DEPLOYER_SECRET` is a funded classic account that pays deploy fees and holds no user value. In production, swap `directSubmission` for a relayer so users pay nothing (see [Existing wallets](/docs/existing-wallets#gasless-onboarding-sponsor-fees-with-a-relayer)).
+
+### 2. Construct and brand the module
+
+Give the picker entry your wallet's name and icon with `productName` / `productIcon`. The module needs an RP ID and a network; pass the `deployer` and `indexer` from step 1.
+
+```ts
+import { PasskeyModule } from '@creit.tech/stellar-wallets-kit/modules/passkey';
+import { Networks } from '@creit.tech/stellar-wallets-kit/types';
+
+const passkey = new PasskeyModule({
+  rpId: location.hostname, // the registrable domain the passkey binds to
+  rpName: 'Acme Wallet', // shown in the OS passkey sheet
+  networkPassphrase: Networks.TESTNET,
+  productName: 'Acme Wallet', // the picker label: your brand, not "Passkey"
+  productIcon: 'data:image/svg+xml;base64,...', // your mark (inline data URI)
+  factoryContractId: cfg.factoryContractId, // enables instant offline reconnect
+  deployer, // required to create an account on first connect
+  indexer, // resolves a returning user's account
+});
+```
+
+### 3. Register it next to your other wallets
+
+The kit's API is static: pass every module to `StellarWalletsKit.init` once. The passkey wallet then appears in `authModal()` and `createButton()` like Freighter or LOBSTR.
+
+```ts
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
+import { defaultModules } from '@creit.tech/stellar-wallets-kit/modules/utils';
+
+StellarWalletsKit.init({
+  network: Networks.TESTNET,
+  modules: [...defaultModules(), passkey],
+});
+```
+
+`PasskeyModule` needs configuration, so it is not part of `defaultModules()`; you always construct it yourself and add it to the list.
+
+### 4. Connect (first-time and returning users)
+
+Select the wallet, then call `getAddress()`. A first-time user with a `deployer` configured gets a fresh passkey and a deployed account in one step (create-on-connect). A returning user resolves instantly: offline from the remembered credential id and public key when `factoryContractId` is set, otherwise through the `indexer`.
+
+```ts
+import { PASSKEY_ID } from '@creit.tech/stellar-wallets-kit/modules/passkey';
+
+StellarWalletsKit.setWallet(PASSKEY_ID); // PASSKEY_ID === 'passkey'
+const { address } = await StellarWalletsKit.getAddress(); // C-address of the smart account
+```
+
+For an explicit "create account" button instead of create-on-connect, call the module's own `createAccount(userName?)` (see [What each kit call does](#what-each-kit-call-does)).
+
+### 5. Sign a transaction
+
+A passkey account is a contract, so it is never the transaction's source. Build the transaction with a funded source account and put the passkey account's authorization in a Soroban auth entry, then sign that through the kit. Pass the connected `address` so the module signs only this account's entries.
+
+```ts
+const { signedTxXdr } = await StellarWalletsKit.signTransaction(unsignedTxXdr, {
+  address, // the connected C-address
+  networkPassphrase: Networks.TESTNET,
+});
+// add the fee source's own signature, then submit with your RPC or a relayer
+```
+
+### 6. Add a backup device
+
+One passkey on one device is a single point of failure. Enroll a second passkey as an additional signer so either device can approve on its own. Register the new device (no deploy), build the account's `add_signer` call, and authorize it with an existing device through the kit.
+
+```ts
+import { registerPasskey } from '@soropass/core/create';
+import { Contract, nativeToScVal } from '@stellar/stellar-sdk';
+
+const backup = await registerPasskey({ rpId: location.hostname, rpName: 'Acme Wallet', userName: 'alice backup' });
+const addSignerOp = new Contract(address).call('add_signer', nativeToScVal(backup.publicKey, { type: 'bytes' }));
+// build + simulate a tx around addSignerOp, then authorize it with the current device:
+const { signedTxXdr } = await StellarWalletsKit.signTransaction(assembledTxXdr, { address });
+```
+
+The account enrolls up to 20 signers and never lets you remove the last one, so a lost device is retired with `remove_signer` from any remaining device. See [Native multi-device recovery](/docs/sdk/accounts#native-multi-device-recovery).
+
+### Sign out
+
+`StellarWalletsKit.disconnect()` drops the session; the passkey stays in the authenticator, so the next connect resolves the same account.
+
+## Configuration
+
+`new PasskeyModule(params)` accepts:
+
+| Param                              | Type                                | Description                                                                                                                                                                                           |
+| ---------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpId` **(required)**              | `string`                            | The WebAuthn Relying Party ID: the registrable domain the passkey is bound to (the current domain or a parent of it).                                                                                 |
+| `networkPassphrase` **(required)** | `string`                            | The network the assembled auth entries are bound to.                                                                                                                                                  |
+| `rpName`                           | `string`                            | Human-readable RP name shown in the OS passkey sheet. Defaults to `rpId`.                                                                                                                             |
+| `network`                          | `string`                            | Network name returned by `getNetwork`. Defaults to `"PUBLIC"` / `"TESTNET"` derived from the passphrase, `"UNKNOWN"` otherwise.                                                                       |
+| `factoryContractId`                | `string`                            | The `AccountFactory` C-address. With it and the persisted founding public key, `getAddress` derives the account address offline from the remembered credential id: no indexer, no deploy round-trip.  |
+| `smartWalletDeployer`              | `string`                            | The deployer account of a passkey-kit v1 smart wallet. Set together with `walletTarget: 'smart-wallet'` to derive v1 addresses offline.                                                               |
+| `walletTarget`                     | `'single-signer' \| 'smart-wallet'` | Which contract ABI to sign for. Defaults to `'single-signer'`.                                                                                                                                        |
+| `indexer`                          | `IndexerAdapter`                    | Resolves a credential id to its deployed account(s). Required when neither `factoryContractId` nor `smartWalletDeployer` is set; otherwise the fallback when offline derivation is not possible.      |
+| `deployer`                         | `AccountDeployer`                   | Deploys the smart account for a newly created passkey. Required for `createAccount()` and the create-on-connect path.                                                                                 |
+| `createOnConnect`                  | `boolean`                           | Create a passkey and deploy an account when `getAddress` finds no existing credential, so a first-time user connects straight from the kit modal. Defaults to `true` when a `deployer` is configured. |
+| `userName`                         | `string`                            | Username recorded in the passkey. Defaults to `"Stellar account"`.                                                                                                                                    |
+| `signer`, `webauthn`               | `WebAuthnSigner`, `WebAuthnClient`  | Override the WebAuthn signer or client (tests, or a custom ceremony). Supplying `webauthn` also makes `isAvailable` report `true` without probing the platform.                                       |
+| `storage`                          | `CredentialStorage`                 | Where the credential id is remembered between visits. Defaults to `localStorage`.                                                                                                                     |
+| `productName`                      | `string`                            | The wallet's display name in the kit picker. Defaults to `"Passkey"`. Set it to your own brand (for example `"Acme Wallet"`) so the passkey option reads as part of your wallet, not a separate product. |
+| `productUrl`, `productIcon`        | `string`                            | Branding for the kit picker. The default icon is an inline SVG data URI, so the wallet list never depends on a remote asset.                                                                          |
+
+The adapters (`indexer`, `deployer`) and the derivation helpers come from `@soropass/core`: [`eventsIndexer`](/docs/sdk/accounts#indexer-adapters), [`factoryDeployer`](/docs/sdk/accounts#deployers), [`smartWalletV1Deployer` / `smartWalletV1Indexer`](/docs/sdk/accounts#v1-smart-wallet-adapters).
+
+## What each kit call does
+
+| Kit call            | Module behavior                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `isAvailable()`     | `true` when the browser exposes WebAuthn and a user-verifying platform authenticator is present (probe capped at 800ms so a hung probe cannot take the kit's wallet list down). Resolves `false` rather than throwing.                                                                                                                                                                                      |
+| `getAddress()`      | Resolution order: the address already resolved this session, then an offline derivation from a remembered credential id and public key, then the `indexer`, and finally a new passkey (create-on-connect). Only the last two steps show an OS prompt. With `skipRequestAccess: true` it refuses instead of prompting.                                                                                                      |
+| `signTransaction()` | Signs the transaction's Soroban address-credential auth entries through core [`signTransaction`](/docs/sdk#signtransaction), passing the connected account as `signerAddress` so a co-authorizer's entries are left untouched. v1 and fee-bump envelopes both work. A transaction with no signable Soroban auth entry is rejected loudly (see below).                                                       |
+| `signAuthEntry()`   | Signs a single `SorobanAuthorizationEntry` through core [`signAuthEntry`](/docs/sdk#signauthentry).                                                                                                                                                                                                                                                                                                         |
+| `signMessage()`     | Returns a self-contained WebAuthn envelope: JSON with base64url fields `{ authenticatorData, clientDataJSON, signature }`, where `signature` is the 64-byte low-S compact secp256r1 signature. Verify it against the account's registered public key over `SHA-256(authenticatorData ‖ SHA-256(clientDataJSON))`; a bare signature alone is not verifiable, which is why the ceremony data travels with it. |
+| `getNetwork()`      | Returns the configured passphrase and the derived (or configured) network name.                                                                                                                                                                                                                                                                                                                             |
+| `disconnect()`      | Drops the in-memory session so the next `getAddress` resolves from scratch. The passkey itself stays in the authenticator: a sign-out, not a deletion.                                                                                                                                                                                                                                                      |
+
+Beyond `ModuleInterface`, the module adds one method:
+
+| Extra method               | What it does                                                                                                                                                                                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createAccount(userName?)` | Registers a new passkey and deploys its smart account through the configured `deployer`, then remembers it. For apps that want an explicit "create account" button rather than create-on-connect. Returns `{ contractId, credentialId, publicKey }`. |
+
+## Why a classic transaction is rejected
+
+A passkey account is a contract (a C-address), so it can never be a transaction's source account, and its authorization travels in an `InvokeHostFunction` operation's auth entries rather than in the envelope's signature list. When you pass `signTransaction` an envelope with no Soroban address-credential auth entry, the module throws immediately with `ext: "NO_SOROBAN_AUTH_ENTRY"` and a message explaining how to build a signable transaction. Failing loudly at the call site beats returning the envelope untouched and failing at submission.
+
+Build the transaction with a separate funded source account and put the passkey account's authorization in the auth entry; [Existing wallets](/docs/existing-wallets#who-pays-the-fees) covers the fee-source pattern.
+
+## Errors
+
+The kit's `IKitError` carries a numeric `code`. `@soropass/core` throws typed `KitError`s with string codes from a [frozen 10-code taxonomy](/docs/sdk#error-taxonomy). The module maps between the two:
+
+- A user-driven abort (`USER_CANCELLED`) maps to kit code `-1`.
+- Every other failure maps to kit code `-3`.
+- The original string code is preserved in `ext`, so you keep the precise cause: `if (e.ext === 'CHALLENGE_MISMATCH') ...`.
+
+Two `ext` values are the module's own, not part of core's taxonomy:
+
+| Module `ext` code         | When                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `NO_SOROBAN_AUTH_ENTRY`   | `signTransaction` received an envelope with no Soroban address-credential auth entry.            |
+| `REQUEST_ACCESS_REQUIRED` | `getAddress({ skipRequestAccess: true })` could not answer without showing an OS passkey prompt. |
+
+## Requirements
+
+- **Buffer polyfill.** The module needs a `Buffer` polyfill in your app. This is a `@stellar/stellar-sdk` requirement, the same one the kit's Ledger and Trezor modules carry.
+- **Secure context.** WebAuthn is unavailable over plain http, so serve over https or localhost.
+- **A platform authenticator, or your own `webauthn` client.** Without either, `isAvailable` resolves `false` and the kit renders the wallet as unavailable.
+
+## Integrate today with @soropass/core
+
+Until the module ships in a kit release, you get the identical flows from the published core SDK; the module wraps exactly these calls:
+
+| Wallet flow           | Core call                                                                                                                                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create an account     | [`createPasskey`](/docs/sdk#createpasskey) with a [`deployer`](/docs/sdk/accounts#deployers)                                                                                                                                           |
+| Resolve the address   | [`deriveAccountAddress`](/docs/sdk#address-derivation) (offline) or [`connect`](/docs/sdk/accounts#connect)                                                                                                                            |
+| Sign a transaction    | [`signTransaction`](/docs/sdk#signtransaction) with `signerAddress` set to the account                                                                                                                                                 |
+| Sign one auth entry   | [`signAuthEntry`](/docs/sdk#signauthentry)                                                                                                                                                                                             |
+| Recover on new device | [`recover`](/docs/sdk/accounts#recover), then enroll a backup passkey: [native `add_signer`](/docs/sdk/accounts#native-multi-device-recovery) on the v0.2 account, or [`addSigner`](/docs/sdk/accounts#addsigner) on a v1 smart-wallet |
+
+[Quickstart Path A](/docs/quickstart#path-a--headless-any-framework-or-none) is the runnable end-to-end version, and [`@soropass/core/testing`](/docs/sdk/testing) gives you the same flows in CI with no browser and no network.
+
+<Cards>
+  <Card title="Quickstart" href="/docs/quickstart">
+    The three integration paths, with runnable examples.
+  </Card>
+  <Card title="SDK reference" href="/docs/sdk">
+    createPasskey, signTransaction, and the error taxonomy the module maps from.
+  </Card>
+  <Card title="Testing" href="/docs/sdk/testing">
+    Mock mode: run create and sign in CI with no authenticator.
+  </Card>
+</Cards>

@@ -28,17 +28,20 @@ payload = SHA256( authenticatorData ‖ SHA256(clientDataJSON) )
 
 **3 · Challenge binding.** The WebAuthn `challenge` **is** the Soroban auth-entry preimage hash (see [Challenge & replay](#challenge--replay)), so a captured signature cannot be replayed for a different transaction, nonce, or network.
 
-**4 · The wire shape.** The assertion maps 1:1 to the contract's `Secp256r1Signature` (map keys sorted, `signature` a 64-byte low-S `BytesN<64>`):
+**4 · The wire shape.** The assertion maps 1:1 to the contract's `Secp256r1Signature` (map keys alphabetical so the ScMap is canonically sorted, `public_key` a 65-byte SEC-1 `BytesN<65>`, `signature` a 64-byte low-S `BytesN<64>`):
 
 ```rust
 pub struct Secp256r1Signature {
   pub authenticator_data: Bytes,
   pub client_data_json:   Bytes,
+  pub public_key:         BytesN<65>,
   pub signature:          BytesN<64>,
 }
 ```
 
-**5 · `__check_auth`.** On-chain, the contract asserts `clientDataJSON.challenge == base64url(payload)`, reconstructs `authenticatorData ‖ SHA256(clientDataJSON)`, and calls the host `secp256r1_verify(publicKey, SHA256(message), signature)`, which traps on an invalid signature. The same digest computed in step 1 is re-derived here; that identity is the whole model.
+The inline `public_key` names which enrolled signer the multi-signer account verifies against.
+
+**5 · `__check_auth`.** On-chain, the contract runs the audited OpenZeppelin verifier sequence: it rejects a `public_key` that is not an enrolled signer (`UnknownSigner`) before any crypto runs, parses `clientDataJSON` (length cap, real JSON, `type == "webauthn.get"`), asserts `clientDataJSON.challenge == base64url(payload)`, checks the User-Present and User-Verified flags and Backup-Eligibility/Backup-State consistency, reconstructs `authenticatorData ‖ SHA256(clientDataJSON)`, and calls the host `secp256r1_verify(public_key, SHA256(message), signature)`, which traps on an invalid signature and rejects a high-S signature at decode. The same digest computed in step 1 is re-derived here; that identity is the whole model.
 
 ## Low-S enforcement
 
@@ -113,9 +116,13 @@ Every row maps to a backing test (`security.test.ts` fails the build if a cited 
 | Malicious relayer / indexer                  | Untrusted, pluggable adapters cannot forge an authorization; at most they delay submission or mis-report a lookup. | submission / indexer adapters                          |
 
 <Callout type="tip">
-  Not just a JS model. A real deployed `__check_auth` on Stellar testnet accepted a
-  `SorobanAuthorizationEntry` assembled and signed by `@soropass/core`: the **positive** run (the account's
-  registered P-256 key) succeeded and the host `secp256r1_verify` trapped the **negative** run (a
-  different key). See the [on-chain proof contract](https://stellar.expert/explorer/testnet/contract/CB3IBD2JTLOFPLT4JFJ3KOIALDTKUMGLSSDZTOK7W2YWCZTPTZU66XB2)
-  and tx [`f256288c…`](https://stellar.expert/explorer/testnet/tx/f256288c75f4865f40d409d22eb1ebe2e48ebd7fdb8ed028ad6d13e4d3ed8418) on stellar.expert. Real hashes come from `scripts/onchain-e2e.ts`, never fabricated.
+  Not just a JS model. A real deployed v0.2 `webauthn-account` ran a passkey-signed XLM payment
+  assembled and signed by `@soropass/core`, on **mainnet and testnet**: the **positive** run (the
+  account's registered P-256 key) transferred XLM through the native SAC, and the **negative** run
+  (a different key) failed on-chain. On mainnet, see the
+  [payment](https://stellar.expert/explorer/public/tx/6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1)
+  and the [wrong-key rejection](https://stellar.expert/explorer/public/tx/6841ae73bfa37a7be2b6c309a8968c5eeb32534a05a9525a225ed69b4b3d795f).
+  On testnet, the [success tx](https://stellar.expert/explorer/testnet/tx/fdeb2829089bf65fe650cc2b94f5a3fc6a329cca4f8bdf6812f5b803b35d20fa)
+  and the [wrong-key rejection](https://stellar.expert/explorer/testnet/tx/d982dab7fc3a8c77011cf17e5507cd8a716963be80ab9b924c5f289dfa7c9ae5).
+  Real hashes come from `packages/core/scripts/transfer-e2e.ts` and `transfer-e2e-mainnet.ts`, never fabricated.
 </Callout>

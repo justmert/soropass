@@ -6,22 +6,28 @@ description: The @soropass/core create + sign primitives, covering ES256-only re
 
 `@soropass/core` is a minimal, headless, ES256-only passkey SDK for Stellar smart accounts. This page is the core reference: registration, public-key extraction, and passkey signing. Connect, recovery, multi-device signers, and the submission/indexer adapters live on [Accounts, recovery & adapters](/docs/sdk/accounts).
 
+<Callout type="info" title="Version">
+  This reference documents `@soropass/core` 0.2.0, the npm `latest`. It pairs with the v0.2
+  account contracts: key-bound address derivation, the signer public key inline in the signature
+  struct, and `userVerification` defaulting to `'required'`.
+</Callout>
+
 ## SDK at a glance
 
 - **Tree-shakeable subpaths**: import only `/create`, `/sign`, `/connect`, `/recover`, `/types`, or `/testing`; the heavy crypto (noble) is shared and pulled only when `/create` or `/sign` is imported.
-- **~2 runtime deps**: `@noble/curves` + `@noble/hashes`; the core barrel is ~1.85 KB gzip, individual subpaths from ~0.2 KB.
+- **~2 runtime deps**: `@noble/curves` + `@noble/hashes`; the core barrel entry is ~3.9 KB gzip, individual subpath entries from ~0.15 KB (measured on the published 0.2.0 dist).
 - **`@stellar/stellar-sdk` is a peer dependency, never bundled** into the SDK output. Stated once here, it holds for every function on this page and the [accounts page](/docs/sdk/accounts). Contract-specific work lives behind the `AccountDeployer` / adapters you supply.
 - **Invariants**: ES256-only (alg −7), always low-S normalized, one frozen 10-code error taxonomy.
 
-| Subpath    | What it gives                      | Bundle                   |
-| ---------- | ---------------------------------- | ------------------------ |
-| `.`        | Public surface                     | 5.6 KB · **~1.85 KB gz** |
-| `/create`  | `createPasskey`, `assertES256`     | ~476 B                   |
-| `/connect` | `connect()`                        | ~208 B                   |
-| `/recover` | `recover()`                        | ~238 B                   |
-| `/sign`    | `signTransaction`, `normalizeLowS` | 605 B · **~349 B gz**    |
-| `/types`   | `KitError`, guards                 | 235 B · **~182 B gz**    |
-| `/testing` | `mockAuthenticator` (dev-only)     | 7.5 KB                   |
+| Subpath    | What it gives                                                               | Bundle                   |
+| ---------- | --------------------------------------------------------------------------- | ------------------------ |
+| `.`        | Public surface                                                              | 14.1 KB · **~3.9 KB gz** |
+| `/create`  | `createPasskey`, `assertES256`                                              | ~549 B                   |
+| `/connect` | `connect()`                                                                 | ~208 B                   |
+| `/recover` | `recover()`                                                                 | ~361 B                   |
+| `/sign`    | `signTransaction`, `normalizeLowS`                                          | 880 B · **~435 B gz**    |
+| `/types`   | `KitError`, guards                                                          | 235 B · **~182 B gz**    |
+| `/testing` | `createPasskeyKit` mock mode (dev-only, [own reference](/docs/sdk/testing)) | 8.3 KB                   |
 
 ## createPasskey
 
@@ -48,19 +54,19 @@ createPasskey(options: CreatePasskeyOptions): Promise<PasskeyCredential>
 
 ### CreatePasskeyOptions
 
-| Field                   | Type                                         | Description                                                                      |
-| ----------------------- | -------------------------------------------- | ------------------------------------------------------------------------------- |
-| `rpId` _(required)_     | `string`                                     | Your site's registrable domain.                                                 |
-| `rpName` _(required)_   | `string`                                     | Human-readable relying-party name shown in the OS sheet.                        |
-| `userName` _(required)_ | `string`                                     | Account name shown during registration.                         |
-| `deployer` _(required)_ | `AccountDeployer`                            | Deploys the smart account for the new passkey (contract-specific).              |
-| `webauthn`              | `WebAuthnClient`                             | WebAuthn client; defaults to `browserWebAuthnClient()`.                         |
-| `storage`               | `CredentialStorage`                          | Where the credential id is persisted; defaults to `defaultCredentialStorage()`. |
-| `userId`                | `Uint8Array`                                 | Optional user handle bytes; generated if omitted.                               |
-| `challenge`             | `Uint8Array`                                 | Optional registration challenge; generated if omitted.                          |
-| `residentKey`           | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.residentKey` hint.                                      |
-| `userVerification`      | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.userVerification` hint.                                 |
-| `userActivation`        | `{ isActive: boolean }`                      | Pass `navigator.userActivation` to enforce the Safari gesture rule.             |
+| Field                   | Type                                         | Description                                                                                                                                                                                       |
+| ----------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpId` _(required)_     | `string`                                     | Your site's registrable domain.                                                                                                                                                                   |
+| `rpName` _(required)_   | `string`                                     | Human-readable relying-party name shown in the OS sheet.                                                                                                                                          |
+| `userName` _(required)_ | `string`                                     | Account name shown during registration.                                                                                                                                                           |
+| `deployer` _(required)_ | `AccountDeployer`                            | Deploys the smart account for the new passkey (contract-specific).                                                                                                                                |
+| `webauthn`              | `WebAuthnClient`                             | WebAuthn client; defaults to `browserWebAuthnClient()`.                                                                                                                                           |
+| `storage`               | `CredentialStorage`                          | Where the credential id is persisted; defaults to `defaultCredentialStorage()`.                                                                                                                   |
+| `userId`                | `Uint8Array`                                 | Optional user handle bytes; generated if omitted.                                                                                                                                                 |
+| `challenge`             | `Uint8Array`                                 | Optional registration challenge; generated if omitted.                                                                                                                                            |
+| `residentKey`           | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.residentKey` hint.                                                                                                                                                        |
+| `userVerification`      | `'discouraged' \| 'preferred' \| 'required'` | `authenticatorSelection.userVerification`. Defaults to `'required'`: the v0.2 account requires the User-Verified flag at sign time, so registration enrolls an authenticator that can produce it. |
+| `userActivation`        | `{ isActive: boolean }`                      | Pass `navigator.userActivation` to enforce the Safari gesture rule.                                                                                                                               |
 
 ### Returns: PasskeyCredential
 
@@ -79,7 +85,6 @@ const account = await createPasskey({
   userName: 'alice@example.com',
   deployer, // your AccountDeployer
   residentKey: 'required',
-  userVerification: 'preferred',
   userActivation: navigator.userActivation, // Safari gesture rule
 });
 
@@ -117,24 +122,24 @@ interface AccountDeployer {
 
 `createPasskey` composes these internally; each is exported for advanced flows and testing. Override the WebAuthn ceremony or credential persistence via `CreatePasskeyOptions.webauthn` / `.storage`.
 
-| Function                     | Signature / returns                                     | Description                                                                                                         |
-| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `assertES256`                | `assertES256(alg: number): void`                        | Throws `ES256_NOT_SUPPORTED` unless `alg === -7`.                                                                   |
-| `assertUserActivation`       | `assertUserActivation(activation?): void`               | Throws `USER_CANCELLED` if not an active user gesture (Safari / WebKit rule).                                       |
-| `buildCreateOptions`         | `→ PublicKeyCredentialCreationOptions`                  | Builds creation options with `pubKeyCredParams` `[{ type: 'public-key', alg: -7 }]` only.                           |
-| `browserWebAuthnClient`      | `→ WebAuthnClient`                                      | `navigator.credentials`-backed client (the default).                                                               |
-| `defaultCredentialStorage`   | `→ CredentialStorage`                                   | `localStorage` with an in-memory fallback for Node / SSR, so the SDK stays import-safe outside the browser.         |
-| `registerPasskey`            | `→ RegisteredPasskey = { credentialId, publicKey }`     | Register + extract the SEC-1 key **without** deploying: the "new device" primitive used by [`addSigner`](/docs/sdk/accounts#addsigner). `createPasskey` is this plus a deploy. |
+| Function                   | Signature / returns                                 | Description                                                                                                                                                                    |
+| -------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `assertES256`              | `assertES256(alg: number): void`                    | Throws `ES256_NOT_SUPPORTED` unless `alg === -7`.                                                                                                                              |
+| `assertUserActivation`     | `assertUserActivation(activation?): void`           | Throws `USER_CANCELLED` if not an active user gesture (Safari / WebKit rule).                                                                                                  |
+| `buildCreateOptions`       | `→ PublicKeyCredentialCreationOptionsJSON`          | Builds creation options with `pubKeyCredParams` `[{ type: 'public-key', alg: -7 }]` only.                                                                                      |
+| `browserWebAuthnClient`    | `→ WebAuthnClient`                                  | `navigator.credentials`-backed client (the default).                                                                                                                           |
+| `defaultCredentialStorage` | `→ CredentialStorage`                               | `localStorage` with an in-memory fallback for Node / SSR, so the SDK stays import-safe outside the browser.                                                                    |
+| `registerPasskey`          | `→ RegisteredPasskey = { credentialId, publicKey }` | Register + extract the SEC-1 key **without** deploying: the "new device" primitive used by [`addSigner`](/docs/sdk/accounts#addsigner). `createPasskey` is this plus a deploy. |
 
 ## Public-key extraction
 
 The path from a WebAuthn attestation to the 65-byte SEC-1 point the contract verifies. Each step is exported so you can extract from whichever shape you hold.
 
 | Function                                                   | Returns      | Description                                                                                                                              |
-| ---------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| ---------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `coseKeyToSec1(coseKey)`                                   | `Uint8Array` | CBOR COSE EC2 → 65-byte SEC-1 `0x04‖X‖Y`; a wrong alg throws `ES256_NOT_SUPPORTED`, any other malformed key throws `INVALID_PUBLIC_KEY`. |
-| `extractPublicKeyFromAuthData(authData)`                   | `Uint8Array` | Pulls the COSE key out of `authenticatorData` and returns the SEC-1 point.                                                              |
-| `extractPublicKeyFromAttestationObject(attestationObject)` | `Uint8Array` | Decodes the `attestationObject` and returns the SEC-1 point.                                                                            |
+| `extractPublicKeyFromAuthData(authData)`                   | `Uint8Array` | Pulls the COSE key out of `authenticatorData` and returns the SEC-1 point.                                                               |
+| `extractPublicKeyFromAttestationObject(attestationObject)` | `Uint8Array` | Decodes the `attestationObject` and returns the SEC-1 point.                                                                             |
 
 ```ts title="extract.ts"
 import { extractPublicKeyFromAttestationObject } from '@soropass/core/create';
@@ -143,9 +148,34 @@ import { extractPublicKeyFromAttestationObject } from '@soropass/core/create';
 const publicKey = extractPublicKeyFromAttestationObject(attestationObject);
 ```
 
+## Address derivation
+
+Derive the smart account's C-address offline, with no deploy and no indexer round-trip: the same `createCustomContract` preimage the network hashes, computed locally. This is what makes a returning user's `getAddress` instant and infra-free.
+
+| Function                            | Options                                                             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deriveAccountAddress(options)`     | `{ factoryContractId, credentialId, publicKey, networkPassphrase }` | The address the `AccountFactory` deploys for a passkey. `credentialId` is `Uint8Array`: pass the same bytes the factory received, which for [`factoryDeployer`](/docs/sdk/accounts#deployers) is the UTF-8 encoding of the base64url credential id (`new TextEncoder().encode(account.credentialId)`). `publicKey` is the passkey's 65-byte SEC-1 key: the v0.2 factory salts the deploy by `sha256(credential_id ‖ public_key)`, so both inputs are part of the address. |
+| `deriveSmartWalletAddress(options)` | `{ deployer, credentialId, networkPassphrase }`                     | The passkey-kit v1 wallet address: salted by `sha256` of the base64url-decoded credential id bytes, deployed by a fixed `deployer` address. `credentialId` is the base64url `string`.                                                                                                                                                                                                                                                                                     |
+
+Binding the public key into the salt is a security property, not bookkeeping: credential ids are public (the factory emits them in events), so a salt over the credential id alone let anyone pre-deploy at a victim's derived address with their own key, capturing anything sent there. With the key bound, deploying at a derived address requires the exact public key, so a squatted deploy produces the victim's intended account.
+
+Both functions are exported from `@soropass/core/create` and throw a typed `KitError` on an invalid deployer address, an empty credential id, or (for `deriveAccountAddress`) a public key that is not 65 bytes.
+
+```ts title="derive.ts"
+import { deriveAccountAddress } from '@soropass/core/create';
+
+const address = deriveAccountAddress({
+  factoryContractId: 'C...FACTORY',
+  credentialId: new TextEncoder().encode(account.credentialId),
+  publicKey: account.publicKey, // 65-byte SEC-1, part of the salt
+  networkPassphrase,
+});
+// address === account.contractId, with no network call
+```
+
 ## signTransaction
 
-Sign every address-credential Soroban auth entry carried by the `InvokeHostFunction` operations of a transaction (base64 XDR envelope). Obtains a WebAuthn assertion, low-S-normalizes it, and assembles the contract signature your `__check_auth` re-derives. Returns the signed envelope XDR.
+Sign every address-credential Soroban auth entry carried by the `InvokeHostFunction` operations of a transaction (base64 XDR envelope, v1 or fee-bump). Obtains a WebAuthn assertion, low-S-normalizes it, and assembles the contract signature your `__check_auth` re-derives. Returns the signed envelope XDR. A transaction that carries no Soroban address-credential auth entry comes back unchanged; set `signerAddress` to sign only the connected account's entries and leave a co-authorizer's entries untouched.
 
 ```ts
 signTransaction(txXdr: string, options: SorobanSignOptions): Promise<string>
@@ -159,7 +189,7 @@ signTransaction(txXdr: string, options: SorobanSignOptions): Promise<string>
 ```ts title="sign-tx.ts"
 import { signTransaction, browserPasskeySigner } from '@soropass/core/sign';
 
-const sign = browserPasskeySigner({ rpId, allowCredentials: [credentialId] });
+const sign = browserPasskeySigner({ rpId, allowCredentials: [credentialId], publicKey });
 const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign });
 ```
 
@@ -180,15 +210,31 @@ signAuthEntry(entryXdr: string, options: SorobanSignOptions): Promise<string>
 
 Shared by `signTransaction` and `signAuthEntry`.
 
-| Field                        | Type                | Description                                                                                                                        |
-| ---------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `networkPassphrase`          | `string`            | Network passphrase bound into the auth challenge (`networkId = SHA256(networkPassphrase)`).                                        |
-| `sign`                       | `WebAuthnSigner`    | The signer that produces the assertion; `browserPasskeySigner(...)` is the standard implementation.                                                      |
-| `target?`                    | `WalletTarget`      | Which ABI to assemble for: the single-signer account (default) or `'smart-wallet'` for the passkey-kit v1 `Signatures(Map)` shape. |
-| `verify?`                    | `SignVerifyOptions` | Opt-in pre-flight (RP-ID / origin / challenge / assertion checks) run before the entry is returned.                               |
-| `signatureExpirationLedger?` | `number`            | The ledger the signature is valid until (smart-wallet target).                                                                    |
+| Field                        | Type                | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `networkPassphrase`          | `string`            | Network passphrase bound into the auth challenge (`networkId = SHA256(networkPassphrase)`).                                                                                                                                                                                                                                                                                                                           |
+| `sign`                       | `WebAuthnSigner`    | The signer that produces the assertion; `browserPasskeySigner(...)` is the standard implementation.                                                                                                                                                                                                                                                                                                                   |
+| `signerAddress?`             | `string`            | `signTransaction` only: sign only the auth entries whose credential address equals this C-address, so the passkey never signs on behalf of, or prompts for, another authorizer's entries. Omit to sign every address-credential entry.                                                                                                                                                                                |
+| `publicKey?`                 | `Uint8Array`        | The signing passkey's 65-byte SEC-1 public key, for the default `single-signer` target: the v0.2 account carries the signer's key inline in the signature struct and verifies against it. Takes precedence over a `publicKey` the signer returns on its assertion. Required for `single-signer` when the signer does not return one (signing throws a `KitError` with neither); ignored by the `smart-wallet` target. |
+| `target?`                    | `WalletTarget`      | Which ABI to assemble for: the single-signer account (default) or `'smart-wallet'` for the passkey-kit v1 `Signatures(Map)` shape.                                                                                                                                                                                                                                                                                    |
+| `verify?`                    | `SignVerifyOptions` | Opt-in pre-flight (RP-ID / origin / challenge / assertion checks) run before the entry is returned.                                                                                                                                                                                                                                                                                                                   |
+| `signatureExpirationLedger?` | `number`            | Stamped onto every address-credential entry before the challenge is computed, so the signature binds the exact expiration `__check_auth` re-derives. Needed for smart-wallet writes; omit when the entry already carries the intended expiration.                                                                                                                                                                     |
+
+The default `single-signer` target assembles the four-field `Secp256r1Signature` struct the v0.2 `webauthn-account` consumes, a canonically sorted ScMap: `{ authenticator_data, client_data_json, public_key, signature }`. The inline `public_key` names which enrolled signer the multi-signer account verifies against; the contract rejects a key it does not hold before any crypto runs. The `smart-wallet` target assembles the three-field passkey-kit v1 shape instead, which resolves the key on-chain by credential id.
 
 For `target: 'smart-wallet'` and the full sign-and-submit path, see [Accounts, recovery & adapters](/docs/sdk/accounts#the-v1-smart-wallet).
+
+### SignVerifyOptions
+
+On-chain `__check_auth` is the real gate; the opt-in `verify` pre-flight catches a bad assertion client-side, turning an opaque on-chain failure into a typed `KitError` at the call site. Providing the object (even empty) always enforces the `webauthn.get` ceremony type, the challenge binding, and the User-Present (UP) flag; each field below adds its check. Omit the object entirely to skip pre-flight (the default).
+
+| Field                      | Type                 | Check                                                                                                                                                                                                                           |
+| -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpId?`                    | `string`             | `authenticatorData.rpIdHash === SHA256(rpId)`, else `RP_ID_MISMATCH`.                                                                                                                                                           |
+| `origin?`                  | `string \| string[]` | `clientDataJSON.origin` is one of these exact origins, else `ORIGIN_MISMATCH`.                                                                                                                                                  |
+| `publicKey?`               | `Uint8Array`         | The 65-byte SEC-1 key verifies the ECDSA assertion signature, else `CONTRACT_AUTH_FAILED`.                                                                                                                                      |
+| `requireUserVerification?` | `boolean`            | Also require the User-Verified (UV) flag (biometric / PIN), else `UNSUPPORTED_AUTHENTICATOR`. Default `false`. The v0.2 account enforces UV on-chain regardless; set this to catch a missing UV flag client-side before submit. |
+| `allowCrossOrigin?`        | `boolean`            | Accept an assertion made in a cross-origin context. Default `false` (`ORIGIN_MISMATCH`).                                                                                                                                        |
 
 ## browserPasskeySigner
 
@@ -200,12 +246,13 @@ browserPasskeySigner(options: BrowserPasskeySignerOptions): WebAuthnSigner
 
 ### BrowserPasskeySignerOptions
 
-| Field               | Type                                         | Description                                               |
-| ------------------- | -------------------------------------------- | --------------------------------------------------------- |
-| `rpId`              | `string`                                     | Relying Party ID (registrable domain).                    |
-| `allowCredentials?` | `string[]`                                   | base64url credential ids; omit for a discoverable prompt. |
-| `userVerification?` | `'discouraged' \| 'preferred' \| 'required'` | WebAuthn user-verification requirement.                   |
-| `webauthn?`         | `WebAuthnClient`                             | Inject a custom client (tests / non-browser).             |
+| Field               | Type                                         | Description                                                                                                                                                                                                                                                                        |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpId`              | `string`                                     | Relying Party ID (registrable domain).                                                                                                                                                                                                                                             |
+| `allowCredentials?` | `string[]`                                   | base64url credential ids; omit for a discoverable prompt.                                                                                                                                                                                                                          |
+| `userVerification?` | `'discouraged' \| 'preferred' \| 'required'` | WebAuthn user-verification requirement. Defaults to `'required'`: the v0.2 account requires the UV flag, so a signature without it fails on-chain.                                                                                                                                 |
+| `publicKey?`        | `Uint8Array`                                 | The passkey's 65-byte SEC-1 public key (from `create` / `connect`). WebAuthn assertions do not return the public key, so pass it here to sign for the `single-signer` target; it is echoed onto each assertion. You can instead supply it once via `SorobanSignOptions.publicKey`. |
+| `webauthn?`         | `WebAuthnClient`                             | Inject a custom client (tests / non-browser).                                                                                                                                                                                                                                      |
 
 ```ts title="signer.ts"
 import { browserPasskeySigner, signTransaction } from '@soropass/core/sign';
@@ -213,7 +260,7 @@ import { browserPasskeySigner, signTransaction } from '@soropass/core/sign';
 const sign = browserPasskeySigner({
   rpId: 'app.example.com',
   allowCredentials: [credentialId], // omit for a discoverable (resident-key) prompt
-  userVerification: 'required',
+  publicKey: account.publicKey, // travels inline in the single-signer struct
 });
 
 const signedXdr = await signTransaction(txXdr, { networkPassphrase, sign });
@@ -228,23 +275,39 @@ Invariant #2. Roughly 50% of Apple Touch ID / Face ID assertions come back high-
   canonical low-S (S ≤ n/2) client-side.
 </Callout>
 
-| Function                        | Signature                                            | Description                                                        |
-| ------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
-| `isLowS(compactSignature)`      | `(Uint8Array) => boolean`                            | True if a 64-byte compact signature is canonical low-S (`S ≤ n/2`). |
-| `normalizeLowS(compactSignature)` | `(Uint8Array) => Uint8Array`                       | If `S > n/2`, replace S with `n − S`. Idempotent.                 |
-| `derToCompact(der)`             | `(Uint8Array) => Uint8Array`                         | ASN.1 DER → 64-byte raw `R‖S` (noble parser). Does **not** enforce low-S. |
-| `derToCompactLowS(der)`         | `(Uint8Array) => Uint8Array`                         | DER → 64-byte canonical low-S compact (what the ceremony uses).   |
+| Function                          | Signature                    | Description                                                               |
+| --------------------------------- | ---------------------------- | ------------------------------------------------------------------------- |
+| `isLowS(compactSignature)`        | `(Uint8Array) => boolean`    | True if a 64-byte compact signature is canonical low-S (`S ≤ n/2`).       |
+| `normalizeLowS(compactSignature)` | `(Uint8Array) => Uint8Array` | If `S > n/2`, replace S with `n − S`. Idempotent.                         |
+| `derToCompact(der)`               | `(Uint8Array) => Uint8Array` | ASN.1 DER → 64-byte raw `R‖S` (noble parser). Does **not** enforce low-S. |
+| `derToCompactLowS(der)`           | `(Uint8Array) => Uint8Array` | DER → 64-byte canonical low-S compact (what the ceremony uses).           |
+
+## Assertion verification primitives
+
+The parse and verify steps behind the [`verify` pre-flight](#signverifyoptions), each exported on its own from `@soropass/core/sign` so you can validate whichever piece you hold. The verify functions throw a typed `KitError`; the parse functions return structured data.
+
+| Function                                | Returns                   | Description                                                                                                                                    |
+| --------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parseClientDataJSON(bytes)`            | `ClientData`              | Decodes `clientDataJSON` into `{ type, challenge, origin, crossOrigin }`.                                                                      |
+| `verifyClientDataJSON(bytes, expected)` | `ClientData`              | Parses, then enforces the `webauthn.get` type, the expected `origin`(s), and the `challenge`; throws `ORIGIN_MISMATCH` / `CHALLENGE_MISMATCH`. |
+| `parseAuthenticatorData(bytes)`         | `ParsedAuthenticatorData` | Decodes `rpIdHash`, the UP / UV / AT flags, and the signature counter.                                                                         |
+| `verifyRpIdHash(authData, rpId)`        | `void`                    | Throws `RP_ID_MISMATCH` unless `rpIdHash === SHA256(rpId)`.                                                                                    |
+| `verifyAssertionSignature(input)`       | `boolean`                 | ECDSA-verifies `{ publicKey, authenticatorData, clientDataJSON, signature }` over the WebAuthn payload.                                        |
+| `encodeChallenge(bytes)`                | `string`                  | Bytes to base64url, the encoding WebAuthn challenges travel in.                                                                                |
+| `decodeChallenge(text)`                 | `Uint8Array`              | base64url to bytes, the inverse.                                                                                                               |
 
 ## Soroban auth primitives
 
 The primitives that derive the challenge the authenticator signs and reassemble the assertion into a verifiable `SorobanAuthorizationEntry`. For how the challenge is bound to the auth preimage, see [Security](/docs/security).
 
-| Function                                            | Returns                       | Description                                                                                                                            |
-| --------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `reconstructSignedPayload({ authenticatorData, clientDataJSON })` | `Uint8Array`     | `SHA256(authData ‖ SHA256(clientDataJSON))`: the 32-byte payload `__check_auth` re-derives.                                          |
-| `authEntryChallenge(entry, networkPassphrase)`      | `string`                      | base64url challenge (43 chars) the authenticator signs.                                                                              |
-| `authEntryChallengeBytes(entry, networkPassphrase)` | `Uint8Array`                  | `SHA256(XDR(HashIdPreimage::SorobanAuthorization{...}))`; `networkId = SHA256(networkPassphrase)`.                                    |
-| `applyAssertionToEntry(entry, assertion)`           | `SorobanAuthorizationEntry`   | Sets the signature to `ScVal::Map { authenticator_data, client_data_json, signature: BytesN<64> }` (alphabetical keys). The signature MUST already be 64-byte low-S. |
+| Function                                                          | Returns                      | Description                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reconstructSignedPayload({ authenticatorData, clientDataJSON })` | `Uint8Array`                 | `SHA256(authData ‖ SHA256(clientDataJSON))`: the 32-byte payload `__check_auth` re-derives.                                                                                                                                                                                                  |
+| `authEntryChallenge(entry, networkPassphrase)`                    | `string`                     | base64url challenge (43 chars) the authenticator signs.                                                                                                                                                                                                                                      |
+| `authEntryChallengeBytes(entry, networkPassphrase)`               | `Uint8Array`                 | `SHA256(XDR(HashIdPreimage::SorobanAuthorization{...}))`; `networkId = SHA256(networkPassphrase)`.                                                                                                                                                                                           |
+| `applyAssertionToEntry(entry, assertion, publicKey)`              | `SorobanAuthorizationEntry`  | Sets the signature to the v0.2 four-field struct `ScVal::Map { authenticator_data, client_data_json, public_key: BytesN<65>, signature: BytesN<64> }` (alphabetical keys). The signature MUST already be 64-byte low-S; `publicKey` names the enrolled signer the contract verifies against. |
+| `referenceCheckAuth(entry, publicKey, passphrase)`                | `CheckAuthResult`            | Verifies a signed entry exactly the way the v0.2 `__check_auth` does: the struct's inline `public_key` must equal the enrolled `publicKey`, plus challenge binding and `secp256r1_verify` semantics. Returns `{ success, challengeBound, signatureValid, reason? }`.                         |
+| `referenceSmartWalletCheckAuth(entry, publicKeyFor, passphrase)`  | `SmartWalletCheckAuthResult` | The same reference verification for the passkey-kit v1 `Signatures(Map)` shape. `publicKeyFor(credentialIdHex)` looks up each signer's SEC-1 key; succeeds only when every signer verifies and is challenge-bound. Returns `{ success, signers, reason? }`.                                  |
 
 <Callout type="warn">
   The `signature` passed to `applyAssertionToEntry` must already be the 64-byte low-S compact form.
@@ -261,7 +324,7 @@ The primitives that derive the challenge the authenticator signs and reassemble 
 
 ## Error taxonomy
 
-Every throw in the SDK is a typed `KitError`, never a bare string. `KitError` extends `Error` with an exhaustive `code` from the frozen `KIT_ERROR_CODES` tuple; `isKitError` is the type guard. All three come from `@soropass/core/types` (~182 B gzipped).
+Every throw in the SDK is a typed `KitError`, never a bare string. `KitError` extends `Error` with an exhaustive `code` from the frozen `KIT_ERROR_CODES` tuple; `isKitError` is the type guard. The v0.2 account contract additionally defines its own numeric contract errors, returned on-chain from `__check_auth` and the signer methods (for example `UnknownSigner`, `UserVerifiedFlagMissing`, `LastSignerRemoval`); those are Soroban contract errors carried in the transaction result, not `KitError` codes. All three come from `@soropass/core/types` (~182 B gzipped), which also exports `BATTLE_TESTED_ANCHORS`: the stable ids of the three behaviors that silently break real users (`low-s-normalization`, `rs256-hard-fail`, `apple-user-gesture`), referenced by name across the test suite, the [threat model](/docs/security), and the [compatibility matrix](/docs/compatibility).
 
 ```ts
 import { KitError, KIT_ERROR_CODES, isKitError } from '@soropass/core/types';
@@ -269,7 +332,8 @@ import type { KitErrorCode } from '@soropass/core/types';
 
 class KitError extends Error {
   readonly code: KitErrorCode; // one of KIT_ERROR_CODES
-  readonly cause?: unknown; // the underlying error, when wrapped
+  readonly name = 'KitError';
+  // `cause` is inherited from Error, set when the original error is wrapped
 }
 
 // exhaustive over KIT_ERROR_CODES; the compiler flags a missing case
@@ -279,15 +343,15 @@ if (isKitError(err) && err.code === 'USER_CANCELLED') return retry();
 | Code                        | When thrown                         | Thrown by                            | Styled UI copy                                      | Recovery  |
 | --------------------------- | ----------------------------------- | ------------------------------------ | --------------------------------------------------- | --------- |
 | `USER_CANCELLED`            | User dismissed the OS passkey sheet | `assertUserActivation / ceremony`    | You closed the passkey prompt before it finished.   | Try again |
-| `UNSUPPORTED_AUTHENTICATOR` | Device/passkey can't be used        | `create / sign / recover (fallback)` | This device or passkey can't be used. Try another. | Try again |
+| `UNSUPPORTED_AUTHENTICATOR` | Device/passkey can't be used        | `create / sign / recover (fallback)` | This device or passkey can't be used. Try another.  | Try again |
 | `ES256_NOT_SUPPORTED`       | Non-P256 key at creation (alg ≠ −7) | `assertES256 / coseKeyToSec1`        | This passkey isn't supported for on-chain accounts. | Try again |
-| `INVALID_PUBLIC_KEY`        | COSE key couldn't be read           | `coseKeyToSec1 / extractPublicKey*`  | Couldn't read the key from this passkey.         | Try again |
+| `INVALID_PUBLIC_KEY`        | COSE key couldn't be read           | `coseKeyToSec1 / extractPublicKey*`  | Couldn't read the key from this passkey.            | Try again |
 | `INVALID_SIGNATURE_DER`     | Malformed / >72-byte DER signature  | `derToCompact`                       | There was a problem with the signature.             | Try again |
-| `RP_ID_MISMATCH`            | rpIdHash ≠ expected origin          | `verifyRpIdHash`                     | Couldn't verify this request. It may have changed. | Try again |
-| `ORIGIN_MISMATCH`           | clientDataJSON origin mismatch      | `verifyClientDataJSON`               | Couldn't verify this request. It may have changed. | Try again |
-| `CHALLENGE_MISMATCH`        | Challenge changed or expired        | `verifyClientDataJSON`               | Couldn't verify this request. It may have expired. | Try again |
+| `RP_ID_MISMATCH`            | rpIdHash ≠ expected origin          | `verifyRpIdHash`                     | Couldn't verify this request. It may have changed.  | Try again |
+| `ORIGIN_MISMATCH`           | clientDataJSON origin mismatch      | `verifyClientDataJSON`               | Couldn't verify this request. It may have changed.  | Try again |
+| `CHALLENGE_MISMATCH`        | Challenge changed or expired        | `verifyClientDataJSON`               | Couldn't verify this request. It may have expired.  | Try again |
 | `CONTRACT_AUTH_FAILED`      | `__check_auth` rejected on-chain    | `signTransaction / deploy`           | Couldn't set up / authorize the account.            | Try again |
-| `NETWORK_ERROR`             | RPC / network unreachable           | `submission / indexer`               | Couldn't reach the network.                      | Retry     |
+| `NETWORK_ERROR`             | RPC / network unreachable           | `submission / indexer`               | Couldn't reach the network.                         | Retry     |
 
 <Callout type="tip">
   The styled layer maps `(screen, code)` → a screen-scoped copy key (e.g. `create:cancelled`,

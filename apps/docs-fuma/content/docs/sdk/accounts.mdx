@@ -4,7 +4,7 @@ icon: KeyRound
 description: Connect and recover a smart account, sign and submit passkey smart-wallet transactions, add or remove signers for multi-device recovery, and swap the pluggable submission and indexer adapters.
 ---
 
-Everything after create + sign: bringing a returning user back (`connect` / `recover`), the passkey-kit **v1 smart-wallet** (payments, add/remove signers, multi-device recovery), and the two pluggable seams for submission and indexing. For the registration and signing primitives, see the [SDK core](/docs/sdk).
+Everything after create + sign: bringing a returning user back (`connect` / `recover`), native multi-device recovery on the v0.2 account (`add_signer` / `remove_signer` on the contract itself), the passkey-kit **v1 smart-wallet** (payments, signer management), and the two pluggable seams for submission and indexing. For the registration and signing primitives, see the [SDK core](/docs/sdk).
 
 ## connect
 
@@ -18,13 +18,14 @@ connect(options: ConnectOptions): Promise<ConnectResult | null>
 
 ### ConnectOptions
 
-| Field                      | Type                | Description                                                                            |
+| Field                      | Type                | Description                                                                           |
 | -------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `rpId` **(required)**      | `string`            | Relying Party ID for the WebAuthn ceremony.                                            |
-| `indexer` **(required)**   | `IndexerAdapter`    | Resolves the credential to its C-address(es).                                          |
+| `rpId` **(required)**      | `string`            | Relying Party ID for the WebAuthn ceremony.                                           |
+| `indexer` **(required)**   | `IndexerAdapter`    | Resolves the credential to its C-address(es).                                         |
 | `webauthn`                 | `WebAuthnClient`    | Optional WebAuthn client override (defaults to the platform `navigator.credentials`). |
-| `storage`                  | `CredentialStorage` | Where the stored credential id is read from.                                           |
-| `silentMediationSupported` | `boolean`           | Override the `isConditionalMediationAvailable` probe.                                  |
+| `storage`                  | `CredentialStorage` | Where the stored credential id is read from.                                          |
+| `publicKey`                | `Uint8Array`        | The passkey's 65-byte SEC-1 key. `deploy` is permissionless, so a credential id can resolve to more than one account; set this to select the one whose factory `deployed` event names this exact key. |
+| `silentMediationSupported` | `boolean`           | Override the `isConditionalMediationAvailable` probe.                                 |
 
 ### ConnectResult
 
@@ -47,20 +48,20 @@ recover(options: RecoverOptions): Promise<RecoverResult[]>
 
 ### RecoverOptions
 
-| Field                    | Type                    | Description                                                                            |
+| Field                    | Type                    | Description                                                                           |
 | ------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
-| `rpId` **(required)**    | `string`                | Relying Party ID for the WebAuthn ceremony.                                            |
+| `rpId` **(required)**    | `string`                | Relying Party ID for the WebAuthn ceremony.                                           |
 | `indexer` **(required)** | `IndexerAdapter`        | Resolves the recovered credential to its C-address(es).                               |
 | `webauthn`               | `WebAuthnClient`        | Optional WebAuthn client override (defaults to the platform `navigator.credentials`). |
-| `challenge`              | `Uint8Array`            | Optional challenge bytes for the `get()` ceremony.                                     |
-| `userActivation`         | `{ isActive: boolean }` | Caller-supplied user-gesture state for the WebAuthn call.                              |
+| `challenge`              | `Uint8Array`            | Optional challenge bytes for the `get()` ceremony.                                    |
+| `userActivation`         | `{ isActive: boolean }` | Caller-supplied user-gesture state for the WebAuthn call.                             |
 
 ### RecoverResult
 
 `Promise<RecoverResult[]>`: one credential can control several accounts; present a picker when the array has more than one entry.
 
 | Field          | Type     | Description                                             |
-| -------------- | -------- | ------------------------------------------------------ |
+| -------------- | -------- | ------------------------------------------------------- |
 | `contractId`   | `string` | A smart-account C-address controlled by the credential. |
 | `credentialId` | `string` | The discoverable passkey credential id that was used.   |
 
@@ -83,9 +84,45 @@ async function restore(rpId, indexer, storage) {
 
 Both functions map a passkey credential to its C-address(es) through an `IndexerAdapter`. See [Indexer adapters](#indexer-adapters) for the bundled `events` indexer and how to write your own.
 
+## Native multi-device recovery
+
+The v0.2 `webauthn-account` is multi-signer: it enrolls up to 20 passkey signers and exposes `add_signer(public_key)`, `remove_signer(public_key)`, `is_signer(public_key)`, and `signer_count()` on the account contract itself. Each add or remove is authorized by the account's own `__check_auth`, so an existing enrolled device signs the change, and the contract refuses to remove the last signer. A lost device never locks the account out: enroll the new device while any enrolled device can still sign, then retire the lost one with `remove_signer`.
+
+The flow is a standard Soroban invoke signed with the default `single-signer` target: register a passkey on the new device (no deploy), build the `add_signer` call, and sign the account's auth entry with an existing device.
+
+```ts title="native-add-device.ts"
+import { registerPasskey } from '@soropass/core/create';
+import { signTransaction, browserPasskeySigner } from '@soropass/core/sign';
+import { Contract, nativeToScVal } from '@stellar/stellar-sdk';
+
+// New device: register + extract, no deploy.
+const device2 = await registerPasskey({ rpId, rpName: 'My Wallet', userName: 'alice' });
+
+// The account-authorized add_signer(public_key) invocation:
+const operation = new Contract(account.contractId).call(
+  'add_signer',
+  nativeToScVal(device2.publicKey, { type: 'bytes' }),
+);
+
+// Build a transaction around `operation` with a funded classic source, simulate
+// and assemble it, then sign the account's auth entry with the EXISTING device:
+const signedXdr = await signTransaction(assembledTxXdr, {
+  networkPassphrase,
+  sign: browserPasskeySigner({
+    rpId,
+    allowCredentials: [account.credentialId],
+    publicKey: account.publicKey,
+  }),
+});
+```
+
+`remove_signer(public_key)` retires a device the same way, authorized by any remaining enrolled device. The full sequence (add device B by A, sign by B, remove A by B, A rejected) is proven on testnet: the transaction hashes live in `contracts/deployments.json` under `testnetV02.recoveryProof`, and `packages/core/scripts/recovery-e2e.ts` reproduces it end to end.
+
+The [`addSigner`](#addsigner) / [`removeSigner`](#removesigner) helpers below target the passkey-kit v1 smart-wallet ABI, not this account.
+
 ## The v1 smart-wallet
 
-Beyond the single-signer account, `@soropass/core` targets the passkey-kit **v1 smart-wallet** (audited, Protocol 27), a multi-signer account whose `type Signature = Signatures(Map<SignerKey, Signature>)`. This adds **payments**, arbitrary contract calls, and **multi-device recovery** (add a second passkey so a lost device never locks you out).
+Beyond the native account, `@soropass/core` also targets the passkey-kit **v1 smart-wallet** (Protocol 27), a multi-signer account whose `type Signature = Signatures(Map<SignerKey, Signature>)`. The [`sendSmartWalletTx`](#sendsmartwallettx) path drives **payments**, arbitrary contract calls, and v1 signer management (`addSigner` / `removeSigner`).
 
 <Callout type="info">
   The passkey-kit author (kalepail, issue #32) confirmed the smart-wallet wire shape:
@@ -113,6 +150,22 @@ const signedXdr = await signTransaction(txXdr, {
   partially-signed auth are preserved and merged.
 </Callout>
 
+### Smart-wallet primitives
+
+The building blocks behind the `smart-wallet` target and the [`addSigner`](#addsigner) / [`removeSigner`](#removesigner) flows, exported from `@soropass/core/sign` for advanced use (custom multi-signer assembly, or driving the wallet contract directly).
+
+| Function                                             | Returns                     | Description                                                                                                                                     |
+| ---------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `applyAssertionToSmartWalletEntry(entry, assertion)` | `SorobanAuthorizationEntry` | Sets (or merges into) the entry's `Signatures(Map<SignerKey, Signature>)` value, keyed by the assertion's credential id and sorted canonically. |
+| `buildSignerKeyScVal(credentialId)`                  | `xdr.ScVal`                 | `SignerKey::Secp256r1(raw credential id bytes)` as an ScVal.                                                                                    |
+| `buildSmartWalletSignatureVariant(assertion)`        | `xdr.ScVal`                 | The `Signature::Secp256r1 { authenticator_data, client_data_json, signature }` variant for one assertion.                                       |
+| `compareSignerKeyScVal(a, b)`                        | `number`                    | The host's canonical element-wise ScVal byte comparator; sort map keys with it.                                                                 |
+| `buildSecp256r1Signer(spec)`                         | `xdr.ScVal`                 | Encodes `Signer::Secp256r1` from `{ credentialId, publicKey, expiration?, storage? }`; validates the 65-byte SEC-1 key.                         |
+| `buildAddSignerOperation(options)`                   | `xdr.Operation`             | The wallet-authorized `add_signer(Signer)` invocation for `{ walletContractId, signer }`.                                                       |
+| `buildRemoveSignerOperation(options)`                | `xdr.Operation`             | The wallet-authorized `remove_signer` invocation for `{ walletContractId, credentialId }`.                                                      |
+
+[`referenceSmartWalletCheckAuth`](/docs/sdk#soroban-auth-primitives) verifies the assembled multi-signer entry the way the v1 `__check_auth` does.
+
 ## sendSmartWalletTx
 
 Sign **and submit** a single passkey-authorized smart-wallet transaction, the general primitive behind every smart-wallet action (payment, contract call, add/remove signer). It runs the full submission sequence so you do not have to:
@@ -128,7 +181,7 @@ sendSmartWalletTx(options: SendSmartWalletTxOptions): Promise<SubmitResult>
 
 ### SendSmartWalletTxOptions
 
-| Field                                | Type                | Description                                                                  |
+| Field                                | Type                | Description                                                                 |
 | ------------------------------------ | ------------------- | --------------------------------------------------------------------------- |
 | `operation` **(required)**           | `xdr.Operation`     | The wallet-authorized invocation (a SAC `transfer`, a contract call, …).    |
 | `networkPassphrase` **(required)**   | `string`            | Bound into the auth challenge.                                              |
@@ -170,7 +223,7 @@ const result = await sendSmartWalletTx({
 
 ## addSigner
 
-Enroll a new passkey signer on a smart-wallet **on-chain**, authorized by an existing device. This is the multi-device recovery flow. Under the hood it builds `add_signer(Signer::Secp256r1(...))` and runs it through `sendSmartWalletTx`. Mint the new device's signer with [`registerPasskey`](/docs/sdk#registration-primitives) (register + extract, no deploy).
+Enroll a new passkey signer on a **passkey-kit v1 smart-wallet** on-chain, authorized by an existing device. Under the hood it builds `add_signer(Signer::Secp256r1(...))` and runs it through `sendSmartWalletTx`. Mint the new device's signer with [`registerPasskey`](/docs/sdk#registration-primitives) (register + extract, no deploy). For the v0.2 account's own recovery, see [Native multi-device recovery](#native-multi-device-recovery).
 
 ```ts
 addSigner(options: AddSignerOptions): Promise<SubmitResult>
@@ -180,11 +233,11 @@ addSigner(options: AddSignerOptions): Promise<SubmitResult>
 
 Everything from [`SendSmartWalletTxOptions`](#sendsmartwallettxoptions) **except `operation`**, plus:
 
-| Field                             | Type              | Description                                                                       |
-| --------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
-| `walletContractId` **(required)** | `string`          | The smart-wallet C-address to add the signer to.                                 |
+| Field                             | Type              | Description                                                                     |
+| --------------------------------- | ----------------- | ------------------------------------------------------------------------------- |
+| `walletContractId` **(required)** | `string`          | The smart-wallet C-address to add the signer to.                                |
 | `newSigner` **(required)**        | `NewDeviceSigner` | `{ credentialId, publicKey, expiration?, storage? }`: the new device's passkey. |
-| `sign` **(required)**             | `WebAuthnSigner`  | The **existing** device's passkey, which authorizes the change.                  |
+| `sign` **(required)**             | `WebAuthnSigner`  | The **existing** device's passkey, which authorizes the change.                 |
 
 `NewDeviceSigner.credentialId` accepts either a base64url string or raw bytes. `expiration` is an optional **UNIX-seconds** timestamp (v1); omit for a non-expiring recovery signer.
 
@@ -217,8 +270,8 @@ removeSigner(options: RemoveSignerOptions): Promise<SubmitResult>
 
 <Callout type="tip">
   The headless [`coreAddDevice`](/docs/components) helper composes `registerPasskey` → your
-  `addSigner` call into the add-device flow's prompting → binding → success states, so the flow works
-  with the styled screens or fully headless.
+  `addSigner` call into the add-device flow's prompting → binding → success states, so the flow
+  works with the styled screens or fully headless.
 </Callout>
 
 ## Adapters
@@ -242,7 +295,8 @@ interface SubmitResult {
 interface IndexerAdapter {
   resolveByCredential(credentialId: string): Promise<ResolvedAccount[]>;
 }
-// ResolvedAccount = { contractId: string }
+// ResolvedAccount = { contractId: string; publicKey?: Uint8Array }
+// publicKey is the founding SEC-1 key the factory `deployed` event reported, when present.
 ```
 
 | `SubmitResult` field | Type                                 | Description                                                        |
@@ -256,11 +310,11 @@ interface IndexerAdapter {
 
 All three return `SubmissionAdapter`, so swapping one for another is a one-line change.
 
-| Factory                                    | Backend                                              |
-| ------------------------------------------ | ---------------------------------------------------- |
-| `directSubmission(options)`                | Zero-infra default; sends straight to soroban-rpc (`rpcUrl` + `networkPassphrase`). |
-| `launchtubeSubmission(options)`            | Legacy Launchtube relay, modeled as one optional adapter. |
-| `openzeppelinRelayerSubmission(options)`   | OZ Relayer / Defender, the post-Launchtube direction. |
+| Factory                                  | Backend                                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `directSubmission(options)`              | Zero-infra default; sends straight to soroban-rpc (`rpcUrl` + `networkPassphrase`). |
+| `launchtubeSubmission(options)`          | Legacy Launchtube relay, modeled as one optional adapter.                           |
+| `openzeppelinRelayerSubmission(options)` | OZ Relayer / Defender, the post-Launchtube direction.                               |
 
 ```ts
 import { directSubmission } from '@soropass/core';
@@ -279,10 +333,10 @@ if (res.status === 'FAILED') console.error(res.errorResultXdr);
 
 Both return `IndexerAdapter` and map a credential to its C-address.
 
-| Factory                  | Backend                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------- |
-| `eventsIndexer(options)` | Zero-infra default; reads on-chain contract events (`rpcUrl` + `factoryContractId`).              |
-| `mercuryIndexer(options)` | Optional Mercury index; the SDK never requires Mercury.                                           |
+| Factory                   | Backend                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| `eventsIndexer(options)`  | Zero-infra default; reads on-chain contract events (`rpcUrl` + `factoryContractId`). |
+| `mercuryIndexer(options)` | Optional Mercury index; the SDK never requires Mercury.                              |
 
 ```ts
 import { eventsIndexer } from '@soropass/core';
@@ -294,6 +348,39 @@ const indexer = eventsIndexer({
 const accounts = await indexer.resolveByCredential(credentialId);
 console.log(accounts.map((a) => a.contractId));
 ```
+
+### Deployers
+
+An [`AccountDeployer`](/docs/sdk#accountdeployer) turns a freshly registered passkey into a deployed smart account. Two ship with the SDK; supply your own for any other contract scheme.
+
+| Factory                          | Backend                                                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `factoryDeployer(options)`       | The on-chain `AccountFactory`: invokes `factory.deploy(public_key, credential_id)`, which deploys a fresh `webauthn-account` (salted by `sha256(credential_id ‖ public_key)`) and emits the event the `eventsIndexer` resolves. |
+| `smartWalletV1Deployer(options)` | The passkey-kit v1 smart wallet (see [v1 smart-wallet adapters](#v1-smart-wallet-adapters)).                                                                                                                                    |
+
+`FactoryDeployerOptions`:
+
+| Field                              | Type      | Description                                                                                                                                                                                                    |
+| ---------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpcUrl` **(required)**            | `string`  | soroban-rpc endpoint used to simulate, assemble, and submit the deploy.                                                                                                                                        |
+| `networkPassphrase` **(required)** | `string`  | Network the deploy transaction targets.                                                                                                                                                                        |
+| `factoryContractId` **(required)** | `string`  | The deployed `AccountFactory` C-address.                                                                                                                                                                       |
+| `sourceSecret` **(required)**      | `string`  | Secret of the account that pays the fee and signs the deploy transaction. The factory's `deploy` is not auth-gated, so this only sources the transaction; use an ephemeral funded key, never a key with value. |
+| `allowHttp`                        | `boolean` | Permit a plain-http RPC URL. Defaults to `true` only when `rpcUrl` starts with `http://`.                                                                                                                      |
+| `fee`                              | `string`  | Base fee in stroops. Defaults to `'2000000'`.                                                                                                                                                                  |
+
+```ts
+import { createPasskey, factoryDeployer } from '@soropass/core';
+
+const account = await createPasskey({
+  rpId,
+  rpName,
+  userName,
+  deployer: factoryDeployer({ rpcUrl, networkPassphrase, factoryContractId, sourceSecret }),
+});
+```
+
+The factory scheme is deterministic: [`deriveAccountAddress`](/docs/sdk#address-derivation) computes the same C-address offline from the credential id and public key, so a returning user resolves their address with no network call.
 
 ### v1 smart-wallet adapters
 
@@ -307,19 +394,19 @@ import {
 } from '@soropass/core';
 ```
 
-| Factory                          | Returns           | Notes                                                                                                                                                                                                                                                                                          |
-| -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Factory                          | Returns           | Notes                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `smartWalletV1Deployer(options)` | `AccountDeployer` | Deploys a fresh v1 wallet from the canonical wasm via `createCustomContract`, salted by `sha256(rawCredentialId)` from a **stable** deployer, so the C-address is deterministic and offline-derivable (pair with `deriveSmartWalletAddress` for `getAddress`). Options: `{ rpcUrl, networkPassphrase, deployerSecret, wasmHash?, allowHttp?, fee? }`. |
-| `smartWalletV1Indexer(options)`  | `IndexerAdapter`  | Resolves a credential id → wallet C-address from on-chain `signer_added` events (deploy + every `add_signer`). The zero-infra default for v1 recovery. Paginates from `startLedger` to the chain tip. Options: `{ rpcUrl, startLedger?, allowHttp? }`.                                                                                        |
+| `smartWalletV1Indexer(options)`  | `IndexerAdapter`  | Resolves a credential id → wallet C-address from on-chain `signer_added` events (deploy + every `add_signer`). The zero-infra default for v1 recovery. Paginates from `startLedger` to the chain tip. Options: `{ rpcUrl, startLedger?, allowHttp? }`.                                                                                                |
 
 `SMART_WALLET_V1_WASM_HASH` is the canonical testnet v1 wasm hash the deployer defaults to: `84924c53a413318df2ce753e30de53ec651404c916d30e861718ad155c94b319`.
 
 <Callout type="warn" title="Recovery lookback window">
-  The events indexer scans from `startLedger` (default: **~1 day back**, `latest - 17280` ledgers) to
-  the current ledger, so **recently created wallets recover with no config**, the common case. To
-  recover an **older** wallet, pass a larger `startLedger`; soroban-rpc keeps only a limited retention
-  window (a few days on testnet), and beyond it the events are gone. Use a persistent index
-  (`mercuryIndexer`). This applies to `eventsIndexer` too.
+  The events indexer scans from `startLedger` (default: **~1 day back**, `latest - 17280` ledgers)
+  to the current ledger, so **recently created wallets recover with no config**, the common case. To
+  recover an **older** wallet, pass a larger `startLedger`; soroban-rpc keeps only a limited
+  retention window (a few days on testnet), and beyond it the events are gone. Use a persistent
+  index (`mercuryIndexer`). This applies to `eventsIndexer` too.
 </Callout>
 
 ### defaultAdapters
@@ -330,8 +417,8 @@ The zero-infra default stack: direct submission + events indexer, pre-wired.
 defaultAdapters(options: DefaultAdapterOptions): { submission: SubmissionAdapter; indexer: IndexerAdapter }
 ```
 
-| Param     | Type                    | Description                                                                                     |
-| --------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Param     | Type                    | Description                                                                                           |
+| --------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | `options` | `DefaultAdapterOptions` | Options for the default direct + events stack (`rpcUrl` + `networkPassphrase` + `factoryContractId`). |
 
 ```ts
@@ -350,8 +437,8 @@ const res = await submission.send(signedTxXdr);
 
 <Callout type="info">
   **Invariant #4**: pluggable adapters for submission + indexer; the default is zero-infra (direct +
-  events). Because every factory returns the same interface, you can start on the default and move to
-  Launchtube, the OZ Relayer, or Mercury later without touching call sites.
+  events). Because every factory returns the same interface, you can start on the default and move
+  to Launchtube, the OZ Relayer, or Mercury later without touching call sites.
 </Callout>
 
 <Cards>

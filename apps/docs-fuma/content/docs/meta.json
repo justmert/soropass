@@ -1,3 +1,14 @@
 {
-  "pages": ["index", "quickstart", "examples", "existing-wallets", "components", "theming", "sdk", "compatibility", "security"]
+  "pages": [
+    "index",
+    "quickstart",
+    "examples",
+    "existing-wallets",
+    "wallets-kit",
+    "components",
+    "theming",
+    "sdk",
+    "compatibility",
+    "security"
+  ]
 }

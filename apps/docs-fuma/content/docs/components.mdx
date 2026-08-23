@@ -166,11 +166,6 @@ The token-driven building blocks the screens compose from, each individually usa
 
 Icons are a thin-line set (1.75px stroke, `currentColor`, 24px grid): `passkey`, `key`, `shield`, `copy`, `check`, `checkCircle`, `alert`, `external`, `refresh`, `plus`, `chevron`, `help`, `arrowLeft`.
 
-<Callout type="info">
-  Promote-to-standalone candidates (AccountChip, Skeleton, Empty / Success / Error) carry **ROADMAP**
-  badges.
-</Callout>
-
 ## Framework decision
 
 SoroPass UI is **framework-agnostic at every layer**: there is no React, Vue, or Svelte runtime dependency anywhere in `@soropass/ui`. Because the headless layer already owns all logic, state, accessibility, and i18n, a framework wrapper is ~20 lines, not a re-implementation.

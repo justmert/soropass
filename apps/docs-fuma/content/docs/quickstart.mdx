@@ -4,18 +4,24 @@ icon: Rocket
 description: Add passkey sign-in for Stellar smart accounts three ways (headless SDK, drop-in UI components, or inside Stellar Wallets Kit), each with a runnable example.
 ---
 
-Three ways to adopt, one runnable example each. **Path A (headless) runs today with only `@soropass/core`**. Start there. Add the UI (Path B) or the kit module (Path C) when you need them.
+SoroPass adds passkey smart accounts to your app or wallet. It is a layer you integrate, not a wallet of its own: your users authorize with Face ID, Touch ID, or a security key, and their account is a Soroban smart contract that passkey controls.
+
+There are three ways to adopt, each with a runnable example. They stack, so start with the one that fits and add the others later:
+
+- **Path A (headless SDK)** runs today with only `@soropass/core`. Any framework, or none. Pick it when you own your UI.
+- **Path B (UI components)** adds drop-in create / sign / recover screens. Pick it when you want ready-made, themeable screens.
+- **Path C (Stellar Wallets Kit)** registers passkeys as one more wallet in the kit's picker, branded as yours. Pick it when you already use stellar-wallets-kit.
 
 ## Install
 
 The SDK is the only required dependency; `@stellar/stellar-sdk` is a peer you already have (or add it alongside):
 
 <Tabs items={['pnpm', 'npm']}>
-  <Tab value="pnpm">```bash pnpm add @soropass/core @stellar/stellar-sdk ```</Tab>
-  <Tab value="npm">```bash npm i @soropass/core @stellar/stellar-sdk ```</Tab>
+  <Tab value="pnpm">```bash pnpm add @soropass/core "@stellar/stellar-sdk@>=12 <17" ```</Tab>
+  <Tab value="npm">```bash npm i @soropass/core "@stellar/stellar-sdk@>=12 <17" ```</Tab>
 </Tabs>
 
-Add `@soropass/ui` for Path B. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
+Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.0` does not yet support. `@soropass/core` installs from npm. Path B's `@soropass/ui` builds from the [SoroPass monorepo](https://github.com/justmert/soropass), where it lives as a pnpm workspace package. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
 
 ## One-time config
 
@@ -68,7 +74,7 @@ const wallets = await recover({ rpId: cfg.rpId, indexer });
 <Callout type="tip">
   Every failure throws a typed `KitError` with one of 10 frozen `code`s. See [errors](/docs/sdk#error-taxonomy).
   For CI, `@soropass/core/testing`'s `createPasskeyKit({ mode: 'mock' })` runs the same shape with no
-  network and no authenticator; swap to `mode: 'live'` in production.
+  network and no authenticator ([Testing](/docs/sdk/testing)); swap to `mode: 'live'` in production.
 </Callout>
 
 ## Path B: with the UI components [#path-b--with-the-ui-components]
@@ -112,9 +118,12 @@ const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, { network
 ```
 
 <Callout type="info">
-  The `PasskeyModule` implements the `@creit.tech/stellar-wallets-kit` `ModuleInterface` (v2.5.0) and is
-  proposed to the kit as a pull request. Until it merges, the `./modules/passkey` export is not on the
-  published kit, so install it from the PR branch. Paths A and B use published packages.
+  The `PasskeyModule` implements the `@creit.tech/stellar-wallets-kit` `ModuleInterface` (v2.5.0)
+  and is proposed to the kit maintainers in [Stellar-Wallets-Kit issue
+  #95](https://github.com/Creit-Tech/Stellar-Wallets-Kit/issues/95). The published kit does not
+  include the `./modules/passkey` export yet, so this path runs once the module lands in a kit
+  release. The [integration guide](/docs/wallets-kit) documents the full module contract and how you
+  run the same flows today through `@soropass/core`, which is on npm.
 </Callout>
 
 ## Next
@@ -125,5 +134,8 @@ const { signedTxXdr } = await StellarWalletsKit.signTransaction(txXdr, { network
   </Card>
   <Card icon={<Package />} title="SDK reference" href="/docs/sdk">
     Every signature, option, and adapter.
+  </Card>
+  <Card icon={<Puzzle />} title="Stellar Wallets Kit" href="/docs/wallets-kit">
+    The PasskeyModule contract and the kit integration, end to end.
   </Card>
 </Cards>
