@@ -15,9 +15,9 @@ A passkey account is a Soroban contract (a `C...` address). The account's `__che
 npm install @soropass/core "@stellar/stellar-sdk@>=12 <17"
 ```
 
-`@stellar/stellar-sdk` is a required peer dependency. Install `>=12 <17`: stellar-sdk 17 reworked the XDR API (int64 fields became native bigints and the `toXDR`/`fromXDR` instance methods changed) that `@soropass/core@0.2.0` builds against, so a plain `npm install @stellar/stellar-sdk` (which resolves to 17) makes the create+sign example throw a `TypeError`. These examples are verified against `@soropass/core@0.2.0` with `@stellar/stellar-sdk` 16 on Node 20+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
+`@stellar/stellar-sdk` is a required peer dependency. Install `>=12 <17`: stellar-sdk 17 reworked the XDR API (int64 fields became native bigints and the `toXDR`/`fromXDR` instance methods changed) that `@soropass/core@0.2.1` builds against, so a plain `npm install @stellar/stellar-sdk` (which resolves to 17) makes the create+sign example throw a `TypeError`. These examples are verified against `@soropass/core@0.2.1` with `@stellar/stellar-sdk` 16 on Node 20+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
 
-Version note. `npm install @soropass/core` installs `0.2.0`, the published `latest`. In 0.2.0: `deriveAccountAddress` and single-signer signing require the signer's 65-byte SEC-1 `publicKey` (the deploy salt and the signature struct both bind it), `userVerification` defaults to `'required'`, and the account contract is multi-signer with native `add_signer` / `remove_signer` recovery.
+Version note. `npm install @soropass/core` installs `0.2.1`, the published `latest`. In 0.2.1: `deriveAccountAddress` and single-signer signing require the signer's 65-byte SEC-1 `publicKey` (the deploy salt and the signature struct both bind it), `userVerification` defaults to `'required'`, and the account contract is multi-signer with native `add_signer` / `remove_signer` recovery.
 
 Two guarantees the SDK enforces so you do not have to:
 

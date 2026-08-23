@@ -55,7 +55,7 @@ Live mode throws when `webauthn`, `deployer`, `indexer`, or `signer` is missing.
 
 ## Reproduce create + sign in Node
 
-The complete loop against `@soropass/core@0.2.0` (with `@stellar/stellar-sdk` `>=12 <17`; version 17 reworked the XDR API `sampleAuthEntry` relies on): create an account, sign a ready-made auth entry, check the signature the way `__check_auth` does, and confirm a wrong key fails.
+The complete loop against `@soropass/core@0.2.1` (with `@stellar/stellar-sdk` `>=12 <17`; version 17 reworked the XDR API `sampleAuthEntry` relies on): create an account, sign a ready-made auth entry, check the signature the way `__check_auth` does, and confirm a wrong key fails.
 
 ```js title="verify.mjs"
 import { createPasskeyKit, sampleAuthEntry } from '@soropass/core/testing';

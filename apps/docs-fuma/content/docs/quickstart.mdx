@@ -21,7 +21,7 @@ The SDK is the only required dependency; `@stellar/stellar-sdk` is a peer you al
   <Tab value="npm">```bash npm i @soropass/core "@stellar/stellar-sdk@>=12 <17" ```</Tab>
 </Tabs>
 
-Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.0` does not yet support. `@soropass/core` installs from npm. Path B's `@soropass/ui` builds from the [SoroPass monorepo](https://github.com/justmert/soropass), where it lives as a pnpm workspace package. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
+Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.1` does not yet support. `@soropass/core` installs from npm. Path B's `@soropass/ui` builds from the [SoroPass monorepo](https://github.com/justmert/soropass), where it lives as a pnpm workspace package. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
 
 ## One-time config
 
