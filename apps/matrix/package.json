@@ -20,8 +20,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@mdn/browser-compat-data": "^8.0.0",
-    "@playwright/test": "^1.60.0",
+    "@mdn/browser-compat-data": "^8.0.12",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.1",
     "tsx": "^4.22.3",
