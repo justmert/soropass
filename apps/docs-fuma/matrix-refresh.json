@@ -1,0 +1,43 @@
+{
+  "latestSnapshot": "bcd.2026-06-13.json",
+  "pulledAt": "2026-08-31",
+  "bcdVersion": "8.0.0",
+  "rowCount": 88,
+  "lastVerification": {
+    "schemaVersion": 1,
+    "runs": [
+      {
+        "ranAt": "2026-07-20",
+        "runnerOs": "darwin",
+        "bcdVersion": "8.0.0",
+        "engines": [
+          {
+            "browser": "Chromium",
+            "version": "148.0.7778.96"
+          }
+        ],
+        "canonicalVerified": true,
+        "snapshot": "matrix.2026-07-20.json",
+        "changed": true
+      },
+      {
+        "ranAt": "2026-08-31",
+        "runnerOs": "linux",
+        "bcdVersion": "8.0.0",
+        "engines": [
+          {
+            "browser": "Chromium",
+            "version": "148.0.7778.96"
+          },
+          {
+            "browser": "Edge",
+            "version": "152.0.4191.53"
+          }
+        ],
+        "canonicalVerified": true,
+        "snapshot": "matrix.2026-08-31.json",
+        "changed": false
+      }
+    ]
+  }
+}
