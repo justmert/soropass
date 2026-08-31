@@ -1,0 +1,75 @@
+---
+title: Fees and sponsorship
+icon: Coins
+description: What a passkey account costs on-chain, who pays, and how to sponsor onboarding so users hold no XLM. Real mainnet numbers for account creation and add-device.
+---
+
+A passkey account is a Soroban smart account (a `C...` contract). Authorization and payment are separate: the passkey proves who may act, and a classic account (yours, a relayer, or the user's) pays the network fee and submits the transaction. This page shows what each passkey operation costs, who can pay, and how to run a gasless onboarding.
+
+<Callout type="info" title="No base reserve">
+  A contract account holds no base reserve, unlike a classic `G` account that locks ~1 XLM.
+  Creating a passkey account costs only the network fee of the deploy, so sponsoring accounts does
+  not lock up XLM.
+</Callout>
+
+## What costs a fee
+
+Only operations that submit a transaction cost a fee. The figures below are measured on Stellar mainnet.
+
+| Operation | Cost | Notes |
+| --- | --- | --- |
+| Create an account (`factory.deploy`) | ~0.05 XLM | One-time, per account. Deploys the smart account. |
+| Add a device / signer (`add_signer`) | ~0.03 XLM | Enrolls a second passkey for recovery. |
+| Remove a signer (`remove_signer`) | ~0.005 XLM | Revokes a device. |
+| Submit a passkey-signed transaction | ~0.005 XLM | Payments, contract calls, any authorized action. |
+
+These are network fees, paid by whichever account submits the transaction. They are separate from the account's own balance: a passkey account holds and spends its own XLM and tokens; the fees above are only the cost of submitting.
+
+## What is free
+
+These run in the browser or read-only against an RPC, so they cost nothing on-chain:
+
+- Signing a transaction, an auth entry, or a message (the fee appears only when you submit a transaction).
+- `connect` (silent reconnect from a stored credential).
+- `recover` (resolve a credential's accounts through the indexer).
+- Deriving an account address offline.
+
+## Who pays
+
+The fee source is a pluggable submission adapter, so you choose the payer once and every operation follows it:
+
+- `directSubmission`: an account you control pays. Good for development.
+- `launchtubeSubmission` or `openzeppelinRelayerSubmission`: a relayer pays, so the user needs no XLM.
+- The user's own `G` account pays.
+
+Set the adapter once and account creation, add-device, and every signed transaction route through it. See [Adapters](/docs/sdk/accounts#adapters) and [Gasless onboarding](/docs/existing-wallets#gasless-onboarding-sponsor-fees-with-a-relayer).
+
+## How SoroPass sponsors onboarding
+
+SoroPass sponsors the operations that remove the onboarding barrier: **account creation and adding a backup device**. A new user gets a working, recoverable passkey account while holding no XLM.
+
+Per user that is about 0.05 XLM to create the account plus about 0.03 XLM to enroll a backup device, so about 0.08 XLM. Sponsoring 10,000 users is on the order of 800 XLM (about 500 XLM for creation and 300 XLM for one add-device each). Budget higher to allow for network fee changes.
+
+Everything after onboarding is the integrating wallet's choice. Because payment is decoupled, a wallet sponsors its users' ongoing transactions through its own account or a relayer, or has users pay. SoroPass does not require or fund ongoing transaction fees.
+
+## Proof on mainnet
+
+The signing path runs on Stellar mainnet:
+
+- Account creation: [`7dcae6b8...`](https://stellar.expert/explorer/public/tx/7dcae6b8a520403d64ec0f1d10118bfb04c93903bfd796acd01bf71c631c8e16)
+- Passkey-signed payment: [`6a532cc4...`](https://stellar.expert/explorer/public/tx/6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1)
+- Wrong key rejected on-chain: [`6841ae73...`](https://stellar.expert/explorer/public/tx/6841ae73bfa37a7be2b6c309a8968c5eeb32534a05a9525a225ed69b4b3d795f)
+- AccountFactory: [`CCCNRWMI...`](https://stellar.expert/explorer/public/contract/CCCNRWMICVEMMUSBI7DL3IKB566QEOOQOLVDOAM5SLFDZ2KGUSRR3JVF)
+
+<Callout type="warn">
+  Never ship a fee-source secret in a browser page. Sponsor from a server-held account or a relayer.
+</Callout>
+
+<Cards>
+  <Card title="Existing wallets" href="/docs/existing-wallets">
+    Add passkeys to users who already hold a classic account, and the fee-source patterns.
+  </Card>
+  <Card title="Accounts, recovery & adapters" href="/docs/sdk/accounts">
+    The submission and indexer adapters, and `add_signer` for multi-device recovery.
+  </Card>
+</Cards>
