@@ -7,21 +7,21 @@ description: What a passkey account costs on-chain, who pays, and how to sponsor
 A passkey account is a Soroban smart account (a `C...` contract). Authorization and payment are separate: the passkey proves who may act, and a classic account (yours, a relayer, or the user's) pays the network fee and submits the transaction. This page shows what each passkey operation costs, who can pay, and how to run a gasless onboarding.
 
 <Callout type="info" title="No base reserve">
-  A contract account holds no base reserve, unlike a classic `G` account that locks ~1 XLM.
-  Creating a passkey account costs only the network fee of the deploy, so sponsoring accounts does
-  not lock up XLM.
+  A contract account holds no base reserve, unlike a classic `G` account that locks ~1 XLM. Creating
+  a passkey account costs only the network fee of the deploy, so sponsoring accounts does not lock
+  up XLM.
 </Callout>
 
 ## What costs a fee
 
 Only operations that submit a transaction cost a fee. The figures below are measured on Stellar mainnet.
 
-| Operation | Cost | Notes |
-| --- | --- | --- |
-| Create an account (`factory.deploy`) | ~0.05 XLM | One-time, per account. Deploys the smart account. |
-| Add a device / signer (`add_signer`) | ~0.03 XLM | Enrolls a second passkey for recovery. |
-| Remove a signer (`remove_signer`) | ~0.005 XLM | Revokes a device. |
-| Submit a passkey-signed transaction | ~0.005 XLM | Payments, contract calls, any authorized action. |
+| Operation                            | Cost       | Notes                                             |
+| ------------------------------------ | ---------- | ------------------------------------------------- |
+| Create an account (`factory.deploy`) | ~0.05 XLM  | One-time, per account. Deploys the smart account. |
+| Add a device / signer (`add_signer`) | ~0.03 XLM  | Enrolls a second passkey for recovery.            |
+| Remove a signer (`remove_signer`)    | ~0.005 XLM | Revokes a device.                                 |
+| Submit a passkey-signed transaction  | ~0.005 XLM | Payments, contract calls, any authorized action.  |
 
 These are network fees, paid by whichever account submits the transaction. They are separate from the account's own balance: a passkey account holds and spends its own XLM and tokens; the fees above are only the cost of submitting.
 
