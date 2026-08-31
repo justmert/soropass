@@ -88,7 +88,7 @@ jobs:
         run: pnpm exec playwright install msedge || echo "msedge unavailable on this runner"
       - name: Run the virtual-authenticator grid (p256.verify round-trip gate)
         run: pnpm matrix:ci
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: matrix-ci-data
           path: apps/matrix/data/ci.*.json
