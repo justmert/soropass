@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
   schedule:
     # Weekly — re-verify the living compatibility matrix against current browsers.
     - cron: '0 6 * * 1'
@@ -100,7 +101,7 @@ jobs:
   # Actions to create and approve pull requests" (Settings → Actions → General).
   matrix-refresh:
     needs: [matrix-ci]
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -118,8 +119,12 @@ jobs:
         with:
           name: matrix-ci-data
           path: apps/matrix/data
-      - name: Refresh dated snapshot + diff (pull → build → diff)
+      - name: Refresh dated snapshot + diff (pull → build → diff → docs export)
         run: pnpm --filter @soropass/matrix matrix:refresh
+        env:
+          # Export the fresh JSON straight into the docs site's /public so the
+          # committed data is what docs.soropass.dev serves after its redeploy.
+          DOCS_PUBLIC_DIR: ${{ github.workspace }}/apps/docs-fuma/public
       - name: Publish the freshness report to the run summary
         run: |
           {
@@ -127,25 +132,23 @@ jobs:
             echo
             cat apps/matrix/rendered/matrix-diff.md
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Open a PR when the matrix changed or a re-verification was logged
-        continue-on-error: true
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: 'chore(matrix): weekly living-matrix refresh'
-          title: 'chore(matrix): weekly living-matrix refresh'
-          body: |
-            Automated weekly re-verification of the compatibility matrix.
-
-            A new dated `matrix.<date>.json` is written only when a cell's status,
-            source, tier, or verifying engine version actually changed, so this PR
-            is not date-churn. Every run appends one honest line to
-            `apps/matrix/data/verification-log.json` (proof we re-verified on this
-            date + browser build). See `apps/matrix/data/matrix-diff.*.json` and
-            `apps/matrix/rendered/matrix-diff.md` for what moved.
-          branch: matrix/auto-refresh
-          add-paths: |
-            apps/matrix/data/*.json
-            apps/matrix/rendered/*.md
+      # Commit the refreshed data directly to main. The previous auto-PR never
+      # landed: its add-paths listed the gitignored apps/matrix/rendered/*.md,
+      # git add fataled on the pathspec, and continue-on-error swallowed the
+      # failure every week. A direct data commit also redeploys the docs site
+      # (Vercel builds on push), which is what keeps /docs/compatibility fresh.
+      - name: Commit the refreshed matrix data to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/matrix/data apps/docs-fuma/public/matrix
+          if git diff --cached --quiet; then
+            echo "matrix unchanged, nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(matrix): weekly living-matrix refresh"
+          git pull --rebase origin main
+          git push origin HEAD:main
 
   # NOTE: there is no docs deploy job here — the docs front-end is a separate
   # designed site, pushed independently. The matrix data (apps/matrix/data/*.json)
