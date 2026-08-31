@@ -40,6 +40,9 @@
       "bufferutil",
       "utf-8-validate",
       "secp256k1"
-    ]
+    ],
+    "overrides": {
+      "@soropass/core": "workspace:*"
+    }
   }
 }

@@ -9,6 +9,7 @@ export default tseslint.config(
       '**/build/**',
       '**/node_modules/**',
       'references/**',
+      'apps/demo/kit/**',
       '.changeset/**',
       '**/*.d.ts',
       '**/.react-router/**',

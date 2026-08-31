@@ -8,6 +8,8 @@ apps/matrix/site/matrix-table.md
 # Astro cache + generated typedoc API reference
 **/.astro
 apps/matrix/site/content/docs/api
+# Vendored stellar-wallets-kit build (dnt output from our fork, replaced when the PR merges)
+apps/demo/kit
 # Playwright run artifacts
 **/test-results
 **/playwright-report

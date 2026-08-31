@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: false
   excludeLinksFromLockfile: false
 
+overrides:
+  '@soropass/core': workspace:*
+
 importers:
 
   .:
@@ -45,23 +48,20 @@ importers:
   apps/demo:
     dependencies:
       '@creit.tech/stellar-wallets-kit':
-        specifier: ^2.3.0
-        version: 2.3.0(@stellar/stellar-sdk@15.1.0)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(tslib@2.8.1)(typescript@5.9.3)(zod@4.4.3)
+        specifier: file:kit
+        version: file:apps/demo/kit(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(tslib@2.8.1)(typescript@5.9.3)(zod@4.4.3)
       '@noble/curves':
-        specifier: ^1.6.0
+        specifier: ^1.9.7
         version: 1.9.7
       '@noble/hashes':
-        specifier: ^1.5.0
+        specifier: ^1.8.0
         version: 1.8.0
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/core
-      '@soropass/ui':
-        specifier: workspace:^
-        version: link:../../packages/ui
       '@stellar/stellar-sdk':
-        specifier: ^15.1.0
-        version: 15.1.0
+        specifier: ^16.0.0
+        version: 16.2.0
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -70,8 +70,8 @@ importers:
         specifier: ^1.48.0
         version: 1.60.0
       vite:
-        specifier: ^5.4.0
-        version: 5.4.21(@types/node@25.9.3)(lightningcss@1.32.0)
+        specifier: ^7.1.7
+        version: 7.3.6(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0)
 
   apps/docs-fuma:
     dependencies:
@@ -158,7 +158,7 @@ importers:
         specifier: ^1.5.0
         version: 1.8.0
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/core
       '@soropass/ui':
         specifier: workspace:^
@@ -186,7 +186,7 @@ importers:
   apps/matrix:
     dependencies:
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/core
       zod:
         specifier: ^4.4.3
@@ -251,7 +251,7 @@ importers:
   packages/kit-module:
     dependencies:
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
     devDependencies:
       '@stellar/stellar-sdk':
@@ -273,7 +273,7 @@ importers:
   packages/ui:
     dependencies:
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
     devDependencies:
       jsdom:
@@ -292,7 +292,7 @@ importers:
   packages/ui-react:
     dependencies:
       '@soropass/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       '@soropass/ui':
         specifier: workspace:^
@@ -558,6 +558,9 @@ packages:
   '@coinbase/cdp-sdk@1.51.0':
     resolution: {integrity: sha512-XK8+OXDER1jirYpuiOct4ij65ODQ31LsmyRrZi/J7zF4GB89qxWZ0KPfAdsqJMP7VvE4no+Q++MKkQtAJUBoyg==}
 
+  '@coinbase/wallet-sdk@4.3.6':
+    resolution: {integrity: sha512-4q8BNG1ViL4mSAAvPAtpwlOs1gpC+67eQtgIwNvT3xyeyFFd+guwkc8bcX5rTmQhXpqnhzC4f0obACbP9CqMSA==}
+
   '@commitlint/cli@19.8.1':
     resolution: {integrity: sha512-LXUdNIkspyxrlV6VDHWBmCZRtkEVRpBKxi2Gtw3J54cGWhLCTouVD/Q6ZSaSvd2YaDObWK8mDjrz3TIKtaQMAA==}
     engines: {node: '>=v18'}
@@ -627,8 +630,8 @@ packages:
     resolution: {integrity: sha512-/yCrWGCoA1SVKOks25EGadP9Pnj0oAIHGpl2wH2M2Y46dPM2ueb8wyCVOD7O3WCTkaJ0IkKvzhl1JY7+uCT2Dw==}
     engines: {node: '>=v18'}
 
-  '@creit.tech/stellar-wallets-kit@2.3.0':
-    resolution: {integrity: sha512-BT21egwJE+zcKeGXPVAy5w6dhhUhoV1v7j5Eh7MG5L2QkvoFvd4ftgT3gMigEZ0e9U5cgIDKGFuVNLDhUePmxw==}
+  '@creit.tech/stellar-wallets-kit@file:apps/demo/kit':
+    resolution: {directory: apps/demo/kit, type: directory}
 
   '@creit.tech/xbull-wallet-connect@0.4.0':
     resolution: {integrity: sha512-LrCUIqUz50SkZ4mv2hTqSmwews8CNRYVoZ9+VjLsK/1U8PByzXTxv1vZyenj6avRTG86ifpoeihz7D3D5YIDrQ==}
@@ -1349,6 +1352,9 @@ packages:
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/ed25519@3.1.0':
+    resolution: {integrity: sha512-pfcObRY3CtvwfaG9Mt5XqZdKmAQppl37tHUeuBhDUbiwJBCVY4/A4lbMvb1xKhMDx96AqAqZpMWuBX1HulhX4g==}
+
   '@noble/hashes@1.4.0':
     resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
     engines: {node: '>= 16'}
@@ -1364,6 +1370,10 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@2.3.0':
+    resolution: {integrity: sha512-oN+QwyX7VSHotibwubG3kpzbwKrfnyR6OOO+3Nk/53ADL7FmgHHz4TgrbaYKvvOw09u6QTx0oiH1cNCIOuN0CQ==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1937,32 +1947,32 @@ packages:
   '@remix-run/node-fetch-server@0.13.3':
     resolution: {integrity: sha512-UfjOXed/DQteaM5VyTfqTeGpHwyL2J5aoRGY6cydip4tt1ehNNeSwuXCC7AEGE0RWBs/7bgKxYkL/B/+UDe4AA==}
 
-  '@reown/appkit-common@1.8.19':
-    resolution: {integrity: sha512-z5wDrYjUGY7YbM4b14NHVo54WKZ5++PQtGkcsXhiOP39yAVijubBQD8BfHs/Pu2fSFqnqLIFoCVvIEfNWWccRw==}
+  '@reown/appkit-common@1.8.21':
+    resolution: {integrity: sha512-FigrZbke9dHVdc4GjG4JNqClIN58gOhREugLx2oEBUFD2e3oQNvX2gcjoUDM2yP0ZAaIEYJOXwjw4sbBU4gzLQ==}
 
-  '@reown/appkit-controllers@1.8.19':
-    resolution: {integrity: sha512-JFNT8CfAVit9FJXh596Ye4U8A/oIapW+Y0KQqjB59DXyTCDZbxZDB32rULBQrSkZ6PufTEa239Dil4kABCQKtg==}
+  '@reown/appkit-controllers@1.8.21':
+    resolution: {integrity: sha512-2xh64lhPb+p0pwKQDQXpokUGqklB+xWD0JpfBvMVEZxeYzKXyJ7piRBB45TH01Etyitkh5Fh4pzBYz4gbIZSog==}
 
-  '@reown/appkit-pay@1.8.19':
-    resolution: {integrity: sha512-HO/tQT0TbTQO3eONxNNPJAOZAOzUiHvjM0Mty1rFFeRBH68auiqQxQi2YFNMs014gNkRN+cb84VYau7+MCC0fQ==}
+  '@reown/appkit-pay@1.8.21':
+    resolution: {integrity: sha512-Tsio2tVcJgBa3WGhDty3Wy9XevTkZISrDsEpR8iaOnaPHdJrKXt7lbFrTEfptKjSgdnKcjhQXqzOdgiF9ljfnA==}
 
-  '@reown/appkit-polyfills@1.8.19':
-    resolution: {integrity: sha512-PSoetRSuZg7f2YFPzdfs4BayQl51zcGqYr7frwOe6td0XEsspLrrVFn/zk5QFbFHZVsMdfRZ+TTunt84ozRdnQ==}
+  '@reown/appkit-polyfills@1.8.21':
+    resolution: {integrity: sha512-EurjE4G6M27yf77GPSuOu1gjUvpRKS3NC5FJgFMzZxmkF5/Dm9kQdokvzK1rdmtQ8JKe+XHmQ75NbmCFt1/7FQ==}
 
-  '@reown/appkit-scaffold-ui@1.8.19':
-    resolution: {integrity: sha512-Ak767x0VzeDIXb0wbzkl19kx6udw7vkb1EU0SAweG3iKc9BunW87Rfcd48/YimzMZycJaYmlbtfmqQQDYs6Few==}
+  '@reown/appkit-scaffold-ui@1.8.21':
+    resolution: {integrity: sha512-bJxHdZmjwwAd1fIQmMgr0jjvyT1EI0KetFP+7UlTs51SxOflXzZ+rz9ZcWKNSLFtSQOro1+Xu6aPRO+5OapmhA==}
 
-  '@reown/appkit-ui@1.8.19':
-    resolution: {integrity: sha512-fCAwW8yyyC3JcgKLBPvCtYuDGC4H8anO7u4LTaAXGEzdcU5H+IrCgNFSPNK7NuTSmgXm1TnoYxPxRFKNiNwFdA==}
+  '@reown/appkit-ui@1.8.21':
+    resolution: {integrity: sha512-1AthTwGq1/gR1Xjib1kkt7unz0Hgh7wbdm1LvOA+Tfp79W8gM1BI/ELP/D8VwTOtaTgHCWERmlnps65p8MHi5Q==}
 
-  '@reown/appkit-utils@1.8.19':
-    resolution: {integrity: sha512-VQPgUMTFqoh4UD3EDZSw9wyMkyZsmIVmu8CdQ2FUxIuqYW4fLd0VIpkDeO64MMhSv8b0X8Vd6m4+eGcqSwlUAg==}
+  '@reown/appkit-utils@1.8.21':
+    resolution: {integrity: sha512-WzEYji9oQIh9P8WkqXiqrLyx/ZYy+svpwT4u2ZC8n7sMSl0j+AzRqMaVrblyFEYAFkW/BtxVqJEqstDZ8f0FYw==}
 
-  '@reown/appkit-wallet@1.8.19':
-    resolution: {integrity: sha512-NVdIKceUhkXYtsG32925ctmVn0QJFNyDlr+mWheMLCEZ/IUPn+6aA53vTVaSUquhyeFxUXtrCOh3ln6v1tup5w==}
+  '@reown/appkit-wallet@1.8.21':
+    resolution: {integrity: sha512-4Y0W8QUdnXpy/KA9Lg1ESZN6VQurBIX3BhLQYIGwQ2/D3CuFe3xCbQDQOuDdgeAr0cMjgnFOvpGy0iOBH9Aivg==}
 
-  '@reown/appkit@1.8.19':
-    resolution: {integrity: sha512-wB+xatkRbOy0AY1cZxxtcKzzPk3l3CTFulDbaISLVmZI6ZnQrOFuLnYc285zGsC6DB4d6bmwYUh89zcMLa4PvQ==}
+  '@reown/appkit@1.8.21':
+    resolution: {integrity: sha512-+6IRUBc9cgXKhNHzxlzxEp7nL1Jx/lcYgHdqwD10O7MPzU2/Ao5/epwt5vqn1nUlwyI6Awm/YCUWIa0Zg5RVEA==}
 
   '@rolldown/binding-android-arm64@1.0.3':
     resolution: {integrity: sha512-454rs7jHngixp/NMxd5srYD57OnzSlZ/eFTETjORQHLwJG1lRtmNOJcBerZlfu4GjKqeq8aCCIQrMdHyhI51Hw==}
@@ -2706,16 +2716,9 @@ packages:
   '@stellar/freighter-api@6.0.0':
     resolution: {integrity: sha512-8CTQcKQmTq/wL715ZUzn1x1POpR0eYhYPKEiaeA7AT0WYBOauOGTxfWPFtSidX3ohAlJZP5HFXy1kG29cVjqxw==}
 
-  '@stellar/js-xdr@3.1.2':
-    resolution: {integrity: sha512-VVolPL5goVEIsvuGqDc5uiKxV03lzfWdvYg1KikvwheDmTBO68CKDji3bAZ/kppZrx5iTA8z3Ld5yuytcvhvOQ==}
-
   '@stellar/js-xdr@4.0.0':
     resolution: {integrity: sha512-+NmNa7Tk5BI5XFdy/6xGTqAN4J9a9KgCrCGhj2uEUTCBhLkch0M+QbKzNH8zEnejWe0p8w+0q5hUVX6L3OzoVA==}
     engines: {node: '>=20.0.0', pnpm: '>=9.0.0'}
-
-  '@stellar/stellar-base@14.0.1':
-    resolution: {integrity: sha512-mI6Kjh9hGWDA1APawQTtCbR7702dNT/8Te1uuRFPqqdoAKBk3WpXOQI3ZSZO+5olW7BSHpmVG5KBPZpIpQxIvw==}
-    engines: {node: '>=20.0.0'}
 
   '@stellar/stellar-base@15.0.0':
     resolution: {integrity: sha512-XQhxUr9BYiEcFcgc4oWcCMR9QJCny/GmmGsuwPKf/ieIcOeb5149KLHYx9mJCA0ea8QbucR2/GzV58QbXOTxQA==}
@@ -2724,6 +2727,11 @@ packages:
   '@stellar/stellar-sdk@15.1.0':
     resolution: {integrity: sha512-GsJUcWx2yboVzYdhTe/LHS3V1wVLSHkUkglC5bBoYWGJt31vzIhbSGno60NP9CdCTNkLJdnrsLJ63oA58Zvh5A==}
     engines: {node: '>=20.0.0'}
+    hasBin: true
+
+  '@stellar/stellar-sdk@16.2.0':
+    resolution: {integrity: sha512-FV/Rm11QvrFzR5X9fIfb6Pg30KyYyrRkNezELGFmYDAYrzoPTjqo7vklnEPd2HEontzjJmZizWk8CjyIh5vp0w==}
+    engines: {node: '>=22.0.0'}
     hasBin: true
 
   '@swc/helpers@0.5.23':
@@ -3387,6 +3395,10 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  agent-base@6.0.2:
+    resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
+    engines: {node: '>= 6.0.0'}
+
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
@@ -3484,6 +3496,9 @@ packages:
   axios@1.16.0:
     resolution: {integrity: sha512-6hp5CwvTPlN2A31g5dxnwAX0orzM7pmCRDLnZSX772mv8WDqICwFjowHuPs04Mc8deIld1+ejhtaMn5vp6b+1w==}
 
+  axios@1.18.0:
+    resolution: {integrity: sha512-E32NzpYKp++W7XRe52rHiXV2ehxmh3wbdgO7MHeFM+vqxLBYHzt0ElkiImtOBxtOmyp0yoC8C6uESVV84Y2/hw==}
+
   babel-dead-code-elimination@1.0.12:
     resolution: {integrity: sha512-GERT7L2TiYcYDtYk1IpD+ASAYXjKbLTDPhBtYj7X1NuRMDTMtAx9kyBenub1Ev41lo91OHCKdmP+egTDmfQ7Ig==}
 
@@ -3525,6 +3540,9 @@ packages:
 
   big.js@6.2.2:
     resolution: {integrity: sha512-y/ie+Faknx7sZA5MfGA2xKlu0GDv8RWrXGsmlteyJQ2lvoKv9GBK/fpRMc2qlSoBAgNxrixICFCBefIq8WCQpQ==}
+
+  bignumber.js@11.1.5:
+    resolution: {integrity: sha512-6WmzCNtUnfKpbozq+hOgWaZMMzORmYBwF1xZScyoIX3QRYWeKTtxxwDOW5tIz7C9BdjkIYHGTcelCLkXg0mndw==}
 
   bignumber.js@9.3.1:
     resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
@@ -4217,9 +4235,17 @@ packages:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
 
+  eventsource-parser@3.1.1:
+    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
+    engines: {node: '>=18.0.0'}
+
   eventsource@2.0.2:
     resolution: {integrity: sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==}
     engines: {node: '>=12.0.0'}
+
+  eventsource@4.1.1:
+    resolution: {integrity: sha512-D6bTRWh6KahHTK/m4WnjPQyEinNPf9eFLEZSEoj7d6fTibspnAVYfzHvirL7u/aoX5d9YYfIkBVAhmigUELk9w==}
+    engines: {node: '>=20.0.0'}
 
   exit-hook@2.2.1:
     resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
@@ -4633,6 +4659,10 @@ packages:
   http-proxy-agent@7.0.2:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
     engines: {node: '>= 14'}
+
+  https-proxy-agent@5.0.1:
+    resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
+    engines: {node: '>= 6'}
 
   https-proxy-agent@7.0.6:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
@@ -6115,6 +6145,10 @@ packages:
   slow-redact@0.3.2:
     resolution: {integrity: sha512-MseHyi2+E/hBRqdOi5COy6wZ7j7DxXRz9NkseavNYSvvWC06D8a5cidVZX3tcG5eCW3NIyVU4zT63hw0Q486jw==}
 
+  smol-toml@1.8.0:
+    resolution: {integrity: sha512-kCZr2V3ch9i00x8zXRhjUNVcjG9ijES5dDudkXvUVCT5QlJNQWElSJdZqyPemffHoLNUYwOcou0Fy+ojN0uHSQ==}
+    engines: {node: '>= 18'}
+
   solid-js@1.9.13:
     resolution: {integrity: sha512-6hJeJMOcEX8ktqjpDoJZEmld3ijvcvWBDtiXBm7f4332SiFN66QeAQI1REQshvyUoISsSeJ4PHDauKYbwao9JQ==}
 
@@ -6437,6 +6471,10 @@ packages:
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
 
+  uint8array-extras@1.5.0:
+    resolution: {integrity: sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A==}
+    engines: {node: '>=18'}
+
   uint8arrays@3.1.1:
     resolution: {integrity: sha512-+QJa8QRnbdXVpHYjLoTpJIdCTiw9Ir62nocClWuXIq2JIh4Uta0cQsTSpFL678p2CN8B+XSApwcU+pQEqVpKWg==}
 
@@ -6682,6 +6720,46 @@ packages:
       sugarss:
         optional: true
       terser:
+        optional: true
+
+  vite@7.3.6:
+    resolution: {integrity: sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
         optional: true
 
   vite@8.0.16:
@@ -7354,6 +7432,27 @@ snapshots:
       - utf-8-validate
     optional: true
 
+  '@coinbase/wallet-sdk@4.3.6(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+    dependencies:
+      '@noble/hashes': 1.4.0
+      clsx: 1.2.1
+      eventemitter3: 5.0.1
+      idb-keyval: 6.2.1
+      ox: 0.6.9(typescript@5.9.3)(zod@4.4.3)
+      preact: 10.24.2
+      viem: 2.52.2(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      zustand: 5.0.3(@types/react@19.2.17)(react@19.2.7)
+    transitivePeerDependencies:
+      - '@types/react'
+      - bufferutil
+      - immer
+      - react
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - zod
+    optional: true
+
   '@commitlint/cli@19.8.1(@types/node@22.19.19)(typescript@5.9.3)':
     dependencies:
       '@commitlint/format': 19.8.1
@@ -7464,7 +7563,7 @@ snapshots:
       '@types/conventional-commits-parser': 5.0.2
       chalk: 5.6.2
 
-  '@creit.tech/stellar-wallets-kit@2.3.0(@stellar/stellar-sdk@15.1.0)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(tslib@2.8.1)(typescript@5.9.3)(zod@4.4.3)':
+  '@creit.tech/stellar-wallets-kit@file:apps/demo/kit(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(tslib@2.8.1)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
       '@albedo-link/intent': 0.12.0
       '@creit.tech/xbull-wallet-connect': 0.4.0
@@ -7474,10 +7573,11 @@ snapshots:
       '@ledgerhq/hw-transport-webusb': 6.29.12
       '@lobstrco/signer-extension-api': 2.0.0
       '@preact/signals': 2.9.0(preact@10.29.2)
-      '@reown/appkit': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@soropass/core': link:packages/core
       '@stellar/freighter-api': 6.0.0
-      '@stellar/stellar-base': 14.0.1
-      '@trezor/connect-plugin-stellar': 10.0.0-alpha.1(@stellar/stellar-sdk@15.1.0)(tslib@2.8.1)
+      '@stellar/stellar-sdk': 16.2.0
+      '@trezor/connect-plugin-stellar': 10.0.0-alpha.1(@stellar/stellar-sdk@16.2.0)(tslib@2.8.1)
       '@trezor/connect-web': 10.0.0-alpha.1(bufferutil@4.1.0)(tslib@2.8.1)
       '@twind/core': 1.1.3(typescript@5.9.3)
       '@twind/preset-autoprefix': 1.0.7(@twind/core@1.1.3(typescript@5.9.3))(typescript@5.9.3)
@@ -7498,7 +7598,6 @@ snapshots:
       - '@netlify/blobs'
       - '@planetscale/database'
       - '@react-native-async-storage/async-storage'
-      - '@stellar/stellar-sdk'
       - '@trezor/connect'
       - '@types/react'
       - '@upstash/redis'
@@ -7515,6 +7614,7 @@ snapshots:
       - ioredis
       - near-api-js
       - react
+      - supports-color
       - tslib
       - typescript
       - uploadthing
@@ -8091,6 +8191,8 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
+  '@noble/ed25519@3.1.0': {}
+
   '@noble/hashes@1.4.0':
     optional: true
 
@@ -8099,6 +8201,8 @@ snapshots:
   '@noble/hashes@1.7.1': {}
 
   '@noble/hashes@1.8.0': {}
+
+  '@noble/hashes@2.3.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -8618,7 +8722,7 @@ snapshots:
 
   '@remix-run/node-fetch-server@0.13.3': {}
 
-  '@reown/appkit-common@1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@3.22.4)':
+  '@reown/appkit-common@1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@3.22.4)':
     dependencies:
       big.js: 6.2.2
       dayjs: 1.11.13
@@ -8629,7 +8733,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-common@1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-common@1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
       big.js: 6.2.2
       dayjs: 1.11.13
@@ -8640,10 +8744,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-controllers@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-controllers@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-wallet': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-wallet': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)
       '@walletconnect/universal-provider': 2.23.7(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
       valtio: 2.1.7(@types/react@19.2.17)(react@19.2.7)
       viem: 2.52.2(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
@@ -8675,12 +8779,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-pay@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-pay@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-controllers': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-ui': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-utils': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-controllers': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-ui': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-utils': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
       lit: 3.3.0
       valtio: 2.1.7(@types/react@19.2.17)(react@19.2.7)
     transitivePeerDependencies:
@@ -8715,18 +8819,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-polyfills@1.8.19':
+  '@reown/appkit-polyfills@1.8.21':
     dependencies:
       buffer: 6.0.3
 
-  '@reown/appkit-scaffold-ui@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-scaffold-ui@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-controllers': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-pay': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-ui': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-utils': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-wallet': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-controllers': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-pay': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-ui': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-utils': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-wallet': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)
       lit: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -8760,12 +8864,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-ui@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-ui@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
       '@phosphor-icons/webcomponents': 2.1.5
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-controllers': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-wallet': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-controllers': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-wallet': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)
       lit: 3.3.0
       qrcode: 1.5.3
     transitivePeerDependencies:
@@ -8796,12 +8900,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-utils@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit-utils@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-controllers': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-polyfills': 1.8.19
-      '@reown/appkit-wallet': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-controllers': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-polyfills': 1.8.21
+      '@reown/appkit-wallet': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)
       '@wallet-standard/wallet': 1.1.0
       '@walletconnect/logger': 3.0.2
       '@walletconnect/universal-provider': 2.23.7(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
@@ -8809,6 +8913,7 @@ snapshots:
       viem: 2.52.2(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
     optionalDependencies:
       '@base-org/account': 2.4.0(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@coinbase/wallet-sdk': 4.3.6(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
       '@safe-global/safe-apps-provider': 0.18.6(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
       '@safe-global/safe-apps-sdk': 9.1.0(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
     transitivePeerDependencies:
@@ -8843,10 +8948,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-wallet@1.8.19(bufferutil@4.1.0)(typescript@5.9.3)':
+  '@reown/appkit-wallet@1.8.21(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@3.22.4)
-      '@reown/appkit-polyfills': 1.8.19
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@3.22.4)
+      '@reown/appkit-polyfills': 1.8.21
       '@walletconnect/logger': 3.0.2
       zod: 3.22.4
     transitivePeerDependencies:
@@ -8854,16 +8959,16 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@reown/appkit@1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
+  '@reown/appkit@1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)':
     dependencies:
-      '@reown/appkit-common': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-controllers': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-pay': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-polyfills': 1.8.19
-      '@reown/appkit-scaffold-ui': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-ui': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-utils': 1.8.19(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
-      '@reown/appkit-wallet': 1.8.19(bufferutil@4.1.0)(typescript@5.9.3)
+      '@reown/appkit-common': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-controllers': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-pay': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-polyfills': 1.8.21
+      '@reown/appkit-scaffold-ui': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-ui': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-utils': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
+      '@reown/appkit-wallet': 1.8.21(bufferutil@4.1.0)(typescript@5.9.3)
       '@walletconnect/universal-provider': 2.23.7(bufferutil@4.1.0)(typescript@5.9.3)(zod@4.4.3)
       bs58: 6.0.0
       semver: 7.7.2
@@ -9700,18 +9805,7 @@ snapshots:
       buffer: 6.0.3
       semver: 7.7.1
 
-  '@stellar/js-xdr@3.1.2': {}
-
   '@stellar/js-xdr@4.0.0': {}
-
-  '@stellar/stellar-base@14.0.1':
-    dependencies:
-      '@noble/curves': 1.9.7
-      '@stellar/js-xdr': 3.1.2
-      base32.js: 0.1.0
-      bignumber.js: 9.3.1
-      buffer: 6.0.3
-      sha.js: 2.4.12
 
   '@stellar/stellar-base@15.0.0':
     dependencies:
@@ -9735,6 +9829,24 @@ snapshots:
       urijs: 1.19.11
     transitivePeerDependencies:
       - debug
+
+  '@stellar/stellar-sdk@16.2.0':
+    dependencies:
+      '@noble/ed25519': 3.1.0
+      '@noble/hashes': 2.3.0
+      '@stellar/js-xdr': 4.0.0
+      axios: 1.18.0
+      base32.js: 0.1.0
+      bignumber.js: 11.1.5
+      buffer: 6.0.3
+      commander: 14.0.3
+      eventsource: 4.1.1
+      feaxios: 0.0.23
+      smol-toml: 1.8.0
+      uint8array-extras: 1.5.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   '@swc/helpers@0.5.23':
     dependencies:
@@ -9956,9 +10068,9 @@ snapshots:
       '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@trezor/connect-plugin-stellar@10.0.0-alpha.1(@stellar/stellar-sdk@15.1.0)(tslib@2.8.1)':
+  '@trezor/connect-plugin-stellar@10.0.0-alpha.1(@stellar/stellar-sdk@16.2.0)(tslib@2.8.1)':
     dependencies:
-      '@stellar/stellar-sdk': 15.1.0
+      '@stellar/stellar-sdk': 16.2.0
       '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
       tslib: 2.8.1
 
@@ -10061,7 +10173,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.19
+      '@types/node': 25.9.3
 
   '@types/conventional-commits-parser@5.0.2':
     dependencies:
@@ -10134,11 +10246,11 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 22.19.19
+      '@types/node': 25.9.3
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.19
+      '@types/node': 25.9.3
 
   '@typescript-eslint/eslint-plugin@8.60.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
@@ -10855,6 +10967,17 @@ snapshots:
       typescript: 5.9.3
       zod: 4.4.3
 
+  abitype@1.2.4(typescript@5.9.3)(zod@3.22.4):
+    optionalDependencies:
+      typescript: 5.9.3
+      zod: 3.22.4
+
+  abitype@1.2.4(typescript@5.9.3)(zod@3.25.76):
+    optionalDependencies:
+      typescript: 5.9.3
+      zod: 3.25.76
+    optional: true
+
   abitype@1.2.4(typescript@5.9.3)(zod@4.4.3):
     optionalDependencies:
       typescript: 5.9.3
@@ -10870,6 +10993,12 @@ snapshots:
       acorn: 8.16.0
 
   acorn@8.16.0: {}
+
+  agent-base@6.0.2:
+    dependencies:
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
 
   agent-base@7.1.4: {}
 
@@ -10970,6 +11099,16 @@ snapshots:
       - debug
     optional: true
 
+  axios@1.18.0:
+    dependencies:
+      follow-redirects: 1.16.0
+      form-data: 4.0.5
+      https-proxy-agent: 5.0.1
+      proxy-from-env: 2.1.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
   babel-dead-code-elimination@1.0.12:
     dependencies:
       '@babel/core': 7.29.7
@@ -11006,6 +11145,8 @@ snapshots:
       is-windows: 1.0.2
 
   big.js@6.2.2: {}
+
+  bignumber.js@11.1.5: {}
 
   bignumber.js@9.3.1: {}
 
@@ -11744,7 +11885,13 @@ snapshots:
 
   events@3.3.0: {}
 
+  eventsource-parser@3.1.1: {}
+
   eventsource@2.0.2: {}
+
+  eventsource@4.1.1:
+    dependencies:
+      eventsource-parser: 3.1.1
 
   exit-hook@2.2.1: {}
 
@@ -12266,6 +12413,13 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.4
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
+  https-proxy-agent@5.0.1:
+    dependencies:
+      agent-base: 6.0.2
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
@@ -13300,7 +13454,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.22.4)
+      abitype: 1.2.4(typescript@5.9.3)(zod@3.22.4)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -13315,7 +13469,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
+      abitype: 1.2.4(typescript@5.9.3)(zod@3.25.76)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -13331,7 +13485,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.4.3)
+      abitype: 1.2.4(typescript@5.9.3)(zod@4.4.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -14096,6 +14250,8 @@ snapshots:
 
   slow-redact@0.3.2: {}
 
+  smol-toml@1.8.0: {}
+
   solid-js@1.9.13:
     dependencies:
       csstype: 3.2.3
@@ -14402,6 +14558,8 @@ snapshots:
 
   ufo@1.6.4: {}
 
+  uint8array-extras@1.5.0: {}
+
   uint8arrays@3.1.1:
     dependencies:
       multiformats: 9.9.0
@@ -14669,6 +14827,22 @@ snapshots:
       '@types/node': 25.9.3
       fsevents: 2.3.3
       lightningcss: 1.32.0
+
+  vite@7.3.6(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0):
+    dependencies:
+      esbuild: 0.28.1
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+      postcss: 8.5.15
+      rollup: 4.60.4
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 25.9.3
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      lightningcss: 1.32.0
+      tsx: 4.22.3
+      yaml: 2.9.0
 
   vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0):
     dependencies:

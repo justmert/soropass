@@ -1,19 +1,25 @@
 import { defineConfig } from 'vite';
 
-// Vanilla TS demo. Workspace deps (@soropass/*) resolve via package
-// `exports` to their built `dist` — run `pnpm -r build` before `dev`/`build`.
-// The on-chain demo (onchain.html) pulls @stellar/stellar-sdk; `global` is
-// aliased to globalThis here and Buffer/process are polyfilled in src/polyfills.ts.
+// @stellar/stellar-sdk expects Node globals in the browser; `Buffer` is polyfilled in
+// index.html and `global` is aliased here, the same setup the other kit examples use.
+//
+// The kit is vendored from our fork's build (./kit, the dnt npm output with the
+// PasskeyModule) until the upstream PR merges, and @soropass/core resolves to the
+// workspace package (root pnpm override). Without dedupe Vite can bundle a second copy
+// of stellar-sdk/stellar-base, the noble libs, or @soropass/core for the vendored
+// package; two copies means an `xdr.Int64` built by one is rejected by the other's
+// writer ("not a Hyper"). Force a single instance of each.
 export default defineConfig({
   define: { global: 'globalThis' },
-  server: { port: 4321, strictPort: true },
-  preview: { port: 4321, strictPort: true },
-  build: {
-    target: 'es2022',
-    rollupOptions: {
-      // Three entries: the gallery (index.html), the docs embed target
-      // (embed.html), and the live on-chain testnet demo (onchain.html).
-      input: { main: 'index.html', embed: 'embed.html', onchain: 'onchain.html' },
-    },
+  server: { port: 5273, strictPort: true },
+  preview: { port: 5273, strictPort: true },
+  resolve: {
+    dedupe: [
+      '@soropass/core',
+      '@stellar/stellar-sdk',
+      '@stellar/stellar-base',
+      '@noble/curves',
+      '@noble/hashes',
+    ],
   },
 });
