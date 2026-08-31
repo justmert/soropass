@@ -47,7 +47,7 @@ body {
 .sp-mono {
   font-family: var(--font-mono);
 }
-.sp-page a {
+a {
   color: inherit;
   text-decoration: none;
 }
@@ -62,9 +62,9 @@ body {
   backdrop-filter: blur(10px);
 }
 .sp-nav__inner {
-  max-width: 1312px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 64px;
   height: 64px;
   display: flex;
   align-items: center;
@@ -202,7 +202,7 @@ body {
 .sp-morelink {
   font-size: 14px;
   font-weight: 600;
-  color: var(--brand) !important;
+  color: var(--brand);
   white-space: nowrap;
 }
 
@@ -472,6 +472,7 @@ body {
 }
 .sp-install .sp-cmd--bar {
   max-width: 1312px;
+  padding: 16px 22px;
 }
 .sp-ways {
   display: grid;
@@ -563,7 +564,7 @@ body {
 .sp-way__foot a {
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--brand) !important;
+  color: var(--brand);
   white-space: nowrap;
 }
 .sp-uistrip {
@@ -589,7 +590,7 @@ body {
   margin-left: auto;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--brand) !important;
+  color: var(--brand);
   white-space: nowrap;
 }
 
@@ -852,6 +853,9 @@ body {
 
 /* ── responsive ────────────────────────────────────────── */
 @media (max-width: 1080px) {
+  .sp-nav__inner {
+    padding: 0 32px;
+  }
   .sp-hero {
     grid-template-columns: minmax(0, 1fr);
     gap: 64px;
