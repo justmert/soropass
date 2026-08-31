@@ -128,17 +128,32 @@ jobs:
             echo
             cat apps/matrix/rendered/matrix-diff.md
           } >> "$GITHUB_STEP_SUMMARY"
+      # The docs Vercel project skips builds for commits that do not touch
+      # apps/docs-fuma, so stamp the refresh into a tracked file there: the
+      # weekly data commit then always triggers the docs redeploy, whose build
+      # exports apps/matrix/data into /public/matrix (scripts/prepare-matrix.mjs).
+      - name: Stamp the refresh into the docs app
+        run: |
+          node -e '
+            const fs = require("fs");
+            const latest = JSON.parse(fs.readFileSync("apps/matrix/data/latest.json", "utf8"));
+            const log = JSON.parse(fs.readFileSync("apps/matrix/data/verification-log.json", "utf8"));
+            const last = Array.isArray(log) ? log[log.length - 1] : log;
+            fs.writeFileSync(
+              "apps/docs-fuma/matrix-refresh.json",
+              JSON.stringify({ ...latest, lastVerification: last ?? null }, null, 2),
+            );
+          '
+
       # Commit the refreshed data directly to main. The previous auto-PR never
       # landed: its add-paths listed the gitignored apps/matrix/rendered/*.md,
       # git add fataled on the pathspec, and continue-on-error swallowed the
-      # failure every week. Committing apps/matrix/data is enough to refresh
-      # docs.soropass.dev: the push redeploys the docs site on Vercel, whose
-      # build exports this data into /public/matrix (scripts/prepare-matrix.mjs).
+      # failure every week.
       - name: Commit the refreshed matrix data to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/matrix/data
+          git add apps/matrix/data apps/docs-fuma/matrix-refresh.json
           if git diff --cached --quiet; then
             echo "matrix unchanged, nothing to commit"
             exit 0
