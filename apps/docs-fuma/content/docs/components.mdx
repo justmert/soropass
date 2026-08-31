@@ -10,10 +10,10 @@ Drop-in, token-driven screens for the passkey moments of a Stellar smart account
 
 The UI ships in two layers, both with zero framework runtime dependency:
 
-| Layer       | Import                | What it owns                                                        |
-| ----------- | --------------------- | ------------------------------------------------------------------ |
-| **Headless** | `@soropass/ui/headless` | State machines, a11y prop-getters, and i18n keys: logic, no DOM.   |
-| **Styled**   | `@soropass/ui/styled`   | Vanilla-DOM `mount*Screen(root, opts)` renderers + `tokens.css`.    |
+| Layer        | Import                  | What it owns                                                     |
+| ------------ | ----------------------- | ---------------------------------------------------------------- |
+| **Headless** | `@soropass/ui/headless` | State machines, a11y prop-getters, and i18n keys: logic, no DOM. |
+| **Styled**   | `@soropass/ui/styled`   | Vanilla-DOM `mount*Screen(root, opts)` renderers + `tokens.css`. |
 
 Adopt the styled screens as-is, or drive your own UI from the headless flow controllers. Either path works. Every visual value comes from CSS custom properties, so you restyle by overriding tokens, never by editing a component. See [Theming](/docs/theming) for the token system.
 
@@ -58,7 +58,7 @@ const handle = mountCreateScreen(root, {
 
 | Prop           | Type                             | Default               | Description                              |
 | -------------- | -------------------------------- | --------------------- | ---------------------------------------- |
-| `flow` **req** | `CreateFlow`                     | None                     | Headless controller; drives transitions. |
+| `flow` **req** | `CreateFlow`                     | None                  | Headless controller; drives transitions. |
 | `copy`         | `Partial<CreateCopy>`            | `DEFAULT_CREATE_COPY` | Override any UI string for i18n / brand. |
 | `input`        | `{ userName? }`                  | `undefined`           | Optional hint for the passkey ceremony.  |
 | `onContinue`   | `(c: PasskeyCredential) => void` | `undefined`           | Fires on the success Continue button.    |
@@ -76,8 +76,8 @@ Five states: `idle`, `prompting`, `submitting`, `done`, `error`. Success shows t
 
 | Prop           | Type                        | Default             | Description                        |
 | -------------- | --------------------------- | ------------------- | ---------------------------------- |
-| `flow` **req** | `SignFlow`                  | None                   | Headless sign controller.          |
-| `tx` **req**   | `TxSummaryData`             | None                   | Host-supplied summary (see below). |
+| `flow` **req** | `SignFlow`                  | None                | Headless sign controller.          |
+| `tx` **req**   | `TxSummaryData`             | None                | Host-supplied summary (see below). |
 | `copy`         | `Partial<SignCopy>`         | `DEFAULT_SIGN_COPY` | i18n / brand voice.                |
 | `onCancel`     | `() => void`                | `undefined`         | Secondary action on idle.          |
 | `onDone`       | `(r: SubmitResult) => void` | `undefined`         | Fires on the done screen.          |
@@ -97,7 +97,7 @@ Six states: `idle`, `discovering`, `resolved`, `selected`, `none`, `error`. The 
 
 | Prop           | Type                         | Default                | Description                    |
 | -------------- | ---------------------------- | ---------------------- | ------------------------------ |
-| `flow` **req** | `RecoverFlow`                | None                      | Headless discovery controller. |
+| `flow` **req** | `RecoverFlow`                | None                   | Headless discovery controller. |
 | `copy`         | `Partial<RecoverCopy>`       | `DEFAULT_RECOVER_COPY` | i18n / brand voice.            |
 | `accountMeta`  | `(a, i) => string`           | `undefined`            | Secondary line per row.        |
 | `onContinue`   | `(a: RecoverResult) => void` | `undefined`            | Selected account confirmed.    |
@@ -114,11 +114,11 @@ One tiny entry surface that forks **"Create a new passkey wallet"** vs **"Use an
 A single `idle` state with two choices that route out: deliberately minimal, no flow state.
 
 | Prop            | Type                   | Description                                                        |
-| --------------- | ---------------------- | ----------------------------------------------------------------- |
-| `onCreate`      | `() => void`           | Opens the Create flow.                                            |
+| --------------- | ---------------------- | ------------------------------------------------------------------ |
+| `onCreate`      | `() => void`           | Opens the Create flow.                                             |
 | `onUseExisting` | `() => void`           | Hands off to the kit modal (getAddress → discoverable credential). |
-| `onHelp`        | `() => void`           | "What's a passkey?" link.                                         |
-| `copy`          | `Partial<ConnectCopy>` | Override any string for i18n.                                     |
+| `onHelp`        | `() => void`           | "What's a passkey?" link.                                          |
+| `copy`          | `Partial<ConnectCopy>` | Override any string for i18n.                                      |
 
 ```ts
 mountConnectScreen(root, {
@@ -141,11 +141,11 @@ States: `idle → prompting → binding → success` / `error`. It reuses the sa
 </Callout>
 
 | Prop           | Type                     | Description                                                  |
-| -------------- | ------------------------ | ----------------------------------------------------------- |
+| -------------- | ------------------------ | ------------------------------------------------------------ |
 | `flow` **req** | `AddDeviceFlow`          | From `createAddDeviceFlow`; drives idle → binding → success. |
-| `onDone`       | `() => void`             | Fires on the success screen (shows the new signer).         |
-| `onCancel`     | `() => void`             | Secondary action on idle.                                   |
-| `copy`         | `Partial<AddDeviceCopy>` | i18n / brand voice.                                         |
+| `onDone`       | `() => void`             | Fires on the success screen (shows the new signer).          |
+| `onCancel`     | `() => void`             | Secondary action on idle.                                    |
+| `copy`         | `Partial<AddDeviceCopy>` | i18n / brand voice.                                          |
 
 ## Primitives
 

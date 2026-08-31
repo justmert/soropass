@@ -39,16 +39,19 @@ import { createPasskey } from '@soropass/core/create';
 const account = await createPasskey({ ...cfg, userName: 'alice', deployer });
 // account.contractId → the new C-address the passkey controls
 ```
+
 </Step>
 <Step>
 ### Move value G → C
 
 Build a normal payment (and any trustline moves) from the old `G` account to the new `C` account, and have your user sign it **once** with their existing classic key (Freighter, Ledger, a seed). This is plain classic Stellar (nothing passkey about it), so it isn't part of `@soropass/core`; your wallet already knows how to do it.
+
 </Step>
 <Step>
 ### The passkey is now the wallet
 
 From here every action is a passkey-signed smart-wallet transaction ([sign](/docs/quickstart#path-a--headless-any-framework-or-none)). You can empty and abandon the old `G` account.
+
 </Step>
 </Steps>
 
@@ -60,7 +63,7 @@ From here every action is a passkey-signed smart-wallet transaction ([sign](/doc
 
 ## No smart account yet?
 
-Then there is nothing for the passkey to sign for: a passkey has **no on-chain identity until its `C` contract is deployed**. "Adding passkeys" *is* deploying that contract (step 1 above, via the [deployer](/docs/sdk/accounts#v1-smart-wallet-adapters)). Before it exists, the passkey is just a key on the device with nowhere to act.
+Then there is nothing for the passkey to sign for: a passkey has **no on-chain identity until its `C` contract is deployed**. "Adding passkeys" _is_ deploying that contract (step 1 above, via the [deployer](/docs/sdk/accounts#v1-smart-wallet-adapters)). Before it exists, the passkey is just a key on the device with nowhere to act.
 
 ## Don't leave one device as a single point of failure
 
@@ -71,22 +74,29 @@ import { registerPasskey } from '@soropass/core/create';
 import { addSigner } from '@soropass/core/recover';
 
 const backup = await registerPasskey({ ...cfg, userName: 'backup' });
-await addSigner({ walletContractId: account.contractId, newSigner: backup, ...cfg, sourceSecret, sign });
+await addSigner({
+  walletContractId: account.contractId,
+  newSigner: backup,
+  ...cfg,
+  sourceSecret,
+  sign,
+});
 ```
 
 <Callout type="warn">
   Adding a signer grants it full authority over the account, so gate it behind a fresh
-  re-authentication with an existing signer. See the [recovery model](/docs/security#recovery-model).
-  (`addSigner` enrolls additional passkey signers; the native account stores 65-byte secp256r1 keys.)
+  re-authentication with an existing signer. See the [recovery
+  model](/docs/security#recovery-model). (`addSigner` enrolls additional passkey signers; the native
+  account stores 65-byte secp256r1 keys.)
 </Callout>
 
 ## Who pays the fees
 
-Authorization and payment are **decoupled**: the passkey says *who can move funds*; a classic account or a relayer *pays the network fee and submits the transaction*. Deploying the contract and every passkey-signed transaction needs a fee source.
+Authorization and payment are **decoupled**: the passkey says _who can move funds_; a classic account or a relayer _pays the network fee and submits the transaction_. Deploying the contract and every passkey-signed transaction needs a fee source.
 
-| Network     | Who pays                                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Testnet** | A throwaway **friendbot-funded classic keypair** deploys the contract and pays. Free and disposable, and the passkey never touches it.          |
+| Network     | Who pays                                                                                                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Testnet** | A throwaway **friendbot-funded classic keypair** deploys the contract and pays. Free and disposable, and the passkey never touches it.         |
 | **Mainnet** | Either **your user's own `G` account** pays (fine if they already hold XLM), or a **relayer / paymaster** sponsors it so your user needs none. |
 
 ## Gasless onboarding: sponsor fees with a relayer
@@ -103,15 +113,17 @@ await sendSmartWalletTx({
   networkPassphrase: cfg.networkPassphrase,
   sourceSecret,
   sign: browserPasskeySigner({ rpId: cfg.rpId, allowCredentials: [account.credentialId] }),
-  submission: launchtubeSubmission({ /* url, token */ }), // routes through the relayer, which sponsors the fee
+  submission: launchtubeSubmission({
+    /* url, token */
+  }), // routes through the relayer, which sponsors the fee
 });
 ```
 
 `openzeppelinRelayerSubmission` is the OZ Relayer equivalent. Every adapter returns the same `SubmissionAdapter`, so you move from the zero-infra default to a relayer without touching call sites. See [Adapters](/docs/sdk/accounts#adapters).
 
 <Callout type="warn">
-  Never ship a hot key in production. Mainnet wallets sponsor fees through a relayer (Launchtube / OZ
-  Relayer) or your user's own account, not a bundled secret.
+  Never ship a hot key in production. Mainnet wallets sponsor fees through a relayer (Launchtube /
+  OZ Relayer) or your user's own account, not a bundled secret.
 </Callout>
 
 ## For wallet teams

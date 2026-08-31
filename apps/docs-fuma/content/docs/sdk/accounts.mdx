@@ -18,14 +18,14 @@ connect(options: ConnectOptions): Promise<ConnectResult | null>
 
 ### ConnectOptions
 
-| Field                      | Type                | Description                                                                           |
-| -------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `rpId` **(required)**      | `string`            | Relying Party ID for the WebAuthn ceremony.                                           |
-| `indexer` **(required)**   | `IndexerAdapter`    | Resolves the credential to its C-address(es).                                         |
-| `webauthn`                 | `WebAuthnClient`    | Optional WebAuthn client override (defaults to the platform `navigator.credentials`). |
-| `storage`                  | `CredentialStorage` | Where the stored credential id is read from.                                          |
+| Field                      | Type                | Description                                                                                                                                                                                           |
+| -------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpId` **(required)**      | `string`            | Relying Party ID for the WebAuthn ceremony.                                                                                                                                                           |
+| `indexer` **(required)**   | `IndexerAdapter`    | Resolves the credential to its C-address(es).                                                                                                                                                         |
+| `webauthn`                 | `WebAuthnClient`    | Optional WebAuthn client override (defaults to the platform `navigator.credentials`).                                                                                                                 |
+| `storage`                  | `CredentialStorage` | Where the stored credential id is read from.                                                                                                                                                          |
 | `publicKey`                | `Uint8Array`        | The passkey's 65-byte SEC-1 key. `deploy` is permissionless, so a credential id can resolve to more than one account; set this to select the one whose factory `deployed` event names this exact key. |
-| `silentMediationSupported` | `boolean`           | Override the `isConditionalMediationAvailable` probe.                                 |
+| `silentMediationSupported` | `boolean`           | Override the `isConditionalMediationAvailable` probe.                                                                                                                                                 |
 
 ### ConnectResult
 

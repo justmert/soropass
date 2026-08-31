@@ -5,6 +5,7 @@
  * the sibling @soropass/ui) has to be materialized locally. Regenerated on every
  * build; the file is gitignored.
  */
+/* global process */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

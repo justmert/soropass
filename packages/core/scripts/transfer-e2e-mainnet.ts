@@ -203,7 +203,9 @@ async function main(): Promise<void> {
   console.log(`wallet balance delta: ${moved.toString()} stroops (expect ${SEND.toString()})`);
   const ok = positive.status === 'SUCCESS' && negative.status !== 'SUCCESS' && moved === SEND;
   if (ok) {
-    console.log('PASSKEY TRANSFER PROOF (mainnet) — passkey moved 0.2 XLM on-chain; wrong key -> FAILED.');
+    console.log(
+      'PASSKEY TRANSFER PROOF (mainnet) — passkey moved 0.2 XLM on-chain; wrong key -> FAILED.',
+    );
     console.log(`  wallet:       ${wallet}`);
     console.log(`  transfer tx:  https://stellar.expert/explorer/public/tx/${positive.hash}`);
     console.log(`  wrong-key tx: https://stellar.expert/explorer/public/tx/${negative.hash}`);

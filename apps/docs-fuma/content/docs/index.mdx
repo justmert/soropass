@@ -7,22 +7,24 @@ description: A minimal passkey SDK plus drop-in create / sign / recover componen
 A minimal passkey SDK plus drop-in **create / sign / recover** UI for Stellar smart accounts. Wallet teams ship passkeys (Face ID, Touch ID, a security key) without hand-rolling WebAuthn, on-chain signing, or device/browser compatibility logic. It is a **layer, not a wallet**: no accounts to manage, no balances of its own.
 
 <Callout type="info" title="Proven, not promised">
-  The secp256r1 `__check_auth` path is **verified on mainnet and testnet**. On mainnet, a real passkey
-  signature authorized a 0.2 XLM payment from a smart account, and the chain rejected a wrong-key
-  signature. See the [payment transaction](https://stellar.expert/explorer/public/tx/6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1)
-  on Stellar Expert. The `AccountFactory` is `CCCNRWMICVEMMUSBI7DL3IKB566QEOOQOLVDOAM5SLFDZ2KGUSRR3JVF`
-  on mainnet and `CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH` on testnet.
+  The secp256r1 `__check_auth` path is **verified on mainnet and testnet**. On mainnet, a real
+  passkey signature authorized a 0.2 XLM payment from a smart account, and the chain rejected a
+  wrong-key signature. See the [payment
+  transaction](https://stellar.expert/explorer/public/tx/6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1)
+  on Stellar Expert. The `AccountFactory` is
+  `CCCNRWMICVEMMUSBI7DL3IKB566QEOOQOLVDOAM5SLFDZ2KGUSRR3JVF` on mainnet and
+  `CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH` on testnet.
 </Callout>
 
 ## Three ways to adopt
 
 They stack: start at the top and add the others later. Each has a runnable example in the [Quickstart](/docs/quickstart).
 
-| Adopt                       | Package            | Use it when                                                                                                                                     |
-| --------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Headless SDK**            | `@soropass/core`   | You own the UI (any framework, or none) or run server-side. Four calls: create, sign, recover, add-device.                                       |
-| **+ UI components**         | `@soropass/ui`     | You want drop-in create / sign / recover / add-device screens: framework-agnostic, themed by `tokens.css`, no design system to adopt.           |
-| **Via Stellar Wallets Kit** | `PasskeyModule`    | You already use [stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit) and want passkeys in its picker next to Freighter / Lobstr, with your `getAddress` / `signTransaction` calls unchanged. |
+| Adopt                       | Package          | Use it when                                                                                                                                                                                                      |
+| --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Headless SDK**            | `@soropass/core` | You own the UI (any framework, or none) or run server-side. Four calls: create, sign, recover, add-device.                                                                                                       |
+| **+ UI components**         | `@soropass/ui`   | You want drop-in create / sign / recover / add-device screens: framework-agnostic, themed by `tokens.css`, no design system to adopt.                                                                            |
+| **Via Stellar Wallets Kit** | `PasskeyModule`  | You already use [stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit) and want passkeys in its picker next to Freighter / Lobstr, with your `getAddress` / `signTransaction` calls unchanged. |
 
 ## What makes it minimal
 

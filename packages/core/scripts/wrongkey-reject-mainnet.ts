@@ -60,8 +60,16 @@ function wrongKeySigner(): WebAuthnSigner {
     const clientDataJSON = new TextEncoder().encode(
       JSON.stringify({ type: 'webauthn.get', challenge, origin: ORIGIN }),
     );
-    const der = p256.sign(sha256(concat(authenticatorData, sha256(clientDataJSON))), priv).toDERRawBytes();
-    return { authenticatorData, clientDataJSON, signature: der, credentialId: new Uint8Array(16).fill(9), publicKey };
+    const der = p256
+      .sign(sha256(concat(authenticatorData, sha256(clientDataJSON))), priv)
+      .toDERRawBytes();
+    return {
+      authenticatorData,
+      clientDataJSON,
+      signature: der,
+      credentialId: new Uint8Array(16).fill(9),
+      publicKey,
+    };
   };
 }
 
@@ -107,7 +115,9 @@ async function main(): Promise<void> {
   });
   const finalTx = TransactionBuilder.fromXDR(signedXdr, NETWORK);
   finalTx.sign(SOURCE);
-  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(finalTx.toXDR());
+  const res = await directSubmission({ rpcUrl: RPC_URL, networkPassphrase: NETWORK }).send(
+    finalTx.toXDR(),
+  );
 
   const rejected = res.status !== 'SUCCESS';
   console.log(`wrong-key transfer: ${res.status} (tx ${res.hash})`);

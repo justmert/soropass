@@ -9,7 +9,9 @@ const PAYMENT = {
 
 export const Idle = () => <SignTransactionScreen state={{ status: 'idle' }} tx={PAYMENT} />;
 
-export const Prompting = () => <SignTransactionScreen state={{ status: 'prompting' }} tx={PAYMENT} />;
+export const Prompting = () => (
+  <SignTransactionScreen state={{ status: 'prompting' }} tx={PAYMENT} />
+);
 
 export const Submitting = () => (
   <SignTransactionScreen state={{ status: 'submitting' }} tx={PAYMENT} />

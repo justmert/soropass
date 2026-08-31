@@ -72,15 +72,15 @@ Sign a transaction with `signTransaction` / `browserPasskeySigner`, resolve a re
 - **Pluggable adapters** for submission (direct, Launchtube, OpenZeppelin Relayer) and indexing (on-chain events, Mercury).
 - **One typed error taxonomy.** Every throw is a `KitError` with a code from a frozen 10-code set.
 
-| Subpath | Contents |
-| --- | --- |
-| `.` | Full public surface |
-| `@soropass/core/create` | `createPasskey`, `registerPasskey`, `deriveAccountAddress`, public-key extraction |
-| `@soropass/core/sign` | `signTransaction`, `signAuthEntry`, `browserPasskeySigner`, low-S helpers |
-| `@soropass/core/connect` | `connect` |
-| `@soropass/core/recover` | `recover`, `addSigner`, `removeSigner` |
-| `@soropass/core/types` | `KitError`, `KIT_ERROR_CODES`, `isKitError` |
-| `@soropass/core/testing` | `createPasskeyKit` mock mode, `sampleAuthEntry` (dev only) |
+| Subpath                  | Contents                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| `.`                      | Full public surface                                                               |
+| `@soropass/core/create`  | `createPasskey`, `registerPasskey`, `deriveAccountAddress`, public-key extraction |
+| `@soropass/core/sign`    | `signTransaction`, `signAuthEntry`, `browserPasskeySigner`, low-S helpers         |
+| `@soropass/core/connect` | `connect`                                                                         |
+| `@soropass/core/recover` | `recover`, `addSigner`, `removeSigner`                                            |
+| `@soropass/core/types`   | `KitError`, `KIT_ERROR_CODES`, `isKitError`                                       |
+| `@soropass/core/testing` | `createPasskeyKit` mock mode, `sampleAuthEntry` (dev only)                        |
 
 ## Documentation
 

@@ -17,6 +17,10 @@ export const Success = () => (
 
 export const Cancelled = () => (
   <AddDeviceScreen
-    state={{ status: 'error', code: 'USER_CANCELLED', message: 'The passkey prompt was dismissed.' }}
+    state={{
+      status: 'error',
+      code: 'USER_CANCELLED',
+      message: 'The passkey prompt was dismissed.',
+    }}
   />
 );

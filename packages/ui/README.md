@@ -50,12 +50,12 @@ Every visual value is a `--pk-*` CSS custom property. Override them in your own 
 
 ## Exports
 
-| Subpath | Contents |
-| --- | --- |
-| `@soropass/ui/headless` | `createCreatePasskeyFlow`, `createSignFlow`, `createRecoverFlow`, `createAddDeviceFlow` and their flow types |
-| `@soropass/ui/styled` | `mountCreateScreen`, `mountConnectScreen`, `mountSignScreen`, `mountRecoverScreen`, `mountAddDeviceScreen` |
-| `@soropass/ui/styled.css` | Styles for the mounted screens |
-| `@soropass/ui/tokens.css` | The `--pk-*` design tokens on their own |
+| Subpath                   | Contents                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `@soropass/ui/headless`   | `createCreatePasskeyFlow`, `createSignFlow`, `createRecoverFlow`, `createAddDeviceFlow` and their flow types |
+| `@soropass/ui/styled`     | `mountCreateScreen`, `mountConnectScreen`, `mountSignScreen`, `mountRecoverScreen`, `mountAddDeviceScreen`   |
+| `@soropass/ui/styled.css` | Styles for the mounted screens                                                                               |
+| `@soropass/ui/tokens.css` | The `--pk-*` design tokens on their own                                                                      |
 
 ## Documentation
 

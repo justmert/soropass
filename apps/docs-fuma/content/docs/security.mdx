@@ -76,10 +76,10 @@ challenge = base64url( SHA256( XDR( SorobanAuthorization{ networkId, nonce, sigE
 
 Passkeys are scoped to an eTLD+1, the RP-ID. Two independent checks pin an assertion to your origin:
 
-| Check               | What it verifies                                                                                             | Error code        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `verifyRpIdHash`    | `authData.rpIdHash === SHA256(rpId)`: the authenticator signed for your RP-ID, not a spoofed one.           | `RP_ID_MISMATCH`  |
-| `origin allow-list` | `clientDataJSON.origin` matches an allowed origin: the assertion came from a page you control. | `ORIGIN_MISMATCH` |
+| Check               | What it verifies                                                                                  | Error code        |
+| ------------------- | ------------------------------------------------------------------------------------------------- | ----------------- |
+| `verifyRpIdHash`    | `authData.rpIdHash === SHA256(rpId)`: the authenticator signed for your RP-ID, not a spoofed one. | `RP_ID_MISMATCH`  |
+| `origin allow-list` | `clientDataJSON.origin` matches an allowed origin: the assertion came from a page you control.    | `ORIGIN_MISMATCH` |
 
 Multi-origin products use **Related Origin Requests**, a `/.well-known/webauthn` document listing allowed `origins`. The [living compatibility matrix](/docs/compatibility) tracks its browser support as a verified row (`related_origin_requests`) rather than assuming it. The residual risk is structural: a passkey bound to a single domain becomes unusable if that domain is lost, which is why recovery recommends a second signer on a different domain or device.
 
@@ -87,10 +87,10 @@ Multi-origin products use **Related Origin Requests**, a `/.well-known/webauthn`
 
 There is no seed phrase to back up, so recovery is about finding the accounts a credential already controls, and adding signers safely. `recover()` performs a **discoverable-credential** assertion (no stored credential id) and resolves the credential through an indexer to every account it controls.
 
-| Credential type  | Survives device loss?        | Trade-off                                                                    |
-| ---------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| Synced (default) | Yes, via the platform cloud | You trust the platform provider (iCloud Keychain / Google Password Manager). |
-| Device-bound     | No, lost with the device    | Stronger isolation, but requires a backup signer.                            |
+| Credential type  | Survives device loss?        | Trade-off                                                                          |
+| ---------------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| Synced (default) | Yes, via the platform cloud  | You trust the platform provider (iCloud Keychain / Google Password Manager).       |
+| Device-bound     | No, lost with the device     | Stronger isolation, but requires a backup signer.                                  |
 | Multi-signer     | Yes, any one signer recovers | Add a second passkey on-chain (`add_signer`); the v1 smart-wallet is multi-signer. |
 
 <Callout type="warn">
@@ -104,16 +104,16 @@ There is no seed phrase to back up, so recovery is about finding the accounts a 
 
 Every row maps to a backing test (`security.test.ts` fails the build if a cited test or anchor id does not exist) or a verified matrix row.
 
-| Threat                                       | Mitigation                                                                                                           | Where it lives                                        |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Signature malleability (high-S)              | Client-side low-S normalization (`S > n/2 → n−S`); recommend the contract reject non-canonical S.                    | `anchors.test.ts · anchor low-s-normalization`        |
-| Replay / wrong-context signing               | Challenge = auth-entry preimage; SDK + `__check_auth` reject mismatches.                                             | `soroban.test.ts · CHALLENGE_MISMATCH`                |
-| Non-ES256 credential (unverifiable on-chain) | RS256 / other algorithms hard-fail at create-time (`ES256_NOT_SUPPORTED`).                                           | `anchors.test.ts · anchor rs256-hard-fail`            |
-| RP-ID spoofing                               | `verifyRpIdHash`: `authData.rpIdHash === SHA256(rpId)`.                                                              | `authData.test.ts · matrix webauthn`                  |
-| Origin spoofing                              | `clientDataJSON.origin` allow-list (`ORIGIN_MISMATCH`).                                                              | `clientData.test.ts · matrix related_origin_requests` |
-| Ceremony auto-trigger / Safari silent reject | User-activation guard (`USER_CANCELLED`).                                                                            | `anchors.test.ts · anchor apple-user-gesture`         |
-| Lost device / cleared storage                | Discoverable-credential `recover()` → indexer resolution.                                                            | `ceremonies.test.ts · matrix conditional_mediation`   |
-| Malicious relayer / indexer                  | Untrusted, pluggable adapters cannot forge an authorization; at most they delay submission or mis-report a lookup. | submission / indexer adapters                          |
+| Threat                                       | Mitigation                                                                                                         | Where it lives                                        |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| Signature malleability (high-S)              | Client-side low-S normalization (`S > n/2 → n−S`); recommend the contract reject non-canonical S.                  | `anchors.test.ts · anchor low-s-normalization`        |
+| Replay / wrong-context signing               | Challenge = auth-entry preimage; SDK + `__check_auth` reject mismatches.                                           | `soroban.test.ts · CHALLENGE_MISMATCH`                |
+| Non-ES256 credential (unverifiable on-chain) | RS256 / other algorithms hard-fail at create-time (`ES256_NOT_SUPPORTED`).                                         | `anchors.test.ts · anchor rs256-hard-fail`            |
+| RP-ID spoofing                               | `verifyRpIdHash`: `authData.rpIdHash === SHA256(rpId)`.                                                            | `authData.test.ts · matrix webauthn`                  |
+| Origin spoofing                              | `clientDataJSON.origin` allow-list (`ORIGIN_MISMATCH`).                                                            | `clientData.test.ts · matrix related_origin_requests` |
+| Ceremony auto-trigger / Safari silent reject | User-activation guard (`USER_CANCELLED`).                                                                          | `anchors.test.ts · anchor apple-user-gesture`         |
+| Lost device / cleared storage                | Discoverable-credential `recover()` → indexer resolution.                                                          | `ceremonies.test.ts · matrix conditional_mediation`   |
+| Malicious relayer / indexer                  | Untrusted, pluggable adapters cannot forge an authorization; at most they delay submission or mis-report a lookup. | submission / indexer adapters                         |
 
 <Callout type="tip">
   Not just a JS model. A real deployed v0.2 `webauthn-account` ran a passkey-signed XLM payment
@@ -121,8 +121,12 @@ Every row maps to a backing test (`security.test.ts` fails the build if a cited 
   account's registered P-256 key) transferred XLM through the native SAC, and the **negative** run
   (a different key) failed on-chain. On mainnet, see the
   [payment](https://stellar.expert/explorer/public/tx/6a532cc4b69d3361646cb7902c6e1040e0e0c84555fb2effb2f5297ad5b325e1)
-  and the [wrong-key rejection](https://stellar.expert/explorer/public/tx/6841ae73bfa37a7be2b6c309a8968c5eeb32534a05a9525a225ed69b4b3d795f).
-  On testnet, the [success tx](https://stellar.expert/explorer/testnet/tx/fdeb2829089bf65fe650cc2b94f5a3fc6a329cca4f8bdf6812f5b803b35d20fa)
-  and the [wrong-key rejection](https://stellar.expert/explorer/testnet/tx/d982dab7fc3a8c77011cf17e5507cd8a716963be80ab9b924c5f289dfa7c9ae5).
-  Real hashes come from `packages/core/scripts/transfer-e2e.ts` and `transfer-e2e-mainnet.ts`, never fabricated.
+  and the [wrong-key
+  rejection](https://stellar.expert/explorer/public/tx/6841ae73bfa37a7be2b6c309a8968c5eeb32534a05a9525a225ed69b4b3d795f).
+  On testnet, the [success
+  tx](https://stellar.expert/explorer/testnet/tx/fdeb2829089bf65fe650cc2b94f5a3fc6a329cca4f8bdf6812f5b803b35d20fa)
+  and the [wrong-key
+  rejection](https://stellar.expert/explorer/testnet/tx/d982dab7fc3a8c77011cf17e5507cd8a716963be80ab9b924c5f289dfa7c9ae5).
+  Real hashes come from `packages/core/scripts/transfer-e2e.ts` and `transfer-e2e-mainnet.ts`, never
+  fabricated.
 </Callout>

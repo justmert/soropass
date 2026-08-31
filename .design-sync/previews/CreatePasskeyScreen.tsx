@@ -21,6 +21,10 @@ export const Success = () => (
 
 export const Cancelled = () => (
   <CreatePasskeyScreen
-    state={{ status: 'error', code: 'USER_CANCELLED', message: 'The passkey prompt was dismissed.' }}
+    state={{
+      status: 'error',
+      code: 'USER_CANCELLED',
+      message: 'The passkey prompt was dismissed.',
+    }}
   />
 );
