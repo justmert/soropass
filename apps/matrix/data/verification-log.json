@@ -14,6 +14,24 @@
       "canonicalVerified": true,
       "snapshot": "matrix.2026-07-20.json",
       "changed": true
+    },
+    {
+      "ranAt": "2026-08-31",
+      "runnerOs": "linux",
+      "bcdVersion": "8.0.0",
+      "engines": [
+        {
+          "browser": "Chromium",
+          "version": "148.0.7778.96"
+        },
+        {
+          "browser": "Edge",
+          "version": "152.0.4191.53"
+        }
+      ],
+      "canonicalVerified": true,
+      "snapshot": "matrix.2026-08-31.json",
+      "changed": true
     }
   ]
 }

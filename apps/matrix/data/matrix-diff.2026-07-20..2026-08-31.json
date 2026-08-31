@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "from": "2026-07-20",
+  "to": "2026-08-31",
+  "changed": [
+    {
+      "cell": "conditional_mediation|Edge|Windows",
+      "before": "supported|BCD|tier-2-manual",
+      "after": "unsupported|ci|tier-1-automated"
+    },
+    {
+      "cell": "es256_alg|Edge|Windows",
+      "before": "supported|curated|tier-2-manual",
+      "after": "supported|ci|tier-1-automated"
+    },
+    {
+      "cell": "hybrid_transport|Chrome|desktop",
+      "before": "supported|ci|tier-1-automated",
+      "after": "unsupported|ci|tier-1-automated"
+    },
+    {
+      "cell": "hybrid_transport|Edge|Windows",
+      "before": "supported|passkeys.dev|tier-2-manual",
+      "after": "unsupported|ci|tier-1-automated"
+    },
+    {
+      "cell": "is_uvpaa|Edge|Windows",
+      "before": "supported|BCD|tier-2-manual",
+      "after": "unsupported|ci|tier-1-automated"
+    },
+    {
+      "cell": "related_origin_requests|Edge|Windows",
+      "before": "supported|passkeys.dev|tier-2-manual",
+      "after": "supported|ci|tier-1-automated"
+    },
+    {
+      "cell": "webauthn|Edge|Windows",
+      "before": "supported|BCD|tier-2-manual",
+      "after": "supported|ci|tier-1-automated"
+    }
+  ],
+  "added": [],
+  "removed": [],
+  "reverified": []
+}
