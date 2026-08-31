@@ -119,12 +119,8 @@ jobs:
         with:
           name: matrix-ci-data
           path: apps/matrix/data
-      - name: Refresh dated snapshot + diff (pull → build → diff → docs export)
+      - name: Refresh dated snapshot + diff (pull → build → diff)
         run: pnpm --filter @soropass/matrix matrix:refresh
-        env:
-          # Export the fresh JSON straight into the docs site's /public so the
-          # committed data is what docs.soropass.dev serves after its redeploy.
-          DOCS_PUBLIC_DIR: ${{ github.workspace }}/apps/docs-fuma/public
       - name: Publish the freshness report to the run summary
         run: |
           {
@@ -135,13 +131,14 @@ jobs:
       # Commit the refreshed data directly to main. The previous auto-PR never
       # landed: its add-paths listed the gitignored apps/matrix/rendered/*.md,
       # git add fataled on the pathspec, and continue-on-error swallowed the
-      # failure every week. A direct data commit also redeploys the docs site
-      # (Vercel builds on push), which is what keeps /docs/compatibility fresh.
+      # failure every week. Committing apps/matrix/data is enough to refresh
+      # docs.soropass.dev: the push redeploys the docs site on Vercel, whose
+      # build exports this data into /public/matrix (scripts/prepare-matrix.mjs).
       - name: Commit the refreshed matrix data to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/matrix/data apps/docs-fuma/public/matrix
+          git add apps/matrix/data
           if git diff --cached --quiet; then
             echo "matrix unchanged, nothing to commit"
             exit 0
