@@ -83,9 +83,9 @@
     "@soropass/core": "workspace:^"
   },
   "devDependencies": {
-    "jsdom": "^25.0.0",
+    "jsdom": "^30.0.1",
     "tsup": "^8.0.0",
-    "typescript": "^5.6.0",
-    "vitest": "^2.0.0"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   }
 }
