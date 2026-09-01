@@ -56,13 +56,21 @@ function makeModule() {
   return { module, auth };
 }
 
+function firstAuthEntry(signedTxXdr: string): xdr.SorobanAuthorizationEntry {
+  const envelope = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64');
+  if (envelope.type !== 'envelopeTypeTx') throw new Error('expected a v1 envelope');
+  const body = envelope.v1.tx.operations[0]!.body;
+  if (body.type !== 'invokeHostFunction') throw new Error('expected invokeHostFunction');
+  return body.invokeHostFunctionOp.auth[0]!;
+}
+
 function unsignedEntry(): xdr.SorobanAuthorizationEntry {
   const address = new Address(StrKey.encodeContract(Buffer.alloc(32, 5)));
   return new xdr.SorobanAuthorizationEntry({
     credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(
       new xdr.SorobanAddressCredentials({
         address: address.toScAddress(),
-        nonce: new xdr.Int64(7),
+        nonce: 7n,
         signatureExpirationLedger: 1000,
         signature: xdr.ScVal.scvVoid(),
       }),
@@ -140,8 +148,7 @@ describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () =>
 
     const { signedTxXdr, signerAddress } = await module.signTransaction(unsignedTxXdr());
     expect(signerAddress).toBe(created.contractId);
-    const envelope = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64');
-    const entry = envelope.v1().tx().operations()[0]!.body().invokeHostFunctionOp().auth()[0]!;
+    const entry = firstAuthEntry(signedTxXdr);
     expect(referenceCheckAuth(entry, created.publicKey, PASSPHRASE).success).toBe(true);
   });
 
@@ -206,15 +213,11 @@ describe('PasskeyModule (S17) — @creit.tech/stellar-wallets-kit v2.2.0', () =>
     });
     const created = await module.createAccount();
     const { signedTxXdr } = await module.signTransaction(unsignedTxXdr());
-    const entry = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64')
-      .v1()
-      .tx()
-      .operations()[0]!
-      .body()
-      .invokeHostFunctionOp()
-      .auth()[0]!;
+    const entry = firstAuthEntry(signedTxXdr);
     // The signature is the v1 Signatures(Map<SignerKey, Signature>) shape, not the bare struct.
-    expect(entry.credentials().address().signature().switch().name).toBe('scvVec');
+    const creds = entry.credentials;
+    if (creds.type !== 'sorobanCredentialsAddress') throw new Error('expected address credentials');
+    expect(creds.address.signature.type).toBe('scvVec');
     const r = referenceSmartWalletCheckAuth(entry, () => created.publicKey, PASSPHRASE);
     expect(r.success).toBe(true);
   });
