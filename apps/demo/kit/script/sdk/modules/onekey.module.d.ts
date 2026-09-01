@@ -38,4 +38,3 @@ export declare class OneKeyModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=onekey.module.d.ts.map

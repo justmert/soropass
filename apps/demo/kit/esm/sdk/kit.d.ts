@@ -89,4 +89,3 @@ export declare class StellarWalletsKit {
      */
     static profileModal(params?: ProfileModalParams): Promise<void>;
 }
-//# sourceMappingURL=kit.d.ts.map

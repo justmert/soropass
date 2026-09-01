@@ -63,24 +63,69 @@ export async function buildAddSignerCall(contractId: string): Promise<string> {
 
   const validUntil = (await server.getLatestLedger()).sequence + 1000;
   const envelope = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
-  const v1 = envelope.v1().tx();
-  for (const op of v1.operations()) {
-    if (op.body().switch().name !== 'invokeHostFunction') continue;
-    for (const entry of op.body().invokeHostFunctionOp().auth()) {
-      if (entry.credentials().switch().name === 'sorobanCredentialsAddress') {
-        entry.credentials().address().signatureExpirationLedger(validUntil);
-      }
+  if (envelope.type !== 'envelopeTypeTx') throw new Error('expected a v1 envelope');
+  const tx0 = envelope.v1.tx;
+
+  // stellar-sdk 17 XDR values are immutable, so the expiration is stamped by
+  // rebuilding each auth entry. Protocol 23 simulation returns addressV2
+  // credentials; both address variants are stamped, preserving the variant.
+  for (const op of tx0.operations) {
+    if (op.body.type !== 'invokeHostFunction') continue;
+    const auth = op.body.invokeHostFunctionOp.auth;
+    for (let i = 0; i < auth.length; i++) {
+      const creds = auth[i].credentials;
+      const addr =
+        creds.type === 'sorobanCredentialsAddress'
+          ? creds.address
+          : creds.type === 'sorobanCredentialsAddressV2'
+            ? creds.addressV2
+            : undefined;
+      if (!addr) continue;
+      const rebuilt = new xdr.SorobanAddressCredentials({
+        address: addr.address,
+        nonce: addr.nonce,
+        signatureExpirationLedger: validUntil,
+        signature: addr.signature,
+      });
+      auth[i] = new xdr.SorobanAuthorizationEntry({
+        credentials:
+          creds.type === 'sorobanCredentialsAddressV2'
+            ? xdr.SorobanCredentials.sorobanCredentialsAddressV2(rebuilt)
+            : xdr.SorobanCredentials.sorobanCredentialsAddress(rebuilt),
+        rootInvocation: auth[i].rootInvocation,
+      });
     }
   }
-  const ext = v1.ext();
-  if (ext.switch() === 1) {
-    const data = ext.sorobanData();
-    const resources = data.resources();
-    resources.instructions(Math.min(100_000_000, resources.instructions() * 5 + 30_000_000));
-    data.resourceFee(new xdr.Int64(9_000_000));
-    v1.fee(10_000_000);
-  }
-  return envelope.toXDR('base64');
+
+  if (tx0.ext.type !== 'sorobanData') return envelope.toXDR('base64');
+  const sd = tx0.ext.sorobanData;
+  const res = sd.resources;
+  const bumped = xdr.TransactionEnvelope.envelopeTypeTx(
+    new xdr.TransactionV1Envelope({
+      tx: new xdr.Transaction({
+        sourceAccount: tx0.sourceAccount,
+        fee: 10_000_000,
+        seqNum: tx0.seqNum,
+        cond: tx0.cond,
+        memo: tx0.memo,
+        operations: tx0.operations,
+        ext: xdr.TransactionExt.sorobanData(
+          new xdr.SorobanTransactionData({
+            ext: sd.ext,
+            resources: new xdr.SorobanResources({
+              footprint: res.footprint,
+              instructions: Math.min(100_000_000, res.instructions * 5 + 30_000_000),
+              diskReadBytes: res.diskReadBytes,
+              writeBytes: res.writeBytes,
+            }),
+            resourceFee: 9_000_000n,
+          }),
+        ),
+      }),
+      signatures: envelope.v1.signatures,
+    }),
+  );
+  return bumped.toXDR('base64');
 }
 
 /** Add the fee source's own signature to an envelope whose auth entries are already signed. */

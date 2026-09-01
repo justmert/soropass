@@ -35,4 +35,3 @@ export declare class xBullModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=xbull.module.d.ts.map

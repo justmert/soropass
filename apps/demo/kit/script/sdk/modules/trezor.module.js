@@ -8,9 +8,9 @@ const connect_web_1 = __importDefault(require("@trezor/connect-web"));
 const TrezorConnect = "default" in connect_web_1.default
     ? connect_web_1.default.default
     : connect_web_1.default;
-const connect_plugin_stellar_1 = require("@trezor/connect-plugin-stellar");
 const stellar_sdk_1 = require("@stellar/stellar-sdk");
-const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.10/mod.js");
+const trezor_transform_js_1 = require("./trezor-transform.js");
+const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.11/mod.js");
 const mod_js_2 = require("../../state/mod.js");
 const mod_js_3 = require("../../types/mod.js");
 const utils_js_1 = require("../utils.js");
@@ -166,14 +166,14 @@ class TrezorModule {
         if (!network)
             throw (0, utils_js_1.parseError)(new Error("You need to provide or set a network passphrase"));
         const tx = new stellar_sdk_1.Transaction(xdr, network);
-        const parsedTx = (0, connect_plugin_stellar_1.transformTransaction)(mnemonicPathValue, tx);
+        const parsedTx = (0, trezor_transform_js_1.transformTransaction)(mnemonicPathValue, tx);
         const result = await TrezorConnect.stellarSignTransaction(parsedTx);
         if (!result.success) {
             throw (0, utils_js_1.parseError)(new Error(result.payload.error));
         }
         tx.addSignature(account, (0, mod_js_1.encodeBase64)((0, mod_js_1.decodeHex)(result.payload.signature)));
         return {
-            signedTxXdr: tx.toXDR(),
+            signedTxXdr: tx.toXdr(),
             signerAddress: account,
         };
     }

@@ -5,7 +5,7 @@ const Transport = TransportImport as any;
 import TransportWebUSBImport from "@ledgerhq/hw-transport-webusb";
 const TransportWebUSB = TransportWebUSBImport as any;
 import { StrKey, Transaction } from "@stellar/stellar-sdk";
-import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.10/mod.js";
+import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.11/mod.js";
 import { parseError } from "../utils.js";
 import { type HardwareWalletModuleInterface, ModuleType } from "../../types/mod.js";
 import { hardwareWalletPaths, mnemonicPath, selectedNetwork } from "../../state/mod.js";
@@ -144,7 +144,7 @@ export class LedgerModule implements HardwareWalletModuleInterface {
     tx.addSignature(account, encodeBase64(result.signature));
 
     return {
-      signedTxXdr: tx.toXDR(),
+      signedTxXdr: tx.toXdr(),
       signerAddress: account,
     };
   }

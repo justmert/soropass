@@ -5,4 +5,3 @@ export declare enum LocalStorageKeys {
     hardwareWalletPaths = "@StellarWalletsKit/hardwareWalletPaths",
     wcSessionPaths = "@StellarWalletsKit/wcSessionPaths"
 }
-//# sourceMappingURL=storage.d.ts.map

@@ -1,5 +1,5 @@
 import { getAddress, getNetwork, isConnected, requestAccess, signAuthEntry, signMessage, signTransaction, } from "@stellar/freighter-api";
-import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.10/mod.js";
+import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.11/mod.js";
 import { ModuleType } from "../../types/mod.js";
 import { parseError } from "../utils.js";
 export const FREIGHTER_ID = "freighter";

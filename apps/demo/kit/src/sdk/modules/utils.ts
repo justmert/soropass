@@ -11,6 +11,7 @@ import { BitgetModule } from "./bitget.module.js";
 import { FordefiModule } from "./fordefi.module.js";
 import { CactusLinkModule } from "./cactuslink.module.js";
 import { DcentModule } from "./dcent.module.js";
+import { ScopulyModule } from "./scopuly.module.js";
 
 /**
  * This method returns all modules that don't require extra configuration before they can be loaded
@@ -35,6 +36,7 @@ export function defaultModules(opts?: {
     new BitgetModule(),
     new CactusLinkModule(),
     new DcentModule(),
+    new ScopulyModule(),
   ];
   return opts?.filterBy ? modules.filter(opts.filterBy) : modules;
 }

@@ -38,4 +38,3 @@ export declare class KleverModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=klever.module.d.ts.map

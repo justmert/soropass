@@ -46,4 +46,3 @@ export declare class DcentModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=dcent.module.d.ts.map

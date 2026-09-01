@@ -42,4 +42,3 @@ export declare class FreighterModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=freighter.module.d.ts.map

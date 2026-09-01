@@ -36,4 +36,3 @@ export declare class HotWalletModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=hotwallet.module.d.ts.map

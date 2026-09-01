@@ -2,9 +2,9 @@ import TrezorConnectImport from "@trezor/connect-web";
 const TrezorConnect = "default" in TrezorConnectImport
     ? TrezorConnectImport.default
     : TrezorConnectImport;
-import { transformTransaction } from "@trezor/connect-plugin-stellar";
 import { Transaction } from "@stellar/stellar-sdk";
-import { decodeHex, encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.10/mod.js";
+import { transformTransaction } from "./trezor-transform.js";
+import { decodeHex, encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.11/mod.js";
 import { hardwareWalletPaths, mnemonicPath, selectedNetwork } from "../../state/mod.js";
 import { ModuleType } from "../../types/mod.js";
 import { parseError } from "../utils.js";
@@ -167,7 +167,7 @@ export class TrezorModule {
         }
         tx.addSignature(account, encodeBase64(decodeHex(result.payload.signature)));
         return {
-            signedTxXdr: tx.toXDR(),
+            signedTxXdr: tx.toXdr(),
             signerAddress: account,
         };
     }

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FreighterModule = exports.FREIGHTER_ID = void 0;
 const freighter_api_1 = require("@stellar/freighter-api");
-const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.10/mod.js");
+const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.11/mod.js");
 const mod_js_2 = require("../../types/mod.js");
 const utils_js_1 = require("../utils.js");
 exports.FREIGHTER_ID = "freighter";

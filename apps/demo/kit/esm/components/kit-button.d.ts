@@ -10,4 +10,3 @@ export type SwkButtonProps = {
     children?: any;
 };
 export declare function SwkButton(props: SwkButtonProps): VNode;
-//# sourceMappingURL=kit-button.d.ts.map

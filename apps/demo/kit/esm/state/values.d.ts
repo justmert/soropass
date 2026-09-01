@@ -25,4 +25,3 @@ export declare const wcSessionPaths: Signal<Array<{
     topic: string;
 }>>;
 export declare function resetWalletState(): void;
-//# sourceMappingURL=values.d.ts.map

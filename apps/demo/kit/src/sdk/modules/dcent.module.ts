@@ -1,4 +1,3 @@
-import * as dntShim from "../../_dnt.shims.js";
 import { type ModuleInterface, ModuleType } from "../../types/mod.js";
 import { parseError } from "../utils.js";
 
@@ -52,7 +51,7 @@ interface DcentStellarProvider {
 
 declare const window:
   & Window
-  & typeof dntShim.dntGlobalThis
+  & typeof globalThis
   & {
     stellar?: {
       provider: string;

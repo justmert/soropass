@@ -26,4 +26,3 @@ export declare enum ButtonShape {
     icon = "icon"
 }
 export declare function Button({ size, mode, shape, classes, styles, children, onClick }: ButtonProps): VNode;
-//# sourceMappingURL=button.d.ts.map

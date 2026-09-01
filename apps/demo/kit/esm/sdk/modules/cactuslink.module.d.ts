@@ -42,4 +42,3 @@ export declare class CactusLinkModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=cactuslink.module.d.ts.map

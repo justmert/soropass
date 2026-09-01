@@ -63,4 +63,3 @@ export interface ITrezorModuleParams {
     lazyLoad?: boolean;
     coreMode?: "auto" | "iframe" | "popup";
 }
-//# sourceMappingURL=trezor.module.d.ts.map

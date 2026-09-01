@@ -1,4 +1,3 @@
-import * as dntShim from "../../_dnt.shims.js";
 import {
   getAddress,
   getNetwork,
@@ -8,13 +7,13 @@ import {
   signMessage,
   signTransaction,
 } from "@stellar/freighter-api";
-import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.10/mod.js";
+import { encodeBase64 } from "../../deps/jsr.io/@std/encoding/1.0.11/mod.js";
 import { type ModuleInterface, ModuleType } from "../../types/mod.js";
 import { parseError } from "../utils.js";
 
 declare const window:
   & Window
-  & typeof dntShim.dntGlobalThis
+  & typeof globalThis
   & {
     stellar?: {
       provider: string;

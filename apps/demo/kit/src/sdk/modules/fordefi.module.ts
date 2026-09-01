@@ -1,4 +1,3 @@
-import * as dntShim from "../../_dnt.shims.js";
 import { type ModuleInterface, ModuleType } from "../../types/mod.js";
 import { parseError } from "../utils.js";
 
@@ -22,7 +21,7 @@ const FREIGHTER_EXTERNAL_MSG_REQUEST = "FREIGHTER_EXTERNAL_MSG_REQUEST";
 const FREIGHTER_EXTERNAL_MSG_RESPONSE = "FREIGHTER_EXTERNAL_MSG_RESPONSE";
 
 declare const window: Window &
-	typeof dntShim.dntGlobalThis & {
+	typeof globalThis & {
 		isFordefi?: boolean;
 		FordefiProviders?: {
 			StellarProvider?: unknown;

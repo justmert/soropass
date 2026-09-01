@@ -40,4 +40,3 @@ export declare class BitgetModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=bitget.module.d.ts.map

@@ -1,4 +1,3 @@
-import * as dntShim from "../../_dnt.shims.js";
 import type { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { type default as Client, SignClient } from "@walletconnect/sign-client";
 import { type AppKit, type CreateAppKit, createAppKit } from "@reown/appkit/core";
@@ -10,7 +9,7 @@ import { activeAddress, selectedNetwork, wcSessionPaths } from "../../state/valu
 
 declare const window:
   & Window
-  & typeof dntShim.dntGlobalThis
+  & typeof globalThis
   & {
     stellar?: {
       provider: string;

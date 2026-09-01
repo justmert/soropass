@@ -49,4 +49,3 @@ export declare class LedgerModule implements HardwareWalletModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=ledger.module.d.ts.map

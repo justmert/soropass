@@ -78,4 +78,3 @@ export declare enum WalletConnectAllowedMethods {
     SIGN_MESSAGE = "stellar_signMessage",
     SIGN_AUTH_ENTRY = "stellar_signAuthEntry"
 }
-//# sourceMappingURL=wallet-connect.module.d.ts.map

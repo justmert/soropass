@@ -16,4 +16,3 @@ export type AuthModalParams = {
 export type ProfileModalParams = {
     container?: HTMLElement;
 };
-//# sourceMappingURL=sdk.d.ts.map

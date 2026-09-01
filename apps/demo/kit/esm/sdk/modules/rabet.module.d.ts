@@ -36,4 +36,3 @@ export declare enum RabetNetwork {
     PUBLIC = "mainnet",
     TESTNET = "testnet"
 }
-//# sourceMappingURL=rabet.module.d.ts.map

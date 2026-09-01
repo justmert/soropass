@@ -14,6 +14,7 @@ const bitget_module_js_1 = require("./bitget.module.js");
 const fordefi_module_js_1 = require("./fordefi.module.js");
 const cactuslink_module_js_1 = require("./cactuslink.module.js");
 const dcent_module_js_1 = require("./dcent.module.js");
+const scopuly_module_js_1 = require("./scopuly.module.js");
 /**
  * This method returns all modules that don't require extra configuration before they can be loaded
  * You can provide a filter function if needed
@@ -35,6 +36,7 @@ function defaultModules(opts) {
         new bitget_module_js_1.BitgetModule(),
         new cactuslink_module_js_1.CactusLinkModule(),
         new dcent_module_js_1.DcentModule(),
+        new scopuly_module_js_1.ScopulyModule(),
     ];
     return opts?.filterBy ? modules.filter(opts.filterBy) : modules;
 }

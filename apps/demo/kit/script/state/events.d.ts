@@ -13,4 +13,3 @@ export declare const addressUpdatedEvent: Subject<string | IKitError>;
 export declare const closeEvent: Subject<void>;
 export declare const disconnectEvent: Subject<void>;
 export {};
-//# sourceMappingURL=events.d.ts.map

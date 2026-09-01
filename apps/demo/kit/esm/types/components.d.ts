@@ -30,4 +30,3 @@ export type SwkAppTheme = {
 };
 export declare const SwkAppLightTheme: SwkAppTheme;
 export declare const SwkAppDarkTheme: SwkAppTheme;
-//# sourceMappingURL=components.d.ts.map

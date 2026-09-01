@@ -12,4 +12,3 @@ export declare enum AvatarSize {
     xl = "w-14 h-14"
 }
 export declare function Avatar(props: AvatarProps): VNode;
-//# sourceMappingURL=avatar.d.ts.map

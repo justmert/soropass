@@ -12,10 +12,11 @@ exercises is the integration.
 
 The `PasskeyModule` is not merged upstream yet, so `@creit.tech/stellar-wallets-kit`
 resolves to `./kit`: the npm build (`deno task build-npm`) of our fork with the module
-included. `@soropass/core` resolves to the workspace package through a root pnpm
-override, because the kit build declares `^0.2.0` and that version is not published yet.
-When the upstream PR merges and core publishes, the vendored copy and the override go
-away in favor of the real packages.
+included, based on kit v2.6.0 (stellar-sdk 17). The kit build declares
+`@soropass/core@^0.3.0`, which is published; a root pnpm override still points it at the
+workspace package so the demo always exercises the current workspace build. When the
+upstream PR merges, the vendored copy and the override go away in favor of the real
+packages.
 
 To refresh the vendored build after changing the module in the fork:
 

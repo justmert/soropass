@@ -36,4 +36,3 @@ export declare class FordefiModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=fordefi.module.d.ts.map

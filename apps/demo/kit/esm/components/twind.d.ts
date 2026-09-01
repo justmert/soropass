@@ -8,4 +8,3 @@ export declare const keyframes: import("@twind/core").KeyframesFunction & {
     [label: string]: import("@twind/core").KeyframesFunction;
 };
 export declare const reset: string;
-//# sourceMappingURL=twind.d.ts.map

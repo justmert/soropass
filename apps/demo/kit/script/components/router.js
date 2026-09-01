@@ -37,10 +37,11 @@ function PageTransition({ children, isActive, duration = 300 }) {
     if (!shouldRender)
         return null;
     const styles = {
-        position: visible ? 'relative' : 'absolute',
+        position: visible ? "relative" : "absolute",
         inset: 0,
         transition: `opacity ${duration}ms ease, transform ${duration}ms ease, position ${duration}ms ease`,
         opacity: visible ? 1 : 0,
+        scrollbarWidth: "none",
     };
     return (0, preact_1.html) `<div style=${styles}>${children}</div>`;
 }
@@ -48,7 +49,9 @@ function MultiPageAnimator({ currentRoute, pages, duration = 300 }) {
     const entries = Object.entries(pages).map(([key, Component]) => (0, preact_1.html) `
       <${PageTransition} id=${key} key=${key} isActive=${currentRoute === key} duration=${duration}>
         <${Component} />
-      <//>
+        <//>
     `);
-    return (0, preact_1.html) `<div style=${{ position: 'relative', width: '100%', height: '100%' }}>${entries}</div>`;
+    return (0, preact_1.html) `
+    <div style=${{ position: "relative", width: "100%", height: "100%" }}>${entries}</div>
+  `;
 }

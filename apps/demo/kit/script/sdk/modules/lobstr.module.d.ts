@@ -36,4 +36,3 @@ export declare class LobstrModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=lobstr.module.d.ts.map

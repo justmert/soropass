@@ -38,4 +38,3 @@ export declare enum AlbedoNetwork {
     PUBLIC = "public",
     TESTNET = "testnet"
 }
-//# sourceMappingURL=albedo.module.d.ts.map

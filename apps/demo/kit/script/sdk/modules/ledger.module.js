@@ -11,7 +11,7 @@ const Transport = hw_transport_1.default;
 const hw_transport_webusb_1 = __importDefault(require("@ledgerhq/hw-transport-webusb"));
 const TransportWebUSB = hw_transport_webusb_1.default;
 const stellar_sdk_1 = require("@stellar/stellar-sdk");
-const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.10/mod.js");
+const mod_js_1 = require("../../deps/jsr.io/@std/encoding/1.0.11/mod.js");
 const utils_js_1 = require("../utils.js");
 const mod_js_2 = require("../../types/mod.js");
 const mod_js_3 = require("../../state/mod.js");
@@ -153,7 +153,7 @@ class LedgerModule {
             : await str.signHash(mnemonicPathValue, tx.hash());
         tx.addSignature(account, (0, mod_js_1.encodeBase64)(result.signature));
         return {
-            signedTxXdr: tx.toXDR(),
+            signedTxXdr: tx.toXdr(),
             signerAddress: account,
         };
     }

@@ -1,4 +1,3 @@
-import * as dntShim from "../../_dnt.shims.js";
 import {
   browserWebAuthnClient,
   connect as connectAccount,
@@ -28,28 +27,22 @@ import { type IKitError, type ModuleInterface, ModuleType } from "../../types/mo
 import { parseError } from "../utils.js";
 
 /**
- * A passkey wallet: a Soroban smart account (a C-address) whose authorization is a
- * WebAuthn secp256r1 signature verified on-chain by the account's `__check_auth`.
+ * A passkey wallet: a Soroban smart account (a C-address) authorized by a WebAuthn
+ * secp256r1 signature that the account contract's `__check_auth` verifies on-chain.
  * There is no extension to install and no seed phrase; the key lives in the platform
  * authenticator (Touch ID, Windows Hello, Android biometrics).
  *
- * The ceremonies, the ES256 enforcement, the DER -> compact low-S conversion and the
- * Soroban auth-entry assembly come from `@soropass/core`; this module only maps them
- * onto the kit's `ModuleInterface`.
+ * The WebAuthn ceremony, ES256 enforcement, DER to compact low-S conversion, and
+ * Soroban auth-entry assembly come from `@soropass/core`; this module maps them onto
+ * the kit's `ModuleInterface`.
  *
- * The v0.2 account is multi-signer and verifies each assertion against the enrolled
- * SEC-1 public key carried inline in the auth entry, and the v0.2 factory salts the
- * account address by `sha256(credentialId ‖ publicKey)`. A WebAuthn assertion never
- * returns the public key, so this module captures it at create time, persists it next
- * to the credential id, and re-fetches it from the factory `deployed` event when a
- * returning device has only the credential id. That key is then passed to
- * `deriveAccountAddress` (for offline `getAddress`) and to `signTransaction` /
- * `signAuthEntry` (for the on-chain signer check).
+ * The account verifies each assertion against the enrolled SEC-1 public key, and the
+ * factory salts the account address by that key. A WebAuthn assertion does not return
+ * the public key, so the module captures it at create time, persists it beside the
+ * credential id, and re-fetches it from the factory event on a returning device.
  *
- * **IMPORTANT**: this module requires a "Buffer" polyfill in your app (it is a
- * `@stellar/stellar-sdk` requirement, the same one the Ledger and Trezor modules
- * carry). It also needs a secure context (https, or localhost) because WebAuthn is
- * unavailable over plain http.
+ * Requirements: `@stellar/stellar-sdk` 17 or newer and a secure context (https or
+ * localhost), since WebAuthn is unavailable over plain http.
  *
  * Configuration is required, so this module is not part of `defaultModules()`:
  *
@@ -75,19 +68,14 @@ import { parseError } from "../utils.js";
 export const PASSKEY_ID: string = "passkey";
 
 /**
- * Budget for `isAvailable`. The kit gives a module 1000ms before it renders the wallet
- * as unavailable, so the platform-authenticator probe is capped below that: a hung
- * `isUserVerifyingPlatformAuthenticatorAvailable` resolves to `false` here rather than
- * losing the race in the kit and taking the whole wallet list down with it.
+ * The kit renders a wallet as unavailable if `isAvailable` does not resolve within
+ * 1000ms, so the platform-authenticator probe is capped below that.
  */
 const IS_AVAILABLE_BUDGET_MS = 800;
 
-/**
- * Inline so the wallet list never depends on a remote asset. Pass `productIcon` to show
- * your own wallet's mark instead.
- */
+/** Inline so the wallet list never depends on a remote asset. Override via `productIcon`. */
 const PASSKEY_ICON =
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICA8cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI3IiBmaWxsPSIjMTAxMzE5Ii8+CiAgPHBhdGggZD0iTTIwLjIgNy41YTYuNiA2LjYgMCAwIDAtNi4yNCA4Ljc0TDcgMjMuMlYyNmg1LjN2LTIuNGgyLjR2LTIuNGgyLjRsMS4zMi0xLjMyQTYuNiA2LjYgMCAwIDAgMjAuMiA3LjVabTEuNSA1LjU1YTEuODUgMS44NSAwIDEgMS0xLjg1LTEuODUgMS44NSAxLjg1IDAgMCAxIDEuODUgMS44NVoiIGZpbGw9IiNGMkY0RjgiLz4KPC9zdmc+Cg==";
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICA8cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI3IiBmaWxsPSIjMzk2OUQ5Ii8+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjJGNEY4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNCA0KSI+CiAgICA8cGF0aCBkPSJNMTIgMTFhMiAyIDAgMCAwLTIgMmMwIDIgMCA0LTEgNiIvPgogICAgPHBhdGggZD0iTTEyIDdhNiA2IDAgMCAwLTYgNmMwIDEgMCAyLS41IDMuNSIvPgogICAgPHBhdGggZD0iTTEyIDdhNiA2IDAgMCAxIDYgNmMwIDEuNS0uMyAzLS44IDQiLz4KICAgIDxwYXRoIGQ9Ik0xMiAxMWEyIDIgMCAwIDEgMiAyYzAgMiAuMyAzLjUgMSA1Ii8+CiAgICA8cGF0aCBkPSJNOSA0LjVhOCA4IDAgMCAxIDkgMS41Ii8+CiAgPC9nPgo8L3N2Zz4K";
 
 /** Which on-chain account ABI the assembled signature targets. */
 export type PasskeyWalletTarget = "single-signer" | "smart-wallet";
@@ -109,16 +97,15 @@ export interface PasskeyModuleParams {
   network?: string;
 
   /**
-   * The AccountFactory C-address. With it, and the persisted founding public key,
-   * `getAddress` derives the account address offline from the credential id (no
-   * indexer and no deploy round-trip), which is what makes a returning user's connect
-   * instant and infra-free.
+   * The AccountFactory C-address. With it and the persisted public key, `getAddress`
+   * derives the account address offline from the credential id, with no indexer and no
+   * deploy round-trip.
    */
   factoryContractId?: string;
 
   /**
-   * The deployer account of a passkey-kit v1 smart wallet. Set it together with
-   * `walletTarget: "smart-wallet"` to derive v1 addresses offline.
+   * Deployer account of a passkey-kit smart wallet. Set it together with
+   * `walletTarget: "smart-wallet"` to derive those addresses offline.
    */
   smartWalletDeployer?: string;
 
@@ -127,24 +114,23 @@ export interface PasskeyModuleParams {
 
   /**
    * Resolves a credential id to its deployed account(s). Required when neither
-   * `factoryContractId` nor `smartWalletDeployer` is set, and used as the fallback
-   * whenever an offline derivation is not possible. On the `single-signer` target it
-   * is also how a returning device with only its credential id re-fetches the founding
-   * public key (from the factory `deployed` event), which the account needs to verify
-   * a signature.
+   * `factoryContractId` nor `smartWalletDeployer` is set, and the fallback when an
+   * offline derivation is not possible. On the single-signer target it is also how a
+   * returning device with only its credential id re-fetches the public key the account
+   * verifies against.
    */
   indexer?: IndexerAdapter;
 
   /**
    * Deploys the smart account for a newly created passkey. Required for
-   * `createAccount()` and for the create-on-connect path.
+   * `createAccount()` and the create-on-connect path.
    */
   deployer?: AccountDeployer;
 
   /**
-   * Create a passkey and deploy an account when `getAddress` finds no existing
-   * credential, so a first-time user can connect straight from the kit's modal.
-   * Requires `deployer`. Defaults to `true` when a `deployer` is configured.
+   * Create and deploy an account when `getAddress` finds no existing credential, so a
+   * first-time user connects straight from the modal. Requires `deployer`. Defaults to
+   * `true` when a `deployer` is configured.
    */
   createOnConnect?: boolean;
 
@@ -160,11 +146,7 @@ export interface PasskeyModuleParams {
   /** Where the credential id is remembered between visits. Defaults to `localStorage`. */
   storage?: CredentialStorage;
 
-  /**
-   * Display name for this wallet in the kit's picker. Defaults to `"Passkey"`. Set it to
-   * your own brand (for example `"Acme Wallet"`) so the passkey option reads as part of
-   * your wallet rather than a separate product; SoroPass is the layer, not the wallet.
-   */
+  /** Display name in the wallet picker. Defaults to `"Passkey"`; set it to your brand. */
   productName?: string;
   productUrl?: string;
   productIcon?: string;
@@ -173,15 +155,11 @@ export interface PasskeyModuleParams {
 type SignOpts = { networkPassphrase?: string; address?: string; path?: string };
 
 /**
- * `@soropass/core` uses a closed set of string error codes. The kit's `IKitError`
- * uses numbers, so the string is preserved in `ext` and the code is mapped onto the
- * kit's vocabulary: `-1` for an abort the user drove, `-3` for everything the module
- * could not complete.
- *
- * The string code is detected by shape as well as by `instanceof`, because a bundler
- * that ends up with two copies of `@soropass/core` (ESM plus CJS, or two versions)
- * breaks the prototype check, and a string code reaching `IKitError.code` would break
- * every consumer that switches on the number.
+ * `@soropass/core` throws errors with string codes; the kit's `IKitError` uses numbers.
+ * Map a user-driven cancel to `-1` and everything else to `-3`, preserving the string
+ * code in `ext`. The code is detected by shape as well as `instanceof`, so a bundle with
+ * two copies of `@soropass/core` (dual ESM/CJS, or two versions) cannot leak a string
+ * into `IKitError.code` and break consumers switching on the number.
  */
 function toKitError(e: unknown): IKitError {
   const code = isKitError(e)
@@ -201,24 +179,24 @@ function toKitError(e: unknown): IKitError {
 }
 
 /**
- * How many Soroban auth entries in this envelope a smart account can authorize.
- *
- * A passkey account is a contract, so it can never be a transaction's source account,
- * and its authorization is carried in an `InvokeHostFunction` operation's auth entries
- * rather than in the envelope's signature list. An envelope with none of those is
- * nothing this wallet can sign, and saying so here beats returning it untouched and
- * failing at submission.
+ * Count the address-credential Soroban auth entries in an envelope. A passkey account
+ * is a contract, so it can never be a transaction's source account; its authorization
+ * is an `InvokeHostFunction` auth entry, not an envelope signature. An envelope with
+ * none is nothing this wallet can sign.
  */
 function signableAuthEntries(txXdr: string): number {
   const envelope = sorobanXdr.TransactionEnvelope.fromXDR(txXdr, "base64");
-  const kind = envelope.switch().name;
-  const tx = kind === "envelopeTypeTxFeeBump" ? envelope.feeBump().tx().innerTx().v1().tx() : envelope.v1().tx();
+  let inner = envelope;
+  if (inner.type === "envelopeTypeTxFeeBump") inner = inner.feeBump.tx.innerTx;
+  if (inner.type !== "envelopeTypeTx") return 0;
 
   let count = 0;
-  for (const op of tx.operations()) {
-    if (op.body().switch().name !== "invokeHostFunction") continue;
-    for (const entry of op.body().invokeHostFunctionOp().auth()) {
-      if (entry.credentials().switch().name === "sorobanCredentialsAddress") count++;
+  for (const op of inner.v1.tx.operations) {
+    if (op.body.type !== "invokeHostFunction") continue;
+    for (const entry of op.body.invokeHostFunctionOp.auth) {
+      // Protocol 23 simulation returns addressV2 credentials; both variants are signable.
+      const t = entry.credentials.type;
+      if (t === "sorobanCredentialsAddress" || t === "sorobanCredentialsAddressV2") count++;
     }
   }
   return count;
@@ -238,10 +216,9 @@ export class PasskeyModule implements ModuleInterface {
   private address?: string;
   private credentialId?: string;
   /**
-   * The connected passkey's SEC-1 (65-byte) public key. The v0.2 single-signer account
-   * verifies against it and the v0.2 factory salts the address by it, so it must travel
-   * with every sign and every offline derivation. It is never in a WebAuthn assertion,
-   * so it is captured at create time, persisted, and re-fetched from the indexer.
+   * The connected passkey's SEC-1 (65-byte) public key. The account verifies against it
+   * and the factory salts the address by it, and it is never in a WebAuthn assertion, so
+   * it is captured at create time, persisted, and re-fetched from the indexer.
    */
   private publicKey?: Uint8Array;
 
@@ -270,7 +247,6 @@ export class PasskeyModule implements ModuleInterface {
     return this.cachedSigner;
   }
 
-  /** True unless this module was configured for the passkey-kit v1 smart-wallet ABI. */
   private get singleSigner(): boolean {
     return this.params.walletTarget !== "smart-wallet";
   }
@@ -288,25 +264,22 @@ export class PasskeyModule implements ModuleInterface {
       clientDataJSON: assertion.clientDataJSON,
       signature: assertion.signature,
       credentialId: decodeChallenge(assertion.id),
-      // A WebAuthn assertion carries no public key; the account needs it inline, so
-      // supply the one captured at create time / recovered from the indexer.
+      // A WebAuthn assertion carries no public key; the account needs it inline.
       publicKey: this.publicKey,
     };
   }
 
   /**
-   * True when the browser exposes WebAuthn and a user-verifying platform
-   * authenticator is present. Resolves `false` rather than throwing, so an
-   * unsupported browser renders the wallet as "unavailable" instead of breaking
-   * the kit's wallet list.
+   * True when the browser exposes WebAuthn and a user-verifying platform authenticator
+   * is present. Resolves `false` rather than throwing, so an unsupported browser renders
+   * the wallet as unavailable instead of breaking the wallet list.
    */
   async isAvailable(): Promise<boolean> {
-    // An app that supplies its own WebAuthn client has already said how ceremonies are
-    // performed (a cross-device flow, a hardware key, a test authenticator), so the
-    // platform probe is not what decides availability for it.
+    // An app that supplies its own WebAuthn client has already decided how ceremonies
+    // run, so the platform probe does not decide availability for it.
     if (this.params.webauthn) return true;
 
-    const pkc = (dntShim.dntGlobalThis as {
+    const pkc = (globalThis as {
       PublicKeyCredential?: {
         isUserVerifyingPlatformAuthenticatorAvailable?: () => Promise<boolean>;
       };
@@ -314,8 +287,8 @@ export class PasskeyModule implements ModuleInterface {
 
     if (!pkc?.isUserVerifyingPlatformAuthenticatorAvailable) return false;
 
-    // `ReturnType<typeof setTimeout>` rather than `number`: the npm build of the kit is
-    // type checked against Node's typings, where the handle is a `Timeout` object.
+    // `ReturnType<typeof setTimeout>` rather than `number`: the npm build is type checked
+    // against Node's typings, where the handle is a `Timeout` object.
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const timer: Promise<false> = new Promise((r) => {
       timeout = setTimeout(() => r(false), IS_AVAILABLE_BUDGET_MS);
@@ -325,19 +298,15 @@ export class PasskeyModule implements ModuleInterface {
     } catch {
       return false;
     } finally {
-      // The probe usually wins the race; leaving the timer pending would keep a
-      // handle alive for the rest of the budget in every host that tracks them.
       clearTimeout(timeout);
     }
   }
 
   /**
-   * Resolves the smart-account address, creating the account on the first visit when
-   * a `deployer` is configured.
-   *
-   * The order is: the address already resolved in this session, then an offline
-   * derivation from a remembered credential id + public key, then the indexer, and
-   * finally a new passkey. Only the last two steps show an OS prompt.
+   * Resolves the smart-account address, creating the account on first visit when a
+   * `deployer` is configured. Resolution order: the address held this session, an
+   * offline derivation from a remembered credential id and public key, the indexer, then
+   * a new passkey. Only the last two can show an OS prompt.
    */
   async getAddress(params?: { path?: string; skipRequestAccess?: boolean }): Promise<{ address: string }> {
     try {
@@ -349,8 +318,7 @@ export class PasskeyModule implements ModuleInterface {
         if (derived) return this.remember(derived, remembered, this.rememberedPublicKey());
       }
 
-      // `skipRequestAccess` means "answer without asking the user". Everything below
-      // this point can show an OS passkey sheet, so it stops here instead.
+      // `skipRequestAccess` means answer without prompting, so stop before any ceremony.
       if (params?.skipRequestAccess === true) {
         throw {
           code: -3,
@@ -366,7 +334,6 @@ export class PasskeyModule implements ModuleInterface {
           indexer: this.params.indexer,
           webauthn: this.webauthn,
           storage: this.storage,
-          // Pick the account whose founding key matches ours, when we know it.
           publicKey: rememberedKey,
         });
         if (connected) {
@@ -391,9 +358,9 @@ export class PasskeyModule implements ModuleInterface {
   }
 
   /**
-   * Registers a new passkey and deploys its smart account. This is beyond
-   * `ModuleInterface`: the kit's modal only asks for an address, so apps that want an
-   * explicit "create account" button call this directly. Requires `deployer`.
+   * Registers a new passkey and deploys its smart account. Beyond `ModuleInterface`:
+   * the modal only asks for an address, so an app that wants an explicit "create account"
+   * button calls this directly. Requires `deployer`.
    */
   async createAccount(userName?: string): Promise<PasskeyCredential> {
     try {
@@ -413,7 +380,6 @@ export class PasskeyModule implements ModuleInterface {
         storage: this.storage,
       });
 
-      // Capture the founding public key so signing and offline derivation work later.
       this.remember(created.contractId, created.credentialId, created.publicKey);
       return created;
     } catch (e) {
@@ -439,10 +405,8 @@ export class PasskeyModule implements ModuleInterface {
         networkPassphrase: opts?.networkPassphrase ?? this.params.networkPassphrase,
         sign: this.signer,
         target: this.params.walletTarget,
-        // Sign only THIS account's auth entries, never a co-authorizer's (H1).
+        // Sign only the connected account's entries, not a co-authorizer's.
         signerAddress: opts?.address ?? this.address,
-        // The v0.2 single-signer account carries the signer key inline and verifies
-        // against it; the smart-wallet target resolves the key on-chain and ignores this.
         publicKey: this.requireSigningKey(),
       });
       return { signedTxXdr, signerAddress: opts?.address ?? this.address };
@@ -469,13 +433,12 @@ export class PasskeyModule implements ModuleInterface {
   }
 
   /**
-   * Signs an arbitrary message with the passkey. A smart account has no standard
-   * on-chain message-verification entry point, so `signedMessage` is a self-contained
-   * WebAuthn envelope: JSON with base64url fields
-   * `{ authenticatorData, clientDataJSON, signature }`, where `signature` is the
-   * 64-byte low-S compact secp256r1 signature. Verify it in your app against the
-   * account's registered public key over `SHA-256(authenticatorData || SHA-256(clientDataJSON))`.
-   * The bare signature alone is not verifiable, which is why the ceremony data travels with it.
+   * Signs an arbitrary message. A smart account has no standard on-chain message
+   * verification entry point, so the result is a self-contained WebAuthn envelope: JSON
+   * with base64url `authenticatorData`, `clientDataJSON`, and a 64-byte low-S compact
+   * `signature`. Verify it against the account's registered public key over
+   * `SHA-256(authenticatorData || SHA-256(clientDataJSON))`; the ceremony data travels
+   * with the signature because the signature alone is not verifiable.
    */
   async signMessage(
     message: string,
@@ -504,10 +467,7 @@ export class PasskeyModule implements ModuleInterface {
     return Promise.resolve({ network, networkPassphrase: passphrase });
   }
 
-  /**
-   * Drops the in-memory session so the next `getAddress` resolves from scratch. The
-   * passkey itself stays in the authenticator: this is a sign-out, not a deletion.
-   */
+  /** Drops the in-memory session; the passkey stays in the authenticator. A sign-out, not a deletion. */
   disconnect(): Promise<void> {
     this.address = undefined;
     this.credentialId = undefined;
@@ -520,11 +480,7 @@ export class PasskeyModule implements ModuleInterface {
     return !!this.params.deployer && this.params.createOnConnect !== false;
   }
 
-  /**
-   * The public key required to sign for the single-signer account. Undefined only for
-   * the smart-wallet target (which resolves the key on-chain). For single-signer, a
-   * missing key here becomes a clear error at assembly time in `@soropass/core`.
-   */
+  /** The signing key, required for single-signer; the smart-wallet target resolves it on-chain. */
   private requireSigningKey(): Uint8Array | undefined {
     return this.singleSigner ? this.publicKey : undefined;
   }
@@ -538,7 +494,6 @@ export class PasskeyModule implements ModuleInterface {
     }
   }
 
-  /** The founding public key, from this session or persisted next to the credential id. */
   private rememberedPublicKey(): Uint8Array | undefined {
     if (this.publicKey) return this.publicKey;
     try {
@@ -549,11 +504,7 @@ export class PasskeyModule implements ModuleInterface {
     }
   }
 
-  /**
-   * Re-fetch the founding public key for a credential from the factory `deployed`
-   * event. Needed on a returning device that has only the credential id, since the
-   * account verifies against the key and a WebAuthn assertion never returns it.
-   */
+  /** Re-fetch the public key from the factory event for a returning device that lacks it. */
   private async resolvePublicKey(credentialId: string, contractId: string): Promise<Uint8Array | undefined> {
     if (!this.params.indexer) return undefined;
     try {
@@ -564,7 +515,6 @@ export class PasskeyModule implements ModuleInterface {
     }
   }
 
-  /** The offline address derivation, when the module is configured for one. */
   private deriveAddress(credentialId: string, publicKey?: Uint8Array): string | undefined {
     if (this.params.smartWalletDeployer) {
       return deriveSmartWalletAddress({
@@ -573,8 +523,7 @@ export class PasskeyModule implements ModuleInterface {
         networkPassphrase: this.params.networkPassphrase,
       });
     }
-    // The v0.2 factory salts by sha256(credentialId ‖ publicKey), so offline derivation
-    // needs the key too. Without it, fall through to the indexer.
+    // The factory salt binds the public key, so offline derivation needs it too.
     if (this.params.factoryContractId && publicKey) {
       return deriveAccountAddress({
         factoryContractId: this.params.factoryContractId,
@@ -594,13 +543,13 @@ export class PasskeyModule implements ModuleInterface {
     this.address = address;
     this.credentialId = credentialId;
     if (publicKey) this.publicKey = publicKey;
-    // Persist so a later visit derives + signs offline. Core's CredentialStorage holds
-    // only the credential id, so the key is stored under a sibling key.
+    // Persist for offline derivation and signing later. CredentialStorage holds only the
+    // credential id, so the key goes under a sibling key.
     try {
       this.storage.set(this.params.rpId, credentialId);
       if (publicKey) this.storage.set(this.publicKeyStorageKey(), encodeChallenge(publicKey));
     } catch {
-      // A read-only / unavailable store still leaves this session fully usable.
+      // A read-only store still leaves this session usable.
     }
     return { address };
   }

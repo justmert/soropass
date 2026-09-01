@@ -480,6 +480,15 @@ const asCoreEntry = (
 ): Parameters<typeof referenceCheckAuth>[0] =>
   entry as unknown as Parameters<typeof referenceCheckAuth>[0];
 
+/** The first Soroban auth entry of a v1 envelope (stellar-sdk 17 property-style XDR). */
+function firstAuthEntry(envelopeXdr: string): xdr.SorobanAuthorizationEntry {
+  const envelope = xdr.TransactionEnvelope.fromXDR(envelopeXdr, 'base64');
+  if (envelope.type !== 'envelopeTypeTx') throw new Error('expected a v1 envelope');
+  const body = envelope.v1.tx.operations[0].body;
+  if (body.type !== 'invokeHostFunction') throw new Error('expected invokeHostFunction');
+  return body.invokeHostFunctionOp.auth[0];
+}
+
 function memoryPublicKey(address: string): Uint8Array | undefined {
   for (const account of backend.memory?.registry.values() ?? []) {
     if (account.contractId === address) return account.publicKey;
@@ -584,13 +593,7 @@ el('sign-tx').addEventListener('click', async () => {
     // In-memory modes: build a local Soroban envelope and verify it here.
     const unsigned = await localEnvelope(address);
     const { signedTxXdr } = await StellarWalletsKit.signTransaction(unsigned, { address });
-    const entry = xdr.TransactionEnvelope.fromXDR(signedTxXdr, 'base64')
-      .v1()
-      .tx()
-      .operations()[0]
-      .body()
-      .invokeHostFunctionOp()
-      .auth()[0];
+    const entry = firstAuthEntry(signedTxXdr);
     const publicKey = memoryPublicKey(address);
     if (!publicKey) throw new Error('no registered public key for the connected account');
     const verdict = referenceCheckAuth(asCoreEntry(entry), publicKey, SdkNetworks.TESTNET);
@@ -774,14 +777,7 @@ el('sign-auth-entry').addEventListener('click', async () => {
   try {
     const { address } = await StellarWalletsKit.getAddress();
     const unsigned = await localEnvelope(address);
-    const entryXdr = xdr.TransactionEnvelope.fromXDR(unsigned, 'base64')
-      .v1()
-      .tx()
-      .operations()[0]
-      .body()
-      .invokeHostFunctionOp()
-      .auth()[0]
-      .toXDR('base64');
+    const entryXdr = firstAuthEntry(unsigned).toXDR('base64');
     const { signedAuthEntry } = await StellarWalletsKit.signAuthEntry(entryXdr, { address });
     log(`signed auth entry (${signedAuthEntry.length} chars)`);
     const publicKey = memoryPublicKey(address);
@@ -871,7 +867,7 @@ async function localEnvelope(contractId: string): Promise<string> {
     credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(
       new xdr.SorobanAddressCredentials({
         address: account.toScAddress(),
-        nonce: new xdr.Int64(Math.floor(Math.random() * 1_000_000)),
+        nonce: BigInt(Math.floor(Math.random() * 1_000_000)),
         signatureExpirationLedger: 100_000,
         signature: xdr.ScVal.scvVoid(),
       }),

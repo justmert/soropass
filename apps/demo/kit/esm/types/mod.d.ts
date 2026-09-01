@@ -234,4 +234,3 @@ export interface HardwareWalletModuleInterface extends ModuleInterface {
         index: number;
     }[]>;
 }
-//# sourceMappingURL=mod.d.ts.map

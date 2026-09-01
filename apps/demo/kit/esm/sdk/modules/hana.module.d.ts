@@ -38,4 +38,3 @@ export declare class HanaModule implements ModuleInterface {
         networkPassphrase: string;
     }>;
 }
-//# sourceMappingURL=hana.module.d.ts.map
