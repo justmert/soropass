@@ -47,6 +47,8 @@ competitor-*/
 
 # local notes, not part of the repo
 CLAUDE.md
+d1test.md
+mainnet-deploy-notes.md
 .ds-sync/
 ds-bundle/
 .design-sync/.cache/
