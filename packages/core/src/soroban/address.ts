@@ -2,6 +2,7 @@ import { Address, StrKey, hash, xdr } from '@stellar/stellar-sdk';
 import { sha256 } from '@noble/hashes/sha256';
 import { KitError } from '../errors';
 import { utf8ToBytes } from '../internal/encoding';
+import { defaultAccountFactory } from '../networks';
 import { decodeChallenge } from '../webauthn/clientData';
 
 /** The createCustomContract C-address from a deployer address + 32-byte salt (no network round-trip). */
@@ -31,8 +32,12 @@ function contractIdFromDeployerSalt(
 }
 
 export interface DeriveAccountAddressOptions {
-  /** The AccountFactory contract C-address — the deployer. */
-  factoryContractId: string;
+  /**
+   * The AccountFactory contract C-address — the deployer. Defaults to the
+   * deployed SoroPass factory for `networkPassphrase` (see
+   * `DEFAULT_ACCOUNT_FACTORIES`).
+   */
+  factoryContractId?: string;
   /** The credential-id bytes the factory salts (utf-8 of the base64url id in our factory). */
   credentialId: Uint8Array;
   /**
@@ -55,7 +60,8 @@ export interface DeriveAccountAddressOptions {
  * (different deployer + salt-input scheme).
  */
 export function deriveAccountAddress(options: DeriveAccountAddressOptions): string {
-  const { factoryContractId, credentialId, publicKey, networkPassphrase } = options;
+  const { credentialId, publicKey, networkPassphrase } = options;
+  const factoryContractId = options.factoryContractId ?? defaultAccountFactory(networkPassphrase);
   if (credentialId.length === 0) {
     throw new KitError('CONTRACT_AUTH_FAILED', 'deriveAccountAddress: empty credential id');
   }

@@ -7,13 +7,18 @@ import {
   scValToNative,
 } from '@stellar/stellar-sdk';
 import { KitError } from '../errors';
+import { defaultAccountFactory } from '../networks';
 import type { AccountDeployer } from '../ceremonies/types';
 
 export interface FactoryDeployerOptions {
   rpcUrl: string;
   networkPassphrase: string;
-  /** The deployed `AccountFactory` contract id (`C…`) — see contracts/account-factory. */
-  factoryContractId: string;
+  /**
+   * The `AccountFactory` contract id (`C…`). Defaults to the deployed SoroPass
+   * factory for `networkPassphrase` (see `DEFAULT_ACCOUNT_FACTORIES`); set it
+   * only to deploy through a different factory.
+   */
+  factoryContractId?: string;
   /**
    * Secret of the testnet account that pays the fee + signs the deploy tx. The
    * factory's `deploy` is not auth-gated, so this just sources/sponsors the
@@ -37,6 +42,8 @@ export function factoryDeployer(options: FactoryDeployerOptions): AccountDeploye
     allowHttp: options.allowHttp ?? options.rpcUrl.startsWith('http://'),
   });
   const source = Keypair.fromSecret(options.sourceSecret);
+  const factoryContractId =
+    options.factoryContractId ?? defaultAccountFactory(options.networkPassphrase);
   return {
     async deploy(input) {
       if (input.publicKey.length !== 65) {
@@ -54,7 +61,7 @@ export function factoryDeployer(options: FactoryDeployerOptions): AccountDeploye
         fee: options.fee ?? '2000000',
         networkPassphrase: options.networkPassphrase,
       })
-        .addOperation(new Contract(options.factoryContractId).call('deploy', pk, cred))
+        .addOperation(new Contract(factoryContractId).call('deploy', pk, cred))
         .setTimeout(120)
         .build();
 

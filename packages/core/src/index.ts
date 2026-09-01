@@ -11,3 +11,4 @@ export * from './sign';
 export * from './connect';
 export * from './recover';
 export * from './adapters';
+export { DEFAULT_ACCOUNT_FACTORIES, defaultAccountFactory } from './networks';

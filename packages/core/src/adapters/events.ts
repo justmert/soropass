@@ -1,4 +1,5 @@
 import { rpc, scValToNative } from '@stellar/stellar-sdk';
+import { defaultAccountFactory } from '../networks';
 import { collectEventsToTip } from './eventsPaging';
 import type { IndexerAdapter, ResolvedAccount } from './types';
 
@@ -12,8 +13,14 @@ function decodeNative(scv: unknown): unknown {
 
 export interface EventsIndexerOptions {
   rpcUrl: string;
-  /** The passkey factory contract that emits an `add`/deploy event per account. */
-  factoryContractId: string;
+  /**
+   * The passkey factory contract that emits an `add`/deploy event per account.
+   * Defaults to the deployed SoroPass factory for `networkPassphrase` (see
+   * `DEFAULT_ACCOUNT_FACTORIES`); one of the two options must be set.
+   */
+  factoryContractId?: string;
+  /** Selects the default factory when `factoryContractId` is omitted. */
+  networkPassphrase?: string;
   /** Ledger to scan from; defaults to ~1 day back from the latest ledger. */
   startLedger?: number;
   allowHttp?: boolean;
@@ -74,6 +81,8 @@ export function eventsIndexer(options: EventsIndexerOptions): IndexerAdapter {
     allowHttp: options.allowHttp ?? options.rpcUrl.startsWith('http://'),
   });
   const match = options.matchEvent ?? defaultMatch;
+  const factoryContractId =
+    options.factoryContractId ?? defaultAccountFactory(options.networkPassphrase ?? '');
   return {
     async resolveByCredential(credentialId: string): Promise<ResolvedAccount[]> {
       const startLedger =
@@ -83,7 +92,7 @@ export function eventsIndexer(options: EventsIndexerOptions): IndexerAdapter {
       // one-shot query misses factory deploys near the latest ledger.
       const events = await collectEventsToTip(
         server,
-        [{ type: 'contract', contractIds: [options.factoryContractId] }],
+        [{ type: 'contract', contractIds: [factoryContractId] }],
         startLedger,
       );
       const accounts: ResolvedAccount[] = [];
