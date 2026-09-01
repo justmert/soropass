@@ -17,11 +17,12 @@ interface LaunchtubeResponse {
 }
 
 /**
- * Legacy Launchtube relay (optional). Modelled as ONE submission adapter — the
- * SDK does not depend on it; `direct` is the default and `openzeppelinRelayer`
- * is the post-Launchtube direction. A network failure surfaces as a typed
- * `KitError('NETWORK_ERROR')`; an HTTP error becomes a `FAILED` result carrying
- * the relay's error body.
+ * Legacy Launchtube relay (optional). The hosted Launchtube service is
+ * discontinued (repository archived January 2026); this adapter remains only
+ * for self-hosted deployments of that code. `direct` is the default and
+ * `openzeppelinRelayerSubmission` is the production relayer path. A network
+ * failure surfaces as a typed `KitError('NETWORK_ERROR')`; an HTTP error
+ * becomes a `FAILED` result carrying the relay's error body.
  */
 export function launchtubeSubmission(options: LaunchtubeSubmissionOptions): SubmissionAdapter {
   return {

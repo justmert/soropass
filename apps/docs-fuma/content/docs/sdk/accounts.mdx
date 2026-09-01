@@ -310,11 +310,11 @@ interface IndexerAdapter {
 
 All three return `SubmissionAdapter`, so swapping one for another is a one-line change.
 
-| Factory                                  | Backend                                                                             |
-| ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `directSubmission(options)`              | Zero-infra default; sends straight to soroban-rpc (`rpcUrl` + `networkPassphrase`). |
-| `launchtubeSubmission(options)`          | Legacy Launchtube relay, modeled as one optional adapter.                           |
-| `openzeppelinRelayerSubmission(options)` | OZ Relayer / Defender, the post-Launchtube direction.                               |
+| Factory                                  | Backend                                                                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `directSubmission(options)`              | Zero-infra default; sends straight to soroban-rpc (`rpcUrl` + `networkPassphrase`).                                                   |
+| `launchtubeSubmission(options)`          | Legacy adapter for the Launchtube relay. The hosted Launchtube service is discontinued; use it only against a self-hosted deployment. |
+| `openzeppelinRelayerSubmission(options)` | OpenZeppelin Relayer, the production relayer path.                                                                                    |
 
 ```ts
 import { directSubmission } from '@soropass/core';
@@ -438,7 +438,7 @@ const res = await submission.send(signedTxXdr);
 <Callout type="info">
   **Invariant #4**: pluggable adapters for submission + indexer; the default is zero-infra (direct +
   events). Because every factory returns the same interface, you can start on the default and move
-  to Launchtube, the OZ Relayer, or Mercury later without touching call sites.
+  to the OZ Relayer or Mercury later without touching call sites.
 </Callout>
 
 <Cards>

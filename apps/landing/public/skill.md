@@ -130,7 +130,7 @@ if (!funded) throw new Error('sponsor funded but not visible on the Soroban RPC 
 const sourceSecret = sponsor.secret();
 ```
 
-On mainnet, the same code runs with two changes: `networkPassphrase: Networks.PUBLIC` with `rpcUrl: 'https://mainnet.sorobanrpc.com'` (the default factory switches to the mainnet deployment automatically), and `sourceSecret` must be an account you fund with real XLM: your app's sponsor account (users hold no XLM, keep the secret server-side) or a relayer (Launchtube, OpenZeppelin Relayer). A contract account holds no base reserve, so sponsoring locks nothing per user. Measured on mainnet: ~0.05 XLM to create an account and ~0.005 XLM per passkey-signed transaction. Costs and sponsorship models: https://docs.soropass.dev/docs/sponsorship
+On mainnet, the same code runs with two changes: `networkPassphrase: Networks.PUBLIC` with `rpcUrl: 'https://mainnet.sorobanrpc.com'` (the default factory switches to the mainnet deployment automatically), and `sourceSecret` must be an account you fund with real XLM: your app's sponsor account (users hold no XLM, keep the secret server-side) or a relayer (OpenZeppelin Relayer). A contract account holds no base reserve, so sponsoring locks nothing per user. Measured on mainnet: ~0.05 XLM to create an account and ~0.005 XLM per passkey-signed transaction. Costs and sponsorship models: https://docs.soropass.dev/docs/sponsorship
 
 To resolve an existing account without deploying, use `deriveAccountAddress` (synchronous and offline: it returns the C-address string directly, no `await` and no RPC) or `connect({ rpId, indexer })`. Note the encoding bridge: `createPasskey` returns `credentialId` as a base64url string, but `deriveAccountAddress` takes `Uint8Array` bytes. Pass the same bytes the factory received, which for `factoryDeployer` is the UTF-8 encoding of the base64url string, not its base64url-decoding. The options also require `publicKey`, the account's 65-byte SEC-1 key, because the v0.2 factory salts the deployed address by `sha256(credential_id ‖ public_key)`; binding the key fixes address squatting (credential ids are public, so a credential-only salt would let anyone pre-deploy at a victim's derived address with their own key).
 
@@ -374,5 +374,5 @@ The v0.2 account contract defines its own numeric contract errors, returned on-c
 
 ## Full reference
 
-- API reference, adapters (Launchtube, OpenZeppelin Relayer, Mercury indexer), and the device/browser compatibility matrix: https://docs.soropass.dev
+- API reference, adapters (OpenZeppelin Relayer, Mercury indexer), and the device/browser compatibility matrix: https://docs.soropass.dev
 - Package: https://www.npmjs.com/package/@soropass/core
