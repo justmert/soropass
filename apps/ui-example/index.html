@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SoroPass UI example</title>
+    <style>
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f4f5f7;
+        color: #16181d;
+      }
+      .app {
+        max-width: 460px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      .bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .bar button {
+        border: 1px solid #d5d9e0;
+        background: #fff;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .bar button[aria-pressed='true'] {
+        border-color: #16181d;
+        font-weight: 600;
+      }
+      .note {
+        font-size: 13px;
+        color: #5a6472;
+        margin: 0 0 20px;
+      }
+      /* Re-theming demo: override @soropass/ui tokens on a wrapping scope.
+         No component CSS is touched; this is the whole theming surface. */
+      .theme-acme {
+        --pk-color-brand: #7c3aed;
+        --pk-color-brand-hover: #6d28d9;
+        --pk-color-brand-active: #5b21b6;
+        --pk-color-brand-soft: #f3e8ff;
+        --pk-radius-md: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="bar" id="nav" role="tablist" aria-label="screens"></div>
+      <div class="bar">
+        <button id="theme" aria-pressed="false">Acme theme</button>
+      </div>
+      <p class="note">
+        Every card below is a drop-in screen from @soropass/ui, wired to the mock kit from
+        @soropass/core/testing: real flows, deterministic in-memory authenticator, no hardware and
+        no network. The theme button re-skins them by overriding tokens only.
+      </p>
+      <div id="screen"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
