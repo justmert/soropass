@@ -95,7 +95,7 @@ const account = await createPasskey({
     rpcUrl: 'https://soroban-testnet.stellar.org',
     networkPassphrase: Networks.TESTNET,
     factoryContractId: 'CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH',
-    sourceSecret, // a funded G-account secret that pays the deploy fee
+    sourceSecret, // a funded G-account secret that pays the deploy fee; see "Fees and sponsorship" below
   }),
 });
 
@@ -116,14 +116,16 @@ import { Keypair, rpc } from '@stellar/stellar-sdk';
 const sponsor = Keypair.random();
 await fetch(`https://friendbot.stellar.org/?addr=${sponsor.publicKey()}`);
 const server = new rpc.Server('https://soroban-testnet.stellar.org');
-for (let i = 0; i < 30; i++) {
+let funded = false;
+for (let i = 0; i < 30 && !funded; i++) {
   try {
     await server.getAccount(sponsor.publicKey());
-    break;
+    funded = true;
   } catch {
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
+if (!funded) throw new Error('sponsor funded but not visible on the Soroban RPC after 30s');
 const sourceSecret = sponsor.secret();
 ```
 
@@ -170,6 +172,70 @@ const signedTxXdr = await signTransaction(unsignedTxXdr, {
 
 The default `single-signer` target requires the signer's 65-byte SEC-1 public key: the assembled signature struct has four fields (`authenticator_data`, `client_data_json`, `public_key`, `signature`), and the v0.2 account verifies against the exact enrolled key named in it. Supply the key either as the `publicKey` option of `browserPasskeySigner` (echoed onto each assertion, shown above) or once as `SorobanSignOptions.publicKey` (which takes precedence); with neither, signing throws a `KitError`. `browserPasskeySigner` defaults `userVerification` to `'required'` because the v0.2 contract enforces the UV flag on-chain. The `target: 'smart-wallet'` path (passkey-kit v1) uses a three-field struct and resolves the key on-chain by credential id.
 
+### A complete payment, end to end
+
+The most common wallet transaction: move XLM out of the smart account through the native Stellar Asset Contract. Two signatures happen, and both are required. The passkey signs the smart account's authorization entry (that is what `__check_auth` verifies), and the classic source account signs the envelope for fees and sequence; submitting without the envelope signature fails with `txBadAuth`. Re-simulating after the passkey signs matters too: the first simulation runs with an unsigned entry and under-budgets the on-chain `secp256r1_verify`, while the enforcing re-simulation runs the real `__check_auth` and prices it correctly.
+
+```ts
+import { signTransaction, browserPasskeySigner } from '@soropass/core';
+import {
+  Asset,
+  Contract,
+  Keypair,
+  Networks,
+  TransactionBuilder,
+  nativeToScVal,
+  rpc,
+} from '@stellar/stellar-sdk';
+
+const server = new rpc.Server('https://soroban-testnet.stellar.org');
+const sponsor = Keypair.fromSecret(sourceSecret); // the fee source from "Fees and sponsorship"
+const SAC = Asset.native().contractId(Networks.TESTNET); // native XLM Stellar Asset Contract
+const addr = (a: string) => nativeToScVal(a, { type: 'address' });
+
+// 1. Build the transfer FROM the smart account, with the sponsor as the
+//    transaction source, and simulate.
+const source = await server.getAccount(sponsor.publicKey());
+const tx = new TransactionBuilder(source, { fee: '1000000', networkPassphrase: Networks.TESTNET })
+  .addOperation(
+    new Contract(SAC).call(
+      'transfer',
+      addr(account.contractId), // from: the smart account
+      addr(destination), // to: any funded account
+      nativeToScVal(25_000_000n, { type: 'i128' }), // 2.5 XLM in stroops
+    ),
+  )
+  .setTimeout(120)
+  .build();
+const assembled = await server.prepareTransaction(tx);
+
+// 2. The passkey signs the smart account's authorization entry. The expiration
+//    is stamped before the challenge is computed, so the signature binds it.
+const validUntil = (await server.getLatestLedger()).sequence + 100;
+const signedXdr = await signTransaction(assembled.toXDR(), {
+  networkPassphrase: Networks.TESTNET,
+  sign: browserPasskeySigner({
+    rpId: location.hostname,
+    allowCredentials: [account.credentialId],
+    publicKey: account.publicKey,
+  }),
+  signatureExpirationLedger: validUntil,
+});
+
+// 3. Re-simulate with the signed entry so the budget covers secp256r1_verify.
+const prepared = await server.prepareTransaction(
+  TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET),
+);
+
+// 4. The classic source signs the ENVELOPE, then submit and poll.
+prepared.sign(sponsor);
+const sent = await server.sendTransaction(prepared);
+const result = await server.pollTransaction(sent.hash);
+// result.status === 'SUCCESS'
+```
+
+The same build, passkey-sign, re-simulate, envelope-sign, submit sequence applies to every transaction the smart account authorizes, including the `add_signer` recovery flow below.
+
 ## Recover on a second device
 
 ### Native recovery on the v0.2 account
@@ -193,9 +259,10 @@ const operation = new Contract(account.contractId).call(
   nativeToScVal(device2.publicKey, { type: 'bytes' }),
 );
 
-// Build a transaction around `operation` with a funded classic source, simulate
-// and assemble it (a standard Soroban invoke), then sign the account's auth
-// entry with the EXISTING device and submit:
+// Build a transaction around `operation` with the funded source, simulate and
+// assemble it, then sign the account's auth entry with the EXISTING device,
+// re-simulate, sign the envelope with the source, and submit: the exact
+// sequence shown in "A complete payment, end to end" above.
 const signedXdr = await signTransaction(assembledTxXdr, {
   networkPassphrase: Networks.TESTNET,
   sign: browserPasskeySigner({
