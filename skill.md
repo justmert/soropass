@@ -106,6 +106,29 @@ const account = await createPasskey({
 
 `createPasskey` uses `browserWebAuthnClient()` by default. `sourceSecret` funds the one-time deploy; in production a relayer or sponsor pays instead. Registration defaults `userVerification` to `'required'`, because the v0.2 account requires the User-Verified flag in `__check_auth`: a signature without UV fails on-chain.
 
+### Fees and sponsorship
+
+Authorization and payment are separate: the passkey proves who may act, and a classic funded `G...` account sources every transaction, pays the network fee, and submits. `sourceSecret` is that fee source. In production it is your app's sponsor account (users hold no XLM, keep the secret server-side) or a relayer (Launchtube, OpenZeppelin Relayer). For development on testnet, fund a throwaway sponsor with friendbot, and poll the RPC before deploying, because friendbot returns before the Soroban RPC sees the new account:
+
+```js
+import { Keypair, rpc } from '@stellar/stellar-sdk';
+
+const sponsor = Keypair.random();
+await fetch(`https://friendbot.stellar.org/?addr=${sponsor.publicKey()}`);
+const server = new rpc.Server('https://soroban-testnet.stellar.org');
+for (let i = 0; i < 30; i++) {
+  try {
+    await server.getAccount(sponsor.publicKey());
+    break;
+  } catch {
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
+const sourceSecret = sponsor.secret();
+```
+
+A contract account holds no base reserve, so sponsoring locks nothing per user. Measured on mainnet: ~0.05 XLM to create an account and ~0.005 XLM per passkey-signed transaction. Costs, models, and the mainnet factory address: https://docs.soropass.dev/docs/sponsorship
+
 To resolve an existing account without deploying, use `deriveAccountAddress` (synchronous and offline: it returns the C-address string directly, no `await` and no RPC) or `connect({ rpId, indexer })`. Note the encoding bridge: `createPasskey` returns `credentialId` as a base64url string, but `deriveAccountAddress` takes `Uint8Array` bytes. Pass the same bytes the factory received, which for `factoryDeployer` is the UTF-8 encoding of the base64url string, not its base64url-decoding. The options also require `publicKey`, the account's 65-byte SEC-1 key, because the v0.2 factory salts the deployed address by `sha256(credential_id ‖ public_key)`; binding the key fixes address squatting (credential ids are public, so a credential-only salt would let anyone pre-deploy at a victim's derived address with their own key).
 
 ```ts
@@ -235,7 +258,7 @@ StellarWalletsKit.setWallet(PASSKEY_ID); // PASSKEY_ID === "passkey"
 const { address } = await StellarWalletsKit.getAddress();
 ```
 
-The kit's API is static: call `StellarWalletsKit.init(...)` once, then the static methods. The kit's npm package is `@creit.tech/stellar-wallets-kit` (note the dot). The `PasskeyModule` is proposed to the `Creit-Tech/Stellar-Wallets-Kit` maintainers (issue #95); the published kit (v2.5.0) does not include the `./modules/passkey` export yet, so this snippet runs once the module lands in a kit release. Until then, call the `@soropass/core` functions above directly; the module wraps exactly those calls. See https://docs.soropass.dev/docs/quickstart for configuration.
+The kit's API is static: call `StellarWalletsKit.init(...)` once, then the static methods. The kit's npm package is `@creit.tech/stellar-wallets-kit` (note the dot). The `PasskeyModule` is proposed upstream to `Creit-Tech/Stellar-Wallets-Kit`; the published kit (v2.6.0) does not include the `./modules/passkey` export yet, so this snippet runs once the module lands in a kit release. Until then, call the `@soropass/core` functions above directly; the module wraps exactly those calls. See https://docs.soropass.dev/docs/quickstart for configuration.
 
 ## Errors
 
