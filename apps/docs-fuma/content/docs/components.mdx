@@ -6,6 +6,14 @@ description: Drop-in, token-driven create, sign, recover, connect, and add-devic
 
 Drop-in, token-driven screens for the passkey moments of a Stellar smart account: create, sign, recover, connect, and add-device. Framework-agnostic, restyled entirely through tokens, and driven by headless state machines you can also use on their own.
 
+## Install
+
+```bash
+npm install @soropass/ui "@stellar/stellar-sdk@>=17"
+```
+
+`@soropass/core` comes in as a dependency, and `@stellar/stellar-sdk` is its peer. A complete consuming example, all five screens wired to the mock kit with no framework and no network, lives at [`apps/ui-example`](https://github.com/justmert/soropass/tree/main/apps/ui-example).
+
 ## Two layers
 
 The UI ships in two layers, both with zero framework runtime dependency:
