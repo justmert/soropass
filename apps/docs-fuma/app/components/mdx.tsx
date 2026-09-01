@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   Cable,
   PlayCircle,
+  Wallet,
+  Coins,
 } from 'lucide-react';
 import type { MDXComponents } from 'mdx/types';
 import { Preview } from './preview';
@@ -43,6 +45,8 @@ export function getMDXComponents(components?: MDXComponents) {
     Workflow,
     ShieldCheck,
     Cable,
+    Wallet,
+    Coins,
     PlayCircle,
     ...components,
   } satisfies MDXComponents;

@@ -4,7 +4,7 @@ icon: Rocket
 description: Add passkey sign-in for Stellar smart accounts three ways (headless SDK, drop-in UI components, or inside Stellar Wallets Kit), each with a runnable example.
 ---
 
-SoroPass adds passkey smart accounts to your app or wallet. It is a layer you integrate, not a wallet of its own: your users authorize with Face ID, Touch ID, or a security key, and their account is a Soroban smart contract that passkey controls.
+SoroPass adds passkey smart accounts to your app or wallet. It is a layer you integrate, not a wallet of its own: your users authorize with Face ID, Touch ID, or a security key, and their account is a Soroban smart contract that the passkey controls.
 
 There are three ways to adopt, each with a runnable example. They stack, so start with the one that fits and add the others later:
 
@@ -44,7 +44,7 @@ const indexer = smartWalletV1Indexer({ rpcUrl: cfg.rpcUrl });
 
 ## Path A: headless (any framework, or none) [#path-a--headless-any-framework-or-none]
 
-Four calls cover the whole lifecycle. This is the runnable core.
+Create, sign, and recover cover the whole lifecycle. This is the runnable core. `DEPLOYER_SECRET` here is a development convenience: in production the fee-source secret stays server-side or behind a relayer, never in browser code.
 
 ```ts
 import { createPasskey } from '@soropass/core/create';

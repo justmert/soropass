@@ -354,7 +354,7 @@ export default function App() {
             <code>@soropass/core</code> is on npm, Apache-2.0, with two runtime deps and stellar-sdk
             as a peer.
           </p>
-          <span className="sp-proofcard__meta">v0.2.1 &middot; ESM + CJS + types</span>
+          <span className="sp-proofcard__meta">v0.3.1 &middot; ESM + CJS + types</span>
         </a>
         <a className="sp-proofcard" href={COMPAT} target="_blank" rel="noopener noreferrer">
           <div className="sp-proofcard__head">
@@ -383,7 +383,7 @@ export default function App() {
         </div>
 
         <CopyChip
-          text={'npm i @soropass/core "@stellar/stellar-sdk@>=12 <17"'}
+          text={'npm i @soropass/core "@stellar/stellar-sdk@>=17"'}
           className="sp-cmd--bar"
         />
 
@@ -437,7 +437,9 @@ export default function App() {
               <pre className="sp-code" dangerouslySetInnerHTML={{ __html: KIT_CODE }} />
             </div>
             <div className="sp-way__foot">
-              <span className="sp-way__pkg">PasskeyModule &middot; ModuleInterface v2.5.0</span>
+              <span className="sp-way__pkg">
+                PasskeyModule &middot; kit v2.6.0 &middot; proposed upstream
+              </span>
               <a href={KIT_GUIDE} target="_blank" rel="noopener noreferrer">
                 Integration guide &#8594;
               </a>
@@ -555,9 +557,9 @@ export default function App() {
         <div className="sp-cta__copy">
           <h2 className="sp-cta__t">Your brand in the picker, one module away.</h2>
           <p>
-            The PasskeyModule implements the kit&apos;s ModuleInterface (v2.5.0), so the passkey
-            option carries your wallet&apos;s name and icon. Try it in the live demo, then follow
-            the integration guide.
+            The PasskeyModule implements the kit&apos;s ModuleInterface (kit v2.6.0) and is proposed
+            upstream; until it lands in a kit release, the same flows run through @soropass/core
+            directly. Try it in the live demo, then follow the integration guide.
           </p>
           <div className="sp-ctarow">
             <a

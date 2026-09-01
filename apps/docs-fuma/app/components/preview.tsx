@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MonitorPlay } from 'lucide-react';
 
-// Once the reference demo is deployed, set this to its embed URL, e.g.
-//   const EMBED_BASE = 'https://demo.soropass.dev/embed.html';
-// While it is empty, previews render a styled placeholder instead of a broken
-// ("server not found") iframe.
-const EMBED_BASE = '/demo/embed.html';
+// The embed page belonged to the previous UI demo; the current demo at
+// demo.soropass.dev is the wallets-kit test run and serves no embed.html.
+// While EMBED_BASE is empty, previews render a styled placeholder instead of
+// an iframe that would load a 404. Restore a real embed URL when the
+// component gallery ships again.
+const EMBED_BASE = '';
 const DEMO_URL = 'https://demo.soropass.dev';
 
 // The states each screen can step through, in flow order. Screens with a single

@@ -44,13 +44,13 @@ The fee source is a pluggable submission adapter, so you choose the payer once a
 
 Set the adapter once and account creation, add-device, and every signed transaction route through it. See [Adapters](/docs/sdk/accounts#adapters) and [Gasless onboarding](/docs/existing-wallets#gasless-onboarding-sponsor-fees-with-a-relayer).
 
-## How SoroPass sponsors onboarding
+## How to sponsor onboarding
 
-SoroPass sponsors the operations that remove the onboarding barrier: **account creation and adding a backup device**. A new user gets a working, recoverable passkey account while holding no XLM.
+Sponsor the two operations that remove the onboarding barrier: **account creation and adding a backup device**. Your new user then holds a working, recoverable passkey account without owning any XLM, and your funded account paid for it.
 
 Per user that is about 0.05 XLM to create the account plus about 0.03 XLM to enroll a backup device, so about 0.08 XLM. Sponsoring 10,000 users is on the order of 800 XLM (about 500 XLM for creation and 300 XLM for one add-device each). Budget higher to allow for network fee changes.
 
-Everything after onboarding is the integrating wallet's choice. Because payment is decoupled, a wallet sponsors its users' ongoing transactions through its own account or a relayer, or has users pay. SoroPass does not require or fund ongoing transaction fees.
+Everything after onboarding is equally your choice. Because payment is decoupled, you sponsor your users' ongoing transactions through your own account or a relayer, or have users pay their own fees once they hold XLM. The deployed factories are open infrastructure: they set no fee policy and fund nothing themselves.
 
 ## Proof on mainnet
 

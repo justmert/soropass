@@ -43,7 +43,10 @@ import { Networks } from '@stellar/stellar-sdk';
 const cfg = {
   rpcUrl: 'https://soroban-testnet.stellar.org',
   networkPassphrase: Networks.TESTNET,
-  factoryContractId: 'C...', // your deployed AccountFactory
+  // Optional since @soropass/core 0.3.1: omit it and the deployed SoroPass
+  // factory for `networkPassphrase` is used (testnet CADKKP4B..., mainnet
+  // CCCNRWMI..., both permissionless). Set it to use your own factory.
+  factoryContractId: 'C...',
 };
 
 const deployer = factoryDeployer({ ...cfg, sourceSecret: DEPLOYER_SECRET }); // funded G-account that pays the deploy
