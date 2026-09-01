@@ -6,8 +6,7 @@ import { Address, xdr } from '@stellar/stellar-sdk';
  * build auth-entry XDR just to have something to sign. The nonce and expiration
  * are fixed placeholders, so this is for local verification, not production.
  *
- * Requires `@stellar/stellar-sdk >=12 <17` (the package's peer range): version 17
- * reworked the XDR API this builds against.
+ * Requires `@stellar/stellar-sdk >=17` (the package's peer range).
  */
 export function sampleAuthEntry(contractId: string, functionName = 'protected'): string {
   const address = new Address(contractId).toScAddress();
@@ -15,7 +14,7 @@ export function sampleAuthEntry(contractId: string, functionName = 'protected'):
     credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(
       new xdr.SorobanAddressCredentials({
         address,
-        nonce: new xdr.Int64(1),
+        nonce: 1n,
         signatureExpirationLedger: 1000,
         signature: xdr.ScVal.scvVoid(),
       }),

@@ -60,8 +60,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/core
       '@stellar/stellar-sdk':
-        specifier: ^16.0.0
-        version: 16.2.0
+        specifier: ^17.0.0
+        version: 17.0.1
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -230,8 +230,8 @@ importers:
         version: 1.8.0
     devDependencies:
       '@stellar/stellar-sdk':
-        specifier: ^15.1.0
-        version: 15.1.0
+        specifier: ^17.0.1
+        version: 17.0.1
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
@@ -255,8 +255,8 @@ importers:
         version: link:../core
     devDependencies:
       '@stellar/stellar-sdk':
-        specifier: ^15.1.0
-        version: 15.1.0
+        specifier: ^17.0.1
+        version: 17.0.1
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
@@ -1161,6 +1161,15 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@exodus/bytes@1.15.1':
+    resolution: {integrity: sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@noble/hashes': ^1.8.0 || ^2.0.0
+    peerDependenciesMeta:
+      '@noble/hashes':
+        optional: true
 
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
@@ -2720,6 +2729,10 @@ packages:
     resolution: {integrity: sha512-+NmNa7Tk5BI5XFdy/6xGTqAN4J9a9KgCrCGhj2uEUTCBhLkch0M+QbKzNH8zEnejWe0p8w+0q5hUVX6L3OzoVA==}
     engines: {node: '>=20.0.0', pnpm: '>=9.0.0'}
 
+  '@stellar/js-xdr@5.0.0':
+    resolution: {integrity: sha512-HBDNKnxr+ecdaEmbZ0mcKkirOF8tXXEbWSw34P3wT40Tn3g+u+cCH17xAWZymzscq8cojHB8340pR8QNVaD32w==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+
   '@stellar/stellar-base@15.0.0':
     resolution: {integrity: sha512-XQhxUr9BYiEcFcgc4oWcCMR9QJCny/GmmGsuwPKf/ieIcOeb5149KLHYx9mJCA0ea8QbucR2/GzV58QbXOTxQA==}
     engines: {node: '>=20.0.0'}
@@ -2729,9 +2742,9 @@ packages:
     engines: {node: '>=20.0.0'}
     hasBin: true
 
-  '@stellar/stellar-sdk@16.2.0':
-    resolution: {integrity: sha512-FV/Rm11QvrFzR5X9fIfb6Pg30KyYyrRkNezELGFmYDAYrzoPTjqo7vklnEPd2HEontzjJmZizWk8CjyIh5vp0w==}
-    engines: {node: '>=22.0.0'}
+  '@stellar/stellar-sdk@17.0.1':
+    resolution: {integrity: sha512-fsHHbzJ14N5Ttq5Qpz4AX0ytmPSLCzcy4XC3uIgSQz0cBkEgv0Zb4KE6tWEd3nDQUk/1qP8ZX9cRonIaUXO3Sw==}
+    engines: {node: '>=22.12.0'}
     hasBin: true
 
   '@swc/helpers@0.5.23':
@@ -2949,51 +2962,49 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@trezor/connect-common@10.0.0-alpha.1':
-    resolution: {integrity: sha512-tuvM72XHACogT/fkp9D8wyzTE8h4X9emYUhvFs2pdTyIfTFs5RHDbcHQWFsvJgJoTK0H44XSSJb8pORijRfn9A==}
+  '@trezor/connect-common@10.0.0-beta.1':
+    resolution: {integrity: sha512-iRXsc9e84IQsqn/hb4PpFnmt/ozMezmRmN/diAK/KbDCYPPBvzbMQRAs/ZCClO2YbhbxmYUX//4NveX+FCZeAw==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/connect-plugin-stellar@10.0.0-alpha.1':
-    resolution: {integrity: sha512-v4lMnnBPxLoV/Yf8F0WmtkZGNsqurpxK62kqvaDeVoAtn5Ud+l6POQkLeQRiGsJYVm0vSDc4LHb5vLMrZTH/KA==}
-    peerDependencies:
-      '@stellar/stellar-sdk': ^13.3.0
-      '@trezor/connect': 9.x.x
-      tslib: ^2.6.2
-
-  '@trezor/connect-web@10.0.0-alpha.1':
-    resolution: {integrity: sha512-CW1ZXzXNVYrJ2WuYneLK2LznkRAfKxRPB3vJyv1U2gia5Q7hsblImITsutLOztO0C2xO1sfETTCyVzfRkRVJEA==}
+  '@trezor/connect-web@10.0.0-beta.1':
+    resolution: {integrity: sha512-zfYNRYJU4wC1tOxU57YIgB3zt134AVJmVLe/vxIuqyl1IIIm7sanWaz6ff1khJHRiKkYzneExmFNNUlQRPVC3A==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/device-utils@10.0.0-alpha.1':
-    resolution: {integrity: sha512-93LhEqH8uKCZHLtF+62uxd3/PXCfqpK4Z98ztfGu5vrtmoONb9dV8Falha0b3KXPDrQ10TUKasFGKLg570Z/Ew==}
-
-  '@trezor/protobuf@10.0.0-alpha.1':
-    resolution: {integrity: sha512-aCUyqAr7Sho9TequaNAjnf27mgae6qzesNrOgB19bUrDrhaDDd/2eyr2SrrY1G4hPYkTyBC0jymvQnozn9f/kA==}
+  '@trezor/crypto-utils@10.0.0-beta.1':
+    resolution: {integrity: sha512-BokMrEgCm6QIwjIfwHZZswbvRRLjGHvS70uMqVcZIOofIIqD+pGXWi2Ll8KW3ZZmIztZqZWPFKUrW2hfH07z+w==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/protocol@10.0.0-alpha.1':
-    resolution: {integrity: sha512-f+rXjtmAdHD93vaLq/QofLJlMP/ZQM4iJqTrcjkUgXKzu8/Jz03tttodBib8A6g9ruGcxLr2smWaRMwwreb8Pg==}
+  '@trezor/device-utils@10.0.0-beta.1':
+    resolution: {integrity: sha512-Hms2U0lv6lUh4eNtYHz2/347/aYkl0l1U5cMLYDu8X0gLf2NGDYEnRC3QGVR1hm9Ha2bzjjgEI25J4Xrz6O+CQ==}
+
+  '@trezor/protobuf@10.0.0-beta.1':
+    resolution: {integrity: sha512-kwKaQloSdfSnIvuERp2sFYdqrk6QUZz8EmIXzPbAgZ+SPPhrpapU00GnVxpg4lR/P8cWHtb/8BKG82lU+Lp3ZQ==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/schema-utils@10.0.0-alpha.1':
-    resolution: {integrity: sha512-0beYv0b0De3Z60sZzM1T+IrYwXeNL+7RKfLokTvqEFDzsQkwxhYrIX47FsBhGsOmGWx9x4+65dxDbnyd4wZT6g==}
+  '@trezor/protocol@10.0.0-beta.1':
+    resolution: {integrity: sha512-kYcnIjSE1mnAkDDQz7roEDEIy3iBS2dkDPtOcd7lI37jpmvXj2Iu4P7jhG+n9SKb0bwu/e69EpmQOrjrwUX0Yw==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/type-utils@10.0.0-alpha.1':
-    resolution: {integrity: sha512-wK75rrwlyXFgPfdHQFRbeKCoj+orQLXKj7rliMK30z+F1y+rEcfv/MW2VP48Q9mL5pea+ZX1nRnb4hYx1v38Ow==}
-
-  '@trezor/utils@10.0.0-alpha.1':
-    resolution: {integrity: sha512-A+txzREoeX2MO1AqocDBsMNe+R21jTx5kungXGuzeTRRevARLsYh8MPes0170uMjq4qNSgopBnYZK18WyksOmQ==}
+  '@trezor/schema-utils@10.0.0-beta.1':
+    resolution: {integrity: sha512-a1+6MfvqWFGuAJ+NfFAUOfxoMmtOC1s97GwW43vOSnOxRi5JT1LqRrOWfdZWLMap/uIXRRHAHD8B96xtTrLqlg==}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@trezor/websocket-client@10.0.0-alpha.1':
-    resolution: {integrity: sha512-129Ot1m+fDodRFBvav2d6v8nLxZLAl/udQP5l5W6jxQZcWUuviphDceT/juF8EvNGdw+L6OIu6fH+yCXARpFWQ==}
+  '@trezor/type-utils@10.0.0-beta.1':
+    resolution: {integrity: sha512-W8tNL8j0oSJvGi85wzacmUowMDTZaL4ABDrbw6ByRlARxIhjcrBTcy6o9aO6ChABBAZuIEMty4mCeJmQttIhpw==}
+
+  '@trezor/utils@10.0.0-beta.1':
+    resolution: {integrity: sha512-kKBYHzSwvfW9k1zkTukLscucsOuOJ08f3mnQGY0rYszgP7jBUdJ61zUdljIDZ73WaJsUb0/ZnnzGVxUHtdcGvw==}
+    peerDependencies:
+      tslib: ^2.6.2
+
+  '@trezor/websocket-client@10.0.0-beta.1':
+    resolution: {integrity: sha512-ctYcledlp3PRTeQluR2JG5t9eeGa678kUIZjR+1/vPgjM3D1Hd/54BY0is1SytkG3LXb0MDvi0OKpP5ZG+fSFw==}
     peerDependencies:
       tslib: ^2.6.2
 
@@ -7576,9 +7587,8 @@ snapshots:
       '@reown/appkit': 1.8.21(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.7)(typescript@5.9.3)(zod@4.4.3)
       '@soropass/core': link:packages/core
       '@stellar/freighter-api': 6.0.0
-      '@stellar/stellar-sdk': 16.2.0
-      '@trezor/connect-plugin-stellar': 10.0.0-alpha.1(@stellar/stellar-sdk@16.2.0)(tslib@2.8.1)
-      '@trezor/connect-web': 10.0.0-alpha.1(bufferutil@4.1.0)(tslib@2.8.1)
+      '@stellar/stellar-sdk': 17.0.1
+      '@trezor/connect-web': 10.0.0-beta.1(bufferutil@4.1.0)(tslib@2.8.1)
       '@twind/core': 1.1.3(typescript@5.9.3)
       '@twind/preset-autoprefix': 1.0.7(@twind/core@1.1.3(typescript@5.9.3))(typescript@5.9.3)
       '@twind/preset-tailwind': 1.1.4(@twind/core@1.1.3(typescript@5.9.3))(typescript@5.9.3)
@@ -7598,7 +7608,6 @@ snapshots:
       - '@netlify/blobs'
       - '@planetscale/database'
       - '@react-native-async-storage/async-storage'
-      - '@trezor/connect'
       - '@types/react'
       - '@upstash/redis'
       - '@vercel/blob'
@@ -7934,6 +7943,10 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@exodus/bytes@1.15.1(@noble/hashes@2.3.0)':
+    optionalDependencies:
+      '@noble/hashes': 2.3.0
 
   '@floating-ui/core@1.7.5':
     dependencies:
@@ -9807,6 +9820,8 @@ snapshots:
 
   '@stellar/js-xdr@4.0.0': {}
 
+  '@stellar/js-xdr@5.0.0': {}
+
   '@stellar/stellar-base@15.0.0':
     dependencies:
       '@noble/curves': 1.9.7
@@ -9830,15 +9845,15 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@stellar/stellar-sdk@16.2.0':
+  '@stellar/stellar-sdk@17.0.1':
     dependencies:
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.3.0)
       '@noble/ed25519': 3.1.0
       '@noble/hashes': 2.3.0
-      '@stellar/js-xdr': 4.0.0
+      '@stellar/js-xdr': 5.0.0
+      '@types/json-schema': 7.0.15
       axios: 1.18.0
-      base32.js: 0.1.0
       bignumber.js: 11.1.5
-      buffer: 6.0.3
       commander: 14.0.3
       eventsource: 4.1.1
       feaxios: 0.0.23
@@ -10058,61 +10073,61 @@ snapshots:
       - csstype
       - utf-8-validate
 
-  '@trezor/connect-common@10.0.0-alpha.1(tslib@2.8.1)':
+  '@trezor/connect-common@10.0.0-beta.1(tslib@2.8.1)':
     dependencies:
-      '@trezor/device-utils': 10.0.0-alpha.1
-      '@trezor/protobuf': 10.0.0-alpha.1(tslib@2.8.1)
-      '@trezor/protocol': 10.0.0-alpha.1(tslib@2.8.1)
-      '@trezor/schema-utils': 10.0.0-alpha.1(tslib@2.8.1)
-      '@trezor/type-utils': 10.0.0-alpha.1
-      '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
+      '@trezor/crypto-utils': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/device-utils': 10.0.0-beta.1
+      '@trezor/protobuf': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/protocol': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/schema-utils': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/type-utils': 10.0.0-beta.1
+      '@trezor/utils': 10.0.0-beta.1(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@trezor/connect-plugin-stellar@10.0.0-alpha.1(@stellar/stellar-sdk@16.2.0)(tslib@2.8.1)':
+  '@trezor/connect-web@10.0.0-beta.1(bufferutil@4.1.0)(tslib@2.8.1)':
     dependencies:
-      '@stellar/stellar-sdk': 16.2.0
-      '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
-      tslib: 2.8.1
-
-  '@trezor/connect-web@10.0.0-alpha.1(bufferutil@4.1.0)(tslib@2.8.1)':
-    dependencies:
-      '@trezor/connect-common': 10.0.0-alpha.1(tslib@2.8.1)
-      '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
-      '@trezor/websocket-client': 10.0.0-alpha.1(bufferutil@4.1.0)(tslib@2.8.1)
+      '@trezor/connect-common': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/utils': 10.0.0-beta.1(tslib@2.8.1)
+      '@trezor/websocket-client': 10.0.0-beta.1(bufferutil@4.1.0)(tslib@2.8.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@trezor/device-utils@10.0.0-alpha.1': {}
+  '@trezor/crypto-utils@10.0.0-beta.1(tslib@2.8.1)':
+    dependencies:
+      '@trezor/type-utils': 10.0.0-beta.1
+      tslib: 2.8.1
 
-  '@trezor/protobuf@10.0.0-alpha.1(tslib@2.8.1)':
+  '@trezor/device-utils@10.0.0-beta.1': {}
+
+  '@trezor/protobuf@10.0.0-beta.1(tslib@2.8.1)':
     dependencies:
       '@bufbuild/protobuf': 2.12.0
-      '@trezor/schema-utils': 10.0.0-alpha.1(tslib@2.8.1)
+      '@trezor/schema-utils': 10.0.0-beta.1(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@trezor/protocol@10.0.0-alpha.1(tslib@2.8.1)':
+  '@trezor/protocol@10.0.0-beta.1(tslib@2.8.1)':
     dependencies:
       tslib: 2.8.1
 
-  '@trezor/schema-utils@10.0.0-alpha.1(tslib@2.8.1)':
+  '@trezor/schema-utils@10.0.0-beta.1(tslib@2.8.1)':
     dependencies:
       '@sinclair/typebox': 0.34.49
-      '@trezor/type-utils': 10.0.0-alpha.1
+      '@trezor/utils': 10.0.0-beta.1(tslib@2.8.1)
       ts-mixer: 6.0.4
       tslib: 2.8.1
 
-  '@trezor/type-utils@10.0.0-alpha.1': {}
+  '@trezor/type-utils@10.0.0-beta.1': {}
 
-  '@trezor/utils@10.0.0-alpha.1(tslib@2.8.1)':
+  '@trezor/utils@10.0.0-beta.1(tslib@2.8.1)':
     dependencies:
-      bignumber.js: 9.3.1
+      bignumber.js: 11.1.5
       tslib: 2.8.1
 
-  '@trezor/websocket-client@10.0.0-alpha.1(bufferutil@4.1.0)(tslib@2.8.1)':
+  '@trezor/websocket-client@10.0.0-beta.1(bufferutil@4.1.0)(tslib@2.8.1)':
     dependencies:
-      '@trezor/utils': 10.0.0-alpha.1(tslib@2.8.1)
+      '@trezor/utils': 10.0.0-beta.1(tslib@2.8.1)
       tslib: 2.8.1
       ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:

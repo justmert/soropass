@@ -45,8 +45,8 @@ export function factoryDeployer(options: FactoryDeployerOptions): AccountDeploye
           `factory deploy: public key must be 65-byte SEC-1 (got ${String(input.publicKey.length)})`,
         );
       }
-      const pk = nativeToScVal(Buffer.from(input.publicKey), { type: 'bytes' });
-      const cred = nativeToScVal(Buffer.from(new TextEncoder().encode(input.credentialId)), {
+      const pk = nativeToScVal(input.publicKey, { type: 'bytes' });
+      const cred = nativeToScVal(new TextEncoder().encode(input.credentialId), {
         type: 'bytes',
       });
       const account = await server.getAccount(source.publicKey());

@@ -81,8 +81,8 @@ export function buildSecp256r1Signer(spec: Secp256r1SignerSpec): xdr.ScVal {
   }
   return xdr.ScVal.scvVec([
     xdr.ScVal.scvSymbol('Secp256r1'),
-    xdr.ScVal.scvBytes(Buffer.from(spec.credentialId)),
-    xdr.ScVal.scvBytes(Buffer.from(spec.publicKey)),
+    xdr.ScVal.scvBytes(spec.credentialId),
+    xdr.ScVal.scvBytes(spec.publicKey),
     expirationScVal(spec.expiration), // SignerExpiration
     noneTuple(), // SignerLimits(None)
     storageScVal(spec.storage), // SignerStorage
@@ -116,8 +116,9 @@ export interface BuildAddSignerOptions {
  * `signTransaction(.., { target: 'smart-wallet' })`.
  */
 export function buildAddSignerOperation(options: BuildAddSignerOptions): xdr.Operation {
-  const signerScVal =
-    options.signer instanceof xdr.ScVal ? options.signer : buildSecp256r1Signer(options.signer);
+  const signerScVal = xdr.ScVal.is(options.signer)
+    ? options.signer
+    : buildSecp256r1Signer(options.signer);
   return contractCall(options.walletContractId, 'add_signer', signerScVal);
 }
 

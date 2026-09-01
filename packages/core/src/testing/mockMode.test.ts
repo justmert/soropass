@@ -3,6 +3,7 @@ import { Address, Networks, StrKey, xdr } from '@stellar/stellar-sdk';
 import { createPasskeyKit } from './index';
 import { mockAuthenticator } from './mockAuthenticator';
 import { referenceCheckAuth } from '../soroban/checkAuth';
+import { scBytes, scMap, scSymbol } from '../soroban/scval';
 import { derToCompact, derToCompactLowS, isLowS } from '../webauthn/signature';
 
 const RP_ID = 'localhost';
@@ -11,7 +12,7 @@ function buildUnsignedEntry(): string {
   const address = new Address(StrKey.encodeContract(Buffer.alloc(32, 3)));
   const credentials = new xdr.SorobanAddressCredentials({
     address: address.toScAddress(),
-    nonce: new xdr.Int64(42),
+    nonce: 42n,
     signatureExpirationLedger: 1000,
     signature: xdr.ScVal.scvVoid(),
   });
@@ -32,9 +33,11 @@ function buildUnsignedEntry(): string {
 }
 
 function assembledSignature(entry: xdr.SorobanAuthorizationEntry): Uint8Array {
-  const structMap = entry.credentials().address().signature().map()!;
-  const field = structMap.find((e) => e.key().sym().toString() === 'signature')!;
-  return new Uint8Array(field.val().bytes());
+  const creds = entry.credentials;
+  if (creds.type !== 'sorobanCredentialsAddress') throw new Error('expected address credentials');
+  const structMap = scMap(creds.address.signature)!;
+  const field = structMap.find((e) => scSymbol(e.key) === 'signature')!;
+  return scBytes(field.val)!;
 }
 
 afterEach(() => {

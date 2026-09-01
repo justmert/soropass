@@ -6,6 +6,7 @@ import { parseAuthenticatorData, verifyRpIdHash } from '../webauthn/authData';
 import { verifyAssertionSignature } from '../webauthn/verify';
 import { authEntryChallenge } from './preimage';
 import { applyAssertionToEntry } from './assemble';
+import { addressCredentials, withAddressCredentials } from './scval';
 import { applyAssertionToSmartWalletEntry } from './smartWallet';
 
 /**
@@ -159,16 +160,19 @@ function preflightAssertion(
   }
 }
 
-async function signEntryInPlace(
+async function signEntry(
   entry: xdr.SorobanAuthorizationEntry,
   options: SorobanSignOptions,
-): Promise<void> {
+): Promise<xdr.SorobanAuthorizationEntry> {
   // Stamp the expiration first: the challenge preimage includes
   // signatureExpirationLedger, so it must be final before we compute it.
+  // v17 XDR values are immutable, so stamping rebuilds the entry.
   if (options.signatureExpirationLedger !== undefined) {
-    const creds = entry.credentials();
-    if (creds.switch().name === 'sorobanCredentialsAddress') {
-      creds.address().signatureExpirationLedger(options.signatureExpirationLedger);
+    const creds = addressCredentials(entry);
+    if (creds) {
+      entry = withAddressCredentials(entry, creds, {
+        signatureExpirationLedger: options.signatureExpirationLedger,
+      });
     }
   }
   const challenge = authEntryChallenge(entry, options.networkPassphrase);
@@ -188,17 +192,16 @@ async function signEntryInPlace(
     signature,
   };
   if (options.target === 'smart-wallet') {
-    applyAssertionToSmartWalletEntry(entry, normalized);
-  } else {
-    const publicKey = options.publicKey ?? assertion.publicKey;
-    if (publicKey === undefined) {
-      throw new KitError(
-        'CONTRACT_AUTH_FAILED',
-        'single-signer signing requires the signer public key: set SorobanSignOptions.publicKey or return publicKey from the signer',
-      );
-    }
-    applyAssertionToEntry(entry, normalized, publicKey);
+    return applyAssertionToSmartWalletEntry(entry, normalized);
   }
+  const publicKey = options.publicKey ?? assertion.publicKey;
+  if (publicKey === undefined) {
+    throw new KitError(
+      'CONTRACT_AUTH_FAILED',
+      'single-signer signing requires the signer public key: set SorobanSignOptions.publicKey or return publicKey from the signer',
+    );
+  }
+  return applyAssertionToEntry(entry, normalized, publicKey);
 }
 
 /**
@@ -211,8 +214,8 @@ export async function signAuthEntry(
   options: SorobanSignOptions,
 ): Promise<string> {
   const entry = xdr.SorobanAuthorizationEntry.fromXDR(entryXdr, 'base64');
-  await signEntryInPlace(entry, options);
-  return entry.toXDR('base64');
+  const signed = await signEntry(entry, options);
+  return signed.toXDR('base64');
 }
 
 /**
@@ -222,21 +225,20 @@ export async function signAuthEntry(
  * caller's sequencing concern.)
  */
 function operationsForSigning(envelope: xdr.TransactionEnvelope): xdr.Operation[] {
-  const kind = envelope.switch().name;
-  if (kind === 'envelopeTypeTx') return envelope.v1().tx().operations();
-  if (kind === 'envelopeTypeTxFeeBump') {
-    const inner = envelope.feeBump().tx().innerTx();
-    if (inner.switch().name !== 'envelopeTypeTx') {
+  if (envelope.type === 'envelopeTypeTx') return envelope.v1.tx.operations;
+  if (envelope.type === 'envelopeTypeTxFeeBump') {
+    const inner = envelope.feeBump.tx.innerTx;
+    if (inner.type !== 'envelopeTypeTx') {
       throw new KitError(
         'CONTRACT_AUTH_FAILED',
         'signTransaction: fee-bump inner transaction is not a v1 transaction',
       );
     }
-    return inner.v1().tx().operations();
+    return inner.v1.tx.operations;
   }
   throw new KitError(
     'CONTRACT_AUTH_FAILED',
-    `signTransaction: unsupported envelope type "${kind}" (expected v1 or fee-bump)`,
+    `signTransaction: unsupported envelope type "${envelope.type}" (expected v1 or fee-bump)`,
   );
 }
 
@@ -248,18 +250,21 @@ function operationsForSigning(envelope: xdr.TransactionEnvelope): xdr.Operation[
 export async function signTransaction(txXdr: string, options: SorobanSignOptions): Promise<string> {
   const envelope = xdr.TransactionEnvelope.fromXDR(txXdr, 'base64');
   for (const op of operationsForSigning(envelope)) {
-    if (op.body().switch().name !== 'invokeHostFunction') continue;
-    const entries = op.body().invokeHostFunctionOp().auth();
-    for (const entry of entries) {
-      if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') continue;
+    if (op.body.type !== 'invokeHostFunction') continue;
+    const entries = op.body.invokeHostFunctionOp.auth;
+    for (let i = 0; i < entries.length; i += 1) {
+      const entry = entries[i]!;
+      const creds = addressCredentials(entry);
+      if (!creds) continue;
       if (
         options.signerAddress !== undefined &&
-        Address.fromScAddress(entry.credentials().address().address()).toString() !==
-          options.signerAddress
+        Address.fromScAddress(creds.address).toString() !== options.signerAddress
       ) {
         continue;
       }
-      await signEntryInPlace(entry, options);
+      // v17 XDR values are immutable: signing rebuilds the entry, so splice the
+      // signed rebuild back into the operation's auth list.
+      entries[i] = await signEntry(entry, options);
     }
   }
   return envelope.toXDR('base64');

@@ -163,21 +163,14 @@ async function main(): Promise<void> {
     }
     const prepared = rpc.assembleTransaction(tx, sim1).build();
 
-    // 2b. set the auth-entry expiration, then sign it with the passkey (smart-wallet shape).
+    // 2b. sign with the passkey (smart-wallet shape); the SDK stamps the
+    // auth-entry expiration BEFORE computing the challenge.
     const validUntil = (await server.getLatestLedger()).sequence + 1000;
-    const penv = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
-    for (const op of penv.v1().tx().operations()) {
-      if (op.body().switch().name !== 'invokeHostFunction') continue;
-      for (const entry of op.body().invokeHostFunctionOp().auth()) {
-        if (entry.credentials().switch().name === 'sorobanCredentialsAddress') {
-          entry.credentials().address().signatureExpirationLedger(validUntil);
-        }
-      }
-    }
-    const signedXdr = await signTransaction(penv.toXDR('base64'), {
+    const signedXdr = await signTransaction(prepared.toXDR(), {
       networkPassphrase: NETWORK,
       sign: signer,
       target: 'smart-wallet',
+      signatureExpirationLedger: validUntil,
     });
 
     // 2c. RE-simulate WITH the signed auth (enforcing): this runs the audited v1
@@ -197,19 +190,38 @@ async function main(): Promise<void> {
     //     passkey-kit deployment complexity; the auth is already proven above.
     try {
       const fenv = xdr.TransactionEnvelope.fromXDR(signedTx.toXDR(), 'base64');
+      if (fenv.type !== 'envelopeTypeTx') throw new Error('expected a v1 envelope');
       const sd = sim2.transactionData.build();
-      const r = sd.resources();
-      r.instructions(100_000_000);
-      r.diskReadBytes(r.diskReadBytes() + 20_000);
-      r.writeBytes(r.writeBytes() + 20_000);
+      const res = sd.resources;
       const fee = Number(sim2.minResourceFee) + 20_000_000;
-      sd.resourceFee(new xdr.Int64(fee));
-      fenv.v1().tx().ext().sorobanData(sd);
-      fenv
-        .v1()
-        .tx()
-        .fee(fee + 1_000_000);
-      const finalTx = TransactionBuilder.fromXDR(fenv.toXDR('base64'), NETWORK);
+      // v17 XDR values are immutable: rebuild the tx with the padded resources.
+      const tx0 = fenv.v1.tx;
+      const rebuilt = xdr.TransactionEnvelope.envelopeTypeTx(
+        new xdr.TransactionV1Envelope({
+          tx: new xdr.Transaction({
+            sourceAccount: tx0.sourceAccount,
+            fee: fee + 1_000_000,
+            seqNum: tx0.seqNum,
+            cond: tx0.cond,
+            memo: tx0.memo,
+            operations: tx0.operations,
+            ext: xdr.TransactionExt.sorobanData(
+              new xdr.SorobanTransactionData({
+                ext: sd.ext,
+                resources: new xdr.SorobanResources({
+                  footprint: res.footprint,
+                  instructions: 100_000_000,
+                  diskReadBytes: res.diskReadBytes + 20_000,
+                  writeBytes: res.writeBytes + 20_000,
+                }),
+                resourceFee: BigInt(fee),
+              }),
+            ),
+          }),
+          signatures: fenv.v1.signatures,
+        }),
+      );
+      const finalTx = TransactionBuilder.fromXDR(rebuilt.toXDR('base64'), NETWORK);
       finalTx.sign(source);
       const sent = await server.sendTransaction(finalTx);
       if (sent.status === 'ERROR')

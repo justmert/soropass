@@ -34,7 +34,9 @@ function assertion(signature: Uint8Array): AssertionResult {
 }
 
 function sigSwitch(entry: xdr.SorobanAuthorizationEntry): string {
-  return entry.credentials().address().signature().switch().name;
+  const creds = entry.credentials;
+  if (creds.type !== 'sorobanCredentialsAddress') throw new Error('expected address credentials');
+  return creds.address.signature.type;
 }
 
 function twoEntryTx(): string {
@@ -59,13 +61,11 @@ function twoEntryTx(): string {
 }
 
 function authEntries(signedXdr: string): xdr.SorobanAuthorizationEntry[] {
-  return xdr.TransactionEnvelope.fromXDR(signedXdr, 'base64')
-    .v1()
-    .tx()
-    .operations()[0]!
-    .body()
-    .invokeHostFunctionOp()
-    .auth();
+  const envelope = xdr.TransactionEnvelope.fromXDR(signedXdr, 'base64');
+  if (envelope.type !== 'envelopeTypeTx') throw new Error('expected a v1 envelope');
+  const body = envelope.v1.tx.operations[0]!.body;
+  if (body.type !== 'invokeHostFunction') throw new Error('expected invokeHostFunction');
+  return body.invokeHostFunctionOp.auth;
 }
 
 describe('signAuthEntry / signTransaction hardening', () => {
@@ -83,17 +83,16 @@ describe('signAuthEntry / signTransaction hardening', () => {
       networkPassphrase: NETWORK,
       sign: () => assertion(highCompact),
     });
-    const map = xdr.SorobanAuthorizationEntry.fromXDR(signedXdr, 'base64')
-      .credentials()
-      .address()
-      .signature()
-      .map()!;
-    const outSig = new Uint8Array(
-      map
-        .find((e) => e.key().sym().toString() === 'signature')!
-        .val()
-        .bytes(),
-    );
+    const signed = xdr.SorobanAuthorizationEntry.fromXDR(signedXdr, 'base64');
+    const creds = signed.credentials;
+    if (creds.type !== 'sorobanCredentialsAddress') throw new Error('expected address credentials');
+    const sig = creds.address.signature;
+    if (sig.type !== 'scvMap') throw new Error('expected an scvMap signature');
+    const field = sig.map!.find(
+      (e) => e.key.type === 'scvSymbol' && e.key.sym.toString() === 'signature',
+    )!;
+    if (field.val.type !== 'scvBytes') throw new Error('expected scvBytes signature field');
+    const outSig = new Uint8Array(field.val.bytes.toBytes());
     expect(outSig).toHaveLength(64);
     expect(isLowS(outSig)).toBe(true);
   });

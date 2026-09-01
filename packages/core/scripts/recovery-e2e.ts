@@ -30,6 +30,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { readFileSync } from 'node:fs';
 import { signTransaction, directSubmission, factoryDeployer } from '../dist/index.js';
 import type { AssertionResult, WebAuthnSigner } from '../dist/index.js';
+import { bumpSorobanFees } from './sorobanFees';
 
 const RPC_URL = process.env.RPC_URL ?? 'https://soroban-testnet.stellar.org';
 const NETWORK = Networks.TESTNET;
@@ -101,28 +102,15 @@ async function invoke(
   const prepared = rpc.assembleTransaction(tx, sim).build();
 
   const validUntil = (await server.getLatestLedger()).sequence + 1000;
-  const envelope = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
-  const v1tx = envelope.v1().tx();
-  for (const op of v1tx.operations()) {
-    if (op.body().switch().name !== 'invokeHostFunction') continue;
-    for (const entry of op.body().invokeHostFunctionOp().auth()) {
-      if (entry.credentials().switch().name === 'sorobanCredentialsAddress') {
-        entry.credentials().address().signatureExpirationLedger(validUntil);
-      }
-    }
-  }
-  const ext = v1tx.ext();
-  if (ext.switch() === 1) {
-    const sorobanData = ext.sorobanData();
-    const resources = sorobanData.resources();
-    resources.instructions(Math.min(100_000_000, resources.instructions() * 5 + 30_000_000));
-    sorobanData.resourceFee(new xdr.Int64(9_000_000));
-    v1tx.fee(10_000_000);
-  }
+  const envelope = bumpSorobanFees(xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64'), {
+    resourceFee: 9_000_000n,
+    txFee: 10_000_000,
+  });
 
   const signedAuthXdr = await signTransaction(envelope.toXDR('base64'), {
     networkPassphrase: NETWORK,
     sign: signer,
+    signatureExpirationLedger: validUntil,
   });
   const finalTx = TransactionBuilder.fromXDR(signedAuthXdr, NETWORK);
   finalTx.sign(SOURCE);

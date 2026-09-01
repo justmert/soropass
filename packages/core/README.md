@@ -14,10 +14,10 @@ A passkey signs with secp256r1 (ES256); a classic Stellar account (`G...`) only 
 ## Install
 
 ```bash
-npm install @soropass/core "@stellar/stellar-sdk@>=12 <17"
+npm install @soropass/core "@stellar/stellar-sdk@>=17"
 ```
 
-`@stellar/stellar-sdk` is a required peer dependency. Pin it to `>=12 <17`: version 17 reworked the XDR API this release builds against. `@soropass/core` publishes ESM, CommonJS, and type declarations.
+`@stellar/stellar-sdk` is a required peer dependency. Install version 17 or newer (the `>=17` peer range): this release builds against the stellar-sdk 17 XDR API. If you must stay on stellar-sdk 12 through 16, install `@soropass/core@0.2.1` instead; 0.2.1 signs only classic address credentials, while 0.3.0 also signs the `addressV2` credentials that Protocol 23 networks return from simulation. `@soropass/core` publishes ESM, CommonJS, and type declarations, and runs without a `Buffer` polyfill.
 
 ## Quick start (no browser)
 

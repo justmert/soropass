@@ -23,6 +23,7 @@ import { p256 } from '@noble/curves/nist';
 import { sha256 } from '@noble/hashes/sha256';
 import { signTransaction, directSubmission } from '../dist/index.js';
 import type { AssertionResult, WebAuthnSigner } from '../dist/index.js';
+import { bumpSorobanFees } from './sorobanFees';
 
 const RPC_URL = process.env.RPC_URL ?? 'https://mainnet.sorobanrpc.com';
 const NETWORK = Networks.PUBLIC;
@@ -91,27 +92,14 @@ async function main(): Promise<void> {
   if (!rpc.Api.isSimulationSuccess(sim)) throw new Error(`sim failed: ${JSON.stringify(sim)}`);
   const prepared = rpc.assembleTransaction(tx, sim).build();
   const validUntil = (await server.getLatestLedger()).sequence + 1000;
-  const envelope = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
-  const v1 = envelope.v1().tx();
-  for (const op of v1.operations()) {
-    if (op.body().switch().name !== 'invokeHostFunction') continue;
-    for (const entry of op.body().invokeHostFunctionOp().auth()) {
-      if (entry.credentials().switch().name === 'sorobanCredentialsAddress') {
-        entry.credentials().address().signatureExpirationLedger(validUntil);
-      }
-    }
-  }
-  const ext = v1.ext();
-  if (ext.switch() === 1) {
-    const sd = ext.sorobanData();
-    const r = sd.resources();
-    r.instructions(Math.min(100_000_000, r.instructions() * 5 + 30_000_000));
-    sd.resourceFee(new xdr.Int64(10_000_000));
-    v1.fee(11_000_000);
-  }
+  const envelope = bumpSorobanFees(xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64'), {
+    resourceFee: 10_000_000n,
+    txFee: 11_000_000,
+  });
   const signedXdr = await signTransaction(envelope.toXDR('base64'), {
     networkPassphrase: NETWORK,
     sign: wrongKeySigner(),
+    signatureExpirationLedger: validUntil,
   });
   const finalTx = TransactionBuilder.fromXDR(signedXdr, NETWORK);
   finalTx.sign(SOURCE);

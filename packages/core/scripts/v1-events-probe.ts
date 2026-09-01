@@ -91,7 +91,7 @@ function describe(sv: xdr.ScVal): string {
   } catch {
     native = '(undecodable)';
   }
-  return `${sv.switch().name} → ${native}`;
+  return `${sv.type} → ${native}`;
 }
 
 async function main(): Promise<void> {

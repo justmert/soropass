@@ -1,9 +1,10 @@
 import { xdr } from '@stellar/stellar-sdk';
 import { p256 } from '@noble/curves/nist';
 import { sha256 } from '../internal/sha256';
-import { concatBytes } from '../internal/bytes';
+import { bytesToHex, concatBytes } from '../internal/bytes';
 import { bytesToBase64Url, bytesToUtf8 } from '../internal/encoding';
 import { authEntryChallengeBytes } from './preimage';
+import { addressCredentials, scBytes, scMap, scSymbol, scVec } from './scval';
 
 export interface CheckAuthResult {
   success: boolean;
@@ -29,8 +30,8 @@ function verifySecp256r1StructMap(
   signaturePayload: Uint8Array,
 ): { ok: boolean; challengeBound: boolean; signatureValid: boolean; reason?: string } {
   const field = (name: string): Uint8Array | undefined => {
-    const e = structMap.find((x) => x.key().sym().toString() === name);
-    return e ? new Uint8Array(e.val().bytes()) : undefined;
+    const e = structMap.find((x) => scSymbol(x.key) === name);
+    return e ? scBytes(e.val) : undefined;
   };
   const authenticatorData = field('authenticator_data');
   const clientDataJSON = field('client_data_json');
@@ -89,17 +90,19 @@ export function referenceCheckAuth(
   publicKey: Uint8Array,
   networkPassphrase: string,
 ): CheckAuthResult {
-  if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') {
+  const credentials = addressCredentials(entry);
+  if (!credentials) {
     return fail('no address credentials');
   }
   // The signature is the Secp256r1Signature struct directly: a sorted ScMap
   // { authenticator_data, client_data_json, public_key, signature } (assemble.ts).
-  const structMap = entry.credentials().address().signature().map();
+  const structMap = scMap(credentials.signature);
   if (!structMap) return fail('signature is not a Secp256r1Signature map');
 
   // Enrollment: the contract rejects a key it does not hold before any crypto.
-  const inline = structMap.find((x) => x.key().sym().toString() === 'public_key');
-  if (inline && !bytesEqual(new Uint8Array(inline.val().bytes()), publicKey)) {
+  const inline = structMap.find((x) => scSymbol(x.key) === 'public_key');
+  const inlineBytes = inline ? scBytes(inline.val) : undefined;
+  if (inline && (!inlineBytes || !bytesEqual(inlineBytes, publicKey))) {
     return fail('unknown signer: inline public_key is not the enrolled key');
   }
 
@@ -127,11 +130,12 @@ export function referenceSmartWalletCheckAuth(
   publicKeyFor: (credentialIdHex: string) => Uint8Array | undefined,
   networkPassphrase: string,
 ): SmartWalletCheckAuthResult {
-  if (entry.credentials().switch().name !== 'sorobanCredentialsAddress') {
+  const credentials = addressCredentials(entry);
+  if (!credentials) {
     return { success: false, signers: [], reason: 'no address credentials' };
   }
-  const sig = entry.credentials().address().signature();
-  const map = sig.switch().name === 'scvVec' ? sig.vec()?.[0]?.map() : undefined;
+  const sigVec = scVec(credentials.signature);
+  const map = sigVec?.[0] ? scMap(sigVec[0]) : undefined;
   if (!map) {
     return { success: false, signers: [], reason: 'signature is not a Signatures(Map) vec' };
   }
@@ -142,11 +146,12 @@ export function referenceSmartWalletCheckAuth(
   let allOk = true;
 
   for (const e of map) {
-    const keyVec = e.key().vec();
-    const idBytes = keyVec?.[1]?.bytes();
-    const credentialId = idBytes ? Buffer.from(idBytes).toString('hex') : '';
+    const keyVec = scVec(e.key);
+    const idBytes = keyVec?.[1] ? scBytes(keyVec[1]) : undefined;
+    const credentialId = idBytes ? bytesToHex(idBytes) : '';
     // Signature::Secp256r1(struct) → scvVec([Symbol, structMap]).
-    const structMap = e.val().vec()?.[1]?.map();
+    const valVec = scVec(e.val);
+    const structMap = valVec?.[1] ? scMap(valVec[1]) : undefined;
     const publicKey = publicKeyFor(credentialId);
     if (!structMap || !publicKey) {
       allOk = false;

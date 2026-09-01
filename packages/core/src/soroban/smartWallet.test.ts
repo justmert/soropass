@@ -11,9 +11,36 @@ import {
 import type { AssertionResult, WebAuthnSigner } from '../types';
 import { concatBytes } from '../internal/bytes';
 import { utf8ToBytes } from '../internal/encoding';
+import { addressCredentials, scBytes, scMap, scSymbol, scVec } from './scval';
 
 const RP_ID = 'localhost';
 const hex = (b: Uint8Array): string => Buffer.from(b).toString('hex');
+
+const credsOf = (entry: xdr.SorobanAuthorizationEntry): xdr.SorobanAddressCredentials => {
+  const c = addressCredentials(entry);
+  if (!c) throw new Error('expected address credentials');
+  return c;
+};
+const vecOf = (v: xdr.ScVal): xdr.ScVal[] => {
+  const x = scVec(v);
+  if (!x) throw new Error('expected scvVec');
+  return x;
+};
+const mapOf = (v: xdr.ScVal): xdr.ScMapEntry[] => {
+  const x = scMap(v);
+  if (!x) throw new Error('expected scvMap');
+  return x;
+};
+const symOf = (v: xdr.ScVal): string => {
+  const s = scSymbol(v);
+  if (s === undefined) throw new Error('expected scvSymbol');
+  return s;
+};
+const bytesOf = (v: xdr.ScVal): Uint8Array => {
+  const b = scBytes(v);
+  if (!b) throw new Error('expected scvBytes');
+  return b;
+};
 
 /** A deterministic mock authenticator for a given key + credential id. */
 function makeSigner(priv: Uint8Array, credentialId: Uint8Array): WebAuthnSigner {
@@ -42,7 +69,7 @@ function unsignedEntryXdr(): string {
   const address = new Address(StrKey.encodeContract(Buffer.alloc(32, 9)));
   const credentials = new xdr.SorobanAddressCredentials({
     address: address.toScAddress(),
-    nonce: new xdr.Int64(987654321),
+    nonce: 987654321n,
     signatureExpirationLedger: 2000,
     signature: xdr.ScVal.scvVoid(),
   });
@@ -78,21 +105,21 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
     const entry = xdr.SorobanAuthorizationEntry.fromXDR(signed, 'base64');
 
     // Wire shape: signature is ScVal::Vec([ScVal::Map([...])]).
-    const sig = entry.credentials().address().signature();
-    expect(sig.switch().name).toBe('scvVec');
-    const map = sig.vec()![0]!.map()!;
+    const sig = credsOf(entry).signature;
+    expect(sig.type).toBe('scvVec');
+    const map = mapOf(vecOf(sig)[0]!);
     expect(map).toHaveLength(1);
 
     // Key is SignerKey::Secp256r1(rawCredentialId) — raw bytes, not hashed/utf8.
-    const keyVec = map[0]!.key().vec()!;
-    expect(keyVec[0]!.sym().toString()).toBe('Secp256r1');
-    expect(hex(new Uint8Array(keyVec[1]!.bytes()))).toBe(hex(credId));
-    expect(hex(new Uint8Array(keyVec[1]!.bytes()))).not.toBe(hex(sha256(credId))); // not hashed
+    const keyVec = vecOf(map[0]!.key);
+    expect(symOf(keyVec[0]!)).toBe('Secp256r1');
+    expect(hex(bytesOf(keyVec[1]!))).toBe(hex(credId));
+    expect(hex(bytesOf(keyVec[1]!))).not.toBe(hex(sha256(credId))); // not hashed
 
     // Value is Signature::Secp256r1(Secp256r1Signature{...}).
-    const valVec = map[0]!.val().vec()!;
-    expect(valVec[0]!.sym().toString()).toBe('Secp256r1');
-    const structFields = valVec[1]!.map()!.map((e) => e.key().sym().toString());
+    const valVec = vecOf(map[0]!.val);
+    expect(symOf(valVec[0]!)).toBe('Secp256r1');
+    const structFields = mapOf(valVec[1]!).map((e) => symOf(e.key));
     expect(structFields).toEqual(['authenticator_data', 'client_data_json', 'signature']);
 
     const result = referenceSmartWalletCheckAuth(
@@ -113,7 +140,7 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
       // default target: single-signer → bare Secp256r1Signature struct (scvMap)
     });
     const entry = xdr.SorobanAuthorizationEntry.fromXDR(bare, 'base64');
-    expect(entry.credentials().address().signature().switch().name).toBe('scvMap');
+    expect(credsOf(entry).signature.type).toBe('scvMap');
     // The smart-wallet verifier cannot read a bare struct.
     const r = referenceSmartWalletCheckAuth(entry, () => PUB_A, Networks.TESTNET);
     expect(r.success).toBe(false);
@@ -135,11 +162,11 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
       target: 'smart-wallet',
     });
     const entry = xdr.SorobanAuthorizationEntry.fromXDR(merged, 'base64');
-    const map = entry.credentials().address().signature().vec()![0]!.map()!;
+    const map = mapOf(vecOf(credsOf(entry).signature)[0]!);
 
     // Both signers preserved, and sorted so the lower bytes come first.
     expect(map).toHaveLength(2);
-    const order = map.map((e) => hex(new Uint8Array(e.key().vec()![1]!.bytes())));
+    const order = map.map((e) => hex(bytesOf(vecOf(e.key)[1]!)));
     expect(order).toEqual([hex(credLo), hex(credHi)]);
 
     // Both verify against their own keys.
@@ -164,12 +191,8 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
       sign: makeSigner(PRIV_A, credId),
       target: 'smart-wallet',
     });
-    const map = xdr.SorobanAuthorizationEntry.fromXDR(twice, 'base64')
-      .credentials()
-      .address()
-      .signature()
-      .vec()![0]!
-      .map()!;
+    const entry = xdr.SorobanAuthorizationEntry.fromXDR(twice, 'base64');
+    const map = mapOf(vecOf(credsOf(entry).signature)[0]!);
     expect(map).toHaveLength(1);
   });
 
@@ -185,7 +208,7 @@ describe('smart-wallet ABI target (passkey-kit Signatures map — issue #32)', (
     // The entry now carries 5000, and — since it was stamped BEFORE the challenge
     // was computed — the signature binds 5000 too (verify would fail if the sig
     // still bound the old 2000 while the entry reads 5000).
-    expect(entry.credentials().address().signatureExpirationLedger()).toBe(5000);
+    expect(credsOf(entry).signatureExpirationLedger).toBe(5000);
     const r = referenceSmartWalletCheckAuth(
       entry,
       (id) => (id === hex(credId) ? PUB_A : undefined),

@@ -20,6 +20,7 @@ import { p256 } from '@noble/curves/nist';
 import { sha256 } from '@noble/hashes/sha256';
 import { signTransaction, directSubmission } from '../dist/index.js';
 import type { AssertionResult, WebAuthnSigner } from '../dist/index.js';
+import { bumpSorobanFees } from './sorobanFees';
 
 const RPC_URL = process.env.RPC_URL ?? 'https://soroban-testnet.stellar.org';
 const NETWORK = Networks.TESTNET;
@@ -77,36 +78,22 @@ async function invokeProtected(server: rpc.Server, signer: WebAuthnSigner, label
   }
   const prepared = rpc.assembleTransaction(tx, sim).build();
 
-  // Set a valid future expiration ledger on every address-credential auth entry,
-  // THEN sign — the challenge binds nonce+expiration+invocation+networkId.
-  const validUntil = (await server.getLatestLedger()).sequence + 1000;
-  const envelope = xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64');
-  const v1tx = envelope.v1().tx();
-  for (const op of v1tx.operations()) {
-    if (op.body().switch().name !== 'invokeHostFunction') continue;
-    for (const entry of op.body().invokeHostFunctionOp().auth()) {
-      if (entry.credentials().switch().name === 'sorobanCredentialsAddress') {
-        entry.credentials().address().signatureExpirationLedger(validUntil);
-      }
-    }
-  }
-
   // Simulation runs `__check_auth` in recording mode and never executes the
   // expensive `secp256r1_verify`, so it under-budgets CPU instructions. Inflate
   // the Soroban instruction budget + resource fee so the real verification fits.
-  const ext = v1tx.ext();
-  if (ext.switch() === 1) {
-    const sorobanData = ext.sorobanData();
-    const resources = sorobanData.resources();
-    resources.instructions(Math.min(100_000_000, resources.instructions() * 5 + 30_000_000));
-    sorobanData.resourceFee(new xdr.Int64(9_000_000));
-    v1tx.fee(10_000_000);
-  }
+  const validUntil = (await server.getLatestLedger()).sequence + 1000;
+  const envelope = bumpSorobanFees(xdr.TransactionEnvelope.fromXDR(prepared.toXDR(), 'base64'), {
+    resourceFee: 9_000_000n,
+    txFee: 10_000_000,
+  });
 
-  // SDK signs the Soroban auth entries (passkey → low-S → Secp256r1Signature ScVal).
+  // SDK signs the Soroban auth entries (passkey → low-S → Secp256r1Signature ScVal),
+  // stamping a valid future expiration ledger on each entry BEFORE the challenge
+  // is computed (the challenge binds nonce+expiration+invocation+networkId).
   const signedAuthXdr = await signTransaction(envelope.toXDR('base64'), {
     networkPassphrase: NETWORK,
     sign: signer,
+    signatureExpirationLedger: validUntil,
   });
 
   // Source signs the envelope (fees/sequence) and we submit via the SDK's adapter.

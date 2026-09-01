@@ -1,6 +1,7 @@
 import { Address, Keypair, Operation, TransactionBuilder, rpc, xdr } from '@stellar/stellar-sdk';
 import { sha256 } from '@noble/hashes/sha256';
 import { KitError } from '../errors';
+import { hexToBytes } from '../internal/bytes';
 import { decodeChallenge } from '../webauthn/clientData';
 import { buildSecp256r1Signer } from '../soroban/signer';
 import { buildSignerKeyScVal } from '../soroban/smartWallet';
@@ -54,8 +55,8 @@ export function smartWalletV1Deployer(options: SmartWalletV1DeployerOptions): Ac
       });
       const op = Operation.createCustomContract({
         address: Address.fromString(source.publicKey()),
-        wasmHash: Buffer.from(wasmHash, 'hex'),
-        salt: Buffer.from(sha256(raw)),
+        wasmHash: hexToBytes(wasmHash),
+        salt: sha256(raw),
         constructorArgs: [buildSecp256r1Signer({ credentialId: raw, publicKey: input.publicKey })],
       });
       const account = await server.getAccount(source.publicKey());

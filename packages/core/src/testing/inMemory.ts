@@ -29,9 +29,7 @@ export function createInMemoryBackend(): InMemoryBackend {
     registry,
     deployer: {
       deploy({ publicKey, credentialId }) {
-        const contractId = StrKey.encodeContract(
-          Buffer.from(sha256(utf8ToBytes('account:' + credentialId))),
-        );
+        const contractId = StrKey.encodeContract(sha256(utf8ToBytes('account:' + credentialId)));
         registry.set(credentialId, { contractId, publicKey });
         return Promise.resolve({ contractId, txHash: `mock-deploy-${String(nonce++)}` });
       },

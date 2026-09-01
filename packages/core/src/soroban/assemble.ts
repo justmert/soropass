@@ -1,5 +1,6 @@
 import { xdr } from '@stellar/stellar-sdk';
 import { KitError } from '../errors';
+import { addressCredentials, withAddressCredentials } from './scval';
 import type { AssertionResult } from './sign';
 
 /**
@@ -18,14 +19,22 @@ import type { AssertionResult } from './sign';
  * normalizes before calling this). `publicKey` names which enrolled signer the
  * contract checks; the multi-signer account rejects a key it does not hold
  * before any crypto runs.
+ *
+ * Returns a NEW entry carrying the signature; the input entry is not modified
+ * (stellar-sdk 17 XDR values are immutable).
  */
 export function applyAssertionToEntry(
   entry: xdr.SorobanAuthorizationEntry,
   assertion: AssertionResult,
   publicKey: Uint8Array,
 ): xdr.SorobanAuthorizationEntry {
-  entry.credentials().address().signature(buildSingleSignerSignatureScVal(assertion, publicKey));
-  return entry;
+  const credentials = addressCredentials(entry);
+  if (!credentials) {
+    throw new KitError('CONTRACT_AUTH_FAILED', 'auth entry has no address credentials to sign');
+  }
+  return withAddressCredentials(entry, credentials, {
+    signature: buildSingleSignerSignatureScVal(assertion, publicKey),
+  });
 }
 
 /** The v0.2 single-signer `Secp256r1Signature` ScVal (4 fields, sorted ScMap). */
@@ -65,6 +74,6 @@ export function buildSignatureScVal(assertion: AssertionResult): xdr.ScVal {
 function bytesField(name: string, bytes: Uint8Array): xdr.ScMapEntry {
   return new xdr.ScMapEntry({
     key: xdr.ScVal.scvSymbol(name),
-    val: xdr.ScVal.scvBytes(Buffer.from(bytes)),
+    val: xdr.ScVal.scvBytes(bytes),
   });
 }

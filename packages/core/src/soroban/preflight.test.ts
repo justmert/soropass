@@ -59,7 +59,7 @@ function unsignedEntryXdr(): string {
   const address = new Address(StrKey.encodeContract(Buffer.alloc(32, 9)));
   const credentials = new xdr.SorobanAddressCredentials({
     address: address.toScAddress(),
-    nonce: new xdr.Int64(11),
+    nonce: 11n,
     signatureExpirationLedger: 2000,
     signature: xdr.ScVal.scvVoid(),
   });

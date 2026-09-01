@@ -1,6 +1,14 @@
 import { xdr } from '@stellar/stellar-sdk';
 import { KitError } from '../errors';
 import { buildSignatureScVal } from './assemble';
+import {
+  addressCredentials,
+  scBytes,
+  scMap,
+  scSymbol,
+  scVec,
+  withAddressCredentials,
+} from './scval';
 import type { AssertionResult } from './sign';
 
 /**
@@ -22,10 +30,7 @@ import type { AssertionResult } from './sign';
  * key — the SEC-1 public key lives in `SignerVal` on-chain, not in the key.
  */
 export function buildSignerKeyScVal(credentialId: Uint8Array): xdr.ScVal {
-  return xdr.ScVal.scvVec([
-    xdr.ScVal.scvSymbol('Secp256r1'),
-    xdr.ScVal.scvBytes(Buffer.from(credentialId)),
-  ]);
+  return xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Secp256r1'), xdr.ScVal.scvBytes(credentialId)]);
 }
 
 /** `Signature::Secp256r1(Secp256r1Signature)` → `scvVec([Symbol("Secp256r1"), <bare struct map>])`. */
@@ -34,16 +39,18 @@ export function buildSmartWalletSignatureVariant(assertion: AssertionResult): xd
 }
 
 function decomposeSignerKey(key: xdr.ScVal): { variant: string; payload: Uint8Array } {
-  const vec = key.vec();
+  const vec = scVec(key);
   if (!vec || vec.length < 2) {
     throw new KitError('CONTRACT_AUTH_FAILED', 'malformed SignerKey (expected an enum vec)');
   }
-  const variant = vec[0]!.sym().toString();
+  const variant = scSymbol(vec[0]!);
+  if (variant === undefined) {
+    throw new KitError('CONTRACT_AUTH_FAILED', 'malformed SignerKey (variant tag is not a symbol)');
+  }
   const el = vec[1]!;
   // Secp256r1(Bytes) and Ed25519(BytesN<32>) are scvBytes; Policy(Address) falls
   // back to its XDR bytes (rare in a passkey SDK — see the ordering note below).
-  const payload =
-    el.switch().name === 'scvBytes' ? new Uint8Array(el.bytes()) : new Uint8Array(el.toXDR());
+  const payload = scBytes(el) ?? new Uint8Array(el.toXDR());
   return { variant, payload };
 }
 
@@ -84,6 +91,9 @@ export function compareSignerKeyScVal(a: xdr.ScVal, b: xdr.ScVal): number {
  * partially-signed multi-sig entry — are preserved; an entry for the same signer
  * key is replaced; then the whole map is canonically sorted.
  *
+ * Returns a NEW entry carrying the merged signatures; the input entry is not
+ * modified (stellar-sdk 17 XDR values are immutable).
+ *
  * Use this for the passkey-kit / webauthn-wallet ABI. For our own single-signer
  * account (`type Signature = Secp256r1Signature`) use `applyAssertionToEntry`.
  */
@@ -91,23 +101,24 @@ export function applyAssertionToSmartWalletEntry(
   entry: xdr.SorobanAuthorizationEntry,
   assertion: AssertionResult,
 ): xdr.SorobanAuthorizationEntry {
-  const credentials = entry.credentials();
-  if (credentials.switch().name !== 'sorobanCredentialsAddress') {
+  const credentials = addressCredentials(entry);
+  if (!credentials) {
     throw new KitError('CONTRACT_AUTH_FAILED', 'auth entry has no address credentials to sign');
   }
   const key = buildSignerKeyScVal(assertion.credentialId);
   const newEntry = new xdr.ScMapEntry({ key, val: buildSmartWalletSignatureVariant(assertion) });
 
-  const current = credentials.address().signature();
+  const current = credentials.signature;
   let mapEntries: xdr.ScMapEntry[];
-  switch (current.switch().name) {
+  switch (current.type) {
     case 'scvVoid':
       mapEntries = [newEntry];
       break;
     case 'scvVec': {
       // Preserve any existing signatures (partial multi-sig); replace same key.
-      const existing = current.vec()?.[0]?.map() ?? [];
-      mapEntries = existing.filter((e) => compareSignerKeyScVal(e.key(), key) !== 0);
+      const first = current.vec?.[0];
+      const existing = (first ? scMap(first) : undefined) ?? [];
+      mapEntries = existing.filter((e) => compareSignerKeyScVal(e.key, key) !== 0);
       mapEntries.push(newEntry);
       break;
     }
@@ -117,7 +128,8 @@ export function applyAssertionToSmartWalletEntry(
         'unexpected existing signature shape for a smart-wallet entry',
       );
   }
-  mapEntries.sort((a, b) => compareSignerKeyScVal(a.key(), b.key()));
-  credentials.address().signature(xdr.ScVal.scvVec([xdr.ScVal.scvMap(mapEntries)]));
-  return entry;
+  mapEntries.sort((a, b) => compareSignerKeyScVal(a.key, b.key));
+  return withAddressCredentials(entry, credentials, {
+    signature: xdr.ScVal.scvVec([xdr.ScVal.scvMap(mapEntries)]),
+  });
 }

@@ -26,17 +26,21 @@ async function onchainWasmHash(contractId: string): Promise<string> {
     new xdr.LedgerKeyContractData({
       contract: Address.fromString(contractId).toScAddress(),
       key: xdr.ScVal.scvLedgerKeyContractInstance(),
-      durability: xdr.ContractDataDurability.persistent(),
+      durability: xdr.ContractDataDurability.persistent,
     }),
   );
   const { entries } = await server.getLedgerEntries(key);
   const data = entries[0]?.val;
   if (!data) throw new Error('no contract-instance ledger entry (not found on testnet)');
-  const exec = data.contractData().val().instance().executable();
-  if (exec.switch().name !== 'contractExecutableWasm') {
-    throw new Error(`executable is ${exec.switch().name}, not wasm`);
+  if (data.type !== 'contractData')
+    throw new Error(`ledger entry is ${data.type}, not contractData`);
+  const val = data.contractData.val;
+  if (val.type !== 'scvContractInstance') throw new Error(`val is ${val.type}, not an instance`);
+  const exec = val.instance.executable;
+  if (exec.type !== 'contractExecutableWasm') {
+    throw new Error(`executable is ${exec.type}, not wasm`);
   }
-  return Buffer.from(exec.wasmHash()).toString('hex');
+  return exec.wasmHash.toString();
 }
 
 async function main(): Promise<void> {

@@ -1,6 +1,7 @@
 import { Address, StrKey, hash, xdr } from '@stellar/stellar-sdk';
 import { sha256 } from '@noble/hashes/sha256';
 import { KitError } from '../errors';
+import { utf8ToBytes } from '../internal/encoding';
 import { decodeChallenge } from '../webauthn/clientData';
 
 /** The createCustomContract C-address from a deployer address + 32-byte salt (no network round-trip). */
@@ -17,11 +18,11 @@ function contractIdFromDeployerSalt(
   }
   const preimage = xdr.HashIdPreimage.envelopeTypeContractId(
     new xdr.HashIdPreimageContractId({
-      networkId: hash(Buffer.from(networkPassphrase)),
+      networkId: hash(utf8ToBytes(networkPassphrase)),
       contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
         new xdr.ContractIdPreimageFromAddress({
           address,
-          salt: Buffer.from(salt),
+          salt,
         }),
       ),
     }),
@@ -68,11 +69,7 @@ export function deriveAccountAddress(options: DeriveAccountAddressOptions): stri
   const saltInput = new Uint8Array(credentialId.length + publicKey.length);
   saltInput.set(credentialId, 0);
   saltInput.set(publicKey, credentialId.length);
-  return contractIdFromDeployerSalt(
-    factoryContractId,
-    hash(Buffer.from(saltInput)),
-    networkPassphrase,
-  );
+  return contractIdFromDeployerSalt(factoryContractId, hash(saltInput), networkPassphrase);
 }
 
 export interface DeriveSmartWalletAddressOptions {
