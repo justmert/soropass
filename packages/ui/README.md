@@ -13,10 +13,10 @@ The styled layer is optional and token-driven, so you re-skin it by swapping tok
 ## Install
 
 ```bash
-npm install @soropass/ui "@stellar/stellar-sdk@>=12 <17"
+npm install @soropass/ui "@stellar/stellar-sdk@>=17"
 ```
 
-`@soropass/core` comes in as a dependency. `@stellar/stellar-sdk` is a peer of the core SDK, so install it alongside and pin it to `>=12 <17` (version 17 reworked the XDR API this release builds against). In the browser, polyfill Node `Buffer` before `@stellar/stellar-sdk` loads (most bundlers do this in one line).
+`@soropass/core` comes in as a dependency. `@stellar/stellar-sdk` is a peer of the core SDK, so install it alongside at version 17 or newer (the `>=17` peer range this release builds against).
 
 ## Quick start
 

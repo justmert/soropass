@@ -17,11 +17,11 @@ There are three ways to adopt, each with a runnable example. They stack, so star
 The SDK is the only required dependency; `@stellar/stellar-sdk` is a peer you already have (or add it alongside):
 
 <Tabs items={['pnpm', 'npm']}>
-  <Tab value="pnpm">```bash pnpm add @soropass/core "@stellar/stellar-sdk@>=12 <17" ```</Tab>
-  <Tab value="npm">```bash npm i @soropass/core "@stellar/stellar-sdk@>=12 <17" ```</Tab>
+  <Tab value="pnpm">```bash pnpm add @soropass/core "@stellar/stellar-sdk@>=17" ```</Tab>
+  <Tab value="npm">```bash npm i @soropass/core "@stellar/stellar-sdk@>=17" ```</Tab>
 </Tabs>
 
-Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.1` does not yet support. `@soropass/core` installs from npm. Path B's `@soropass/ui` builds from the [SoroPass monorepo](https://github.com/justmert/soropass), where it lives as a pnpm workspace package. In the browser, polyfill Node `Buffer` / `process` before `@stellar/stellar-sdk` loads (it expects them). Most bundlers do this with a one-liner.
+Install `@stellar/stellar-sdk` at version 17 or newer: `@soropass/core@0.3.0` builds against the stellar-sdk 17 XDR API (on stellar-sdk 12 through 16, install `@soropass/core@0.2.1` instead; 0.2.1 signs only classic address credentials, while 0.3.0 also signs the `addressV2` credentials Protocol 23 networks return from simulation). `@soropass/core` installs from npm and runs in the browser without a `Buffer` polyfill. Path B's `@soropass/ui` builds from the [SoroPass monorepo](https://github.com/justmert/soropass), where it lives as a pnpm workspace package.
 
 ## One-time config
 

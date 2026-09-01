@@ -24,10 +24,10 @@ SoroPass is not a wallet. It is the layer your wallet integrates: you keep your 
 ## Install
 
 ```bash
-npm install @soropass/core "@stellar/stellar-sdk@>=12 <17"
+npm install @soropass/core "@stellar/stellar-sdk@>=17"
 ```
 
-Pin `@stellar/stellar-sdk` to `>=12 <17`: version 17 reworked the XDR API in a way `@soropass/core@0.2.1` does not yet support. The kit package that carries the module is `@creit.tech/stellar-wallets-kit` (note the dot).
+Install `@stellar/stellar-sdk` at version 17 or newer: `@soropass/core@0.3.0` builds against the stellar-sdk 17 XDR API, matching the kit's own stellar-sdk 17 dependency. The kit package that carries the module is `@creit.tech/stellar-wallets-kit` (note the dot).
 
 ## Integration walkthrough
 
@@ -206,7 +206,7 @@ Two `ext` values are the module's own, not part of core's taxonomy:
 
 ## Requirements
 
-- **Buffer polyfill.** The module needs a `Buffer` polyfill in your app. This is a `@stellar/stellar-sdk` requirement, the same one the kit's Ledger and Trezor modules carry.
+- **Buffer polyfill.** `@soropass/core` and the module's signing path run without a `Buffer` polyfill on `@stellar/stellar-sdk` 17. The kit's hardware-wallet modules (Ledger, Trezor) still carry one as a requirement; an existing polyfill does no harm.
 - **Secure context.** WebAuthn is unavailable over plain http, so serve over https or localhost.
 - **A platform authenticator, or your own `webauthn` client.** Without either, `isAvailable` resolves `false` and the kit renders the wallet as unavailable.
 
