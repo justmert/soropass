@@ -26,7 +26,7 @@ Two guarantees the SDK enforces so you do not have to:
 
 ## Reproduce create + sign in Node (no browser)
 
-This is the fastest way to confirm the SDK works and to run a create + sign in CI or any environment without WebAuthn hardware. `@soropass/core/testing` provides `createPasskeyKit({ mode: "mock" })`, which wires a deterministic in-process authenticator and an in-memory backend. The mock path has the same shape as the live path, so the same calls work against real adapters later.
+This is the fastest way to confirm the SDK works and to run a create + sign in CI or any environment without WebAuthn hardware. `@soropass/core/testing` provides `createPasskeyKit({ mode: "mock" })`, which wires a deterministic in-process authenticator and an in-memory backend. The mock path has the same shape as the live path, so the same calls work against real adapters later. One difference: the mock account's `contractId` comes from the in-memory backend, not the factory scheme, so it does not equal a `deriveAccountAddress` derivation; that check applies to real factory-deployed accounts.
 
 ```js
 // verify.mjs. Run with: node verify.mjs
@@ -174,7 +174,46 @@ The default `single-signer` target requires the signer's 65-byte SEC-1 public ke
 
 ### A complete payment, end to end
 
-The most common wallet transaction: move XLM out of the smart account through the native Stellar Asset Contract. Two signatures happen, and both are required. The passkey signs the smart account's authorization entry (that is what `__check_auth` verifies), and the classic source account signs the envelope for fees and sequence; submitting without the envelope signature fails with `txBadAuth`. Re-simulating after the passkey signs matters too: the first simulation runs with an unsigned entry and under-budgets the on-chain `secp256r1_verify`, while the enforcing re-simulation runs the real `__check_auth` and prices it correctly.
+The most common wallet transaction: move XLM out of the smart account through the native Stellar Asset Contract. The listing uses `account` from "Create a passkey account in the browser", `sourceSecret` (the sponsor) from "Fees and sponsorship", and `destination`, any funded classic account.
+
+A fresh smart account holds no XLM, so fund it before its first outgoing payment. On testnet the sponsor seeds it with a classic SAC transfer:
+
+```ts
+import {
+  Asset,
+  Contract,
+  Keypair,
+  Networks,
+  TransactionBuilder,
+  nativeToScVal,
+  rpc,
+} from '@stellar/stellar-sdk';
+
+const server = new rpc.Server('https://soroban-testnet.stellar.org');
+const sponsor = Keypair.fromSecret(sourceSecret);
+const SAC = Asset.native().contractId(Networks.TESTNET);
+const addr = (a: string) => nativeToScVal(a, { type: 'address' });
+
+const funding = new TransactionBuilder(await server.getAccount(sponsor.publicKey()), {
+  fee: '1000000',
+  networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(
+    new Contract(SAC).call(
+      'transfer',
+      addr(sponsor.publicKey()),
+      addr(account.contractId),
+      nativeToScVal(100_000_000n, { type: 'i128' }), // 10 XLM
+    ),
+  )
+  .setTimeout(120)
+  .build();
+const preparedFunding = await server.prepareTransaction(funding);
+preparedFunding.sign(sponsor);
+await server.pollTransaction((await server.sendTransaction(preparedFunding)).hash);
+```
+
+Two signatures happen in the payment itself, and both are required. The passkey signs the smart account's authorization entry (that is what `__check_auth` verifies), and the classic source account signs the envelope for fees and sequence; submitting without the envelope signature fails with `txBadAuth`. Re-simulating after the passkey signs matters too: the first simulation runs with an unsigned entry and under-budgets the on-chain `secp256r1_verify`, while the enforcing re-simulation runs the real `__check_auth` and prices it correctly.
 
 ```ts
 import { signTransaction, browserPasskeySigner } from '@soropass/core';
@@ -234,7 +273,7 @@ const result = await server.pollTransaction(sent.hash);
 // result.status === 'SUCCESS'
 ```
 
-The same build, passkey-sign, re-simulate, envelope-sign, submit sequence applies to every transaction the smart account authorizes, including the `add_signer` recovery flow below.
+The opt-in `verify` pre-flight from the section above works here too: add it to the `signTransaction` options to catch an RP, origin, or key mismatch before submitting. The same build, passkey-sign, re-simulate, envelope-sign, submit sequence applies to every transaction the smart account authorizes, including the `add_signer` recovery flow below.
 
 ## Recover on a second device
 
