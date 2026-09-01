@@ -15,9 +15,9 @@ A passkey account is a Soroban contract (a `C...` address). The account's `__che
 npm install @soropass/core "@stellar/stellar-sdk@>=17"
 ```
 
-`@stellar/stellar-sdk` is a required peer dependency. Install version 17 or newer (the `>=17` peer range): `@soropass/core@0.3.0` builds against the stellar-sdk 17 XDR API, so a plain `npm install @stellar/stellar-sdk` (which resolves to 17) is correct. On stellar-sdk 16 or older the create+sign example throws a `TypeError`; for those versions install `@soropass/core@0.2.1`, noting that 0.2.1 signs only classic address credentials, while 0.3.0 also signs the `addressV2` credentials that Protocol 23 networks (testnet today) return from simulation. These examples are verified against `@soropass/core@0.3.0` with `@stellar/stellar-sdk` 17 on Node 20+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
+`@stellar/stellar-sdk` is a required peer dependency. Install version 17 or newer (the `>=17` peer range): `@soropass/core@0.3.1` builds against the stellar-sdk 17 XDR API, so a plain `npm install @stellar/stellar-sdk` (which resolves to 17) is correct. On stellar-sdk 16 or older the create+sign example throws a `TypeError`; for those versions install `@soropass/core@0.2.1`, noting that 0.2.1 signs only classic address credentials, while 0.3.x also signs the `addressV2` credentials that Protocol 23 networks (testnet today) return from simulation. These examples are verified against `@soropass/core@0.3.1` with `@stellar/stellar-sdk` 17 on Node 20+. `@soropass/core` publishes ESM, CommonJS, and type declarations.
 
-Version note. `npm install @soropass/core` installs `0.3.0`, the published `latest`. In 0.3.0: `@stellar/stellar-sdk` 17 or newer is required, `deriveAccountAddress` and single-signer signing require the signer's 65-byte SEC-1 `publicKey` (the deploy salt and the signature struct both bind it), `userVerification` defaults to `'required'`, and the account contract is multi-signer with native `add_signer` / `remove_signer` recovery.
+Version note. `npm install @soropass/core` installs `0.3.1`, the published `latest`. In 0.3.x: `@stellar/stellar-sdk` 17 or newer is required, `deriveAccountAddress` and single-signer signing require the signer's 65-byte SEC-1 `publicKey` (the deploy salt and the signature struct both bind it), `userVerification` defaults to `'required'`, and the account contract is multi-signer with native `add_signer` / `remove_signer` recovery. Since 0.3.1, `factoryContractId` is optional everywhere it appears: it defaults to the SoroPass-deployed `AccountFactory` for the network (`DEFAULT_ACCOUNT_FACTORIES` exports the map), and an explicit id overrides the default.
 
 Two guarantees the SDK enforces so you do not have to:
 
@@ -81,7 +81,7 @@ OK: wrong key rejected
 
 ## Create a passkey account in the browser
 
-In a browser, `createPasskey` runs the real WebAuthn registration and deploys the account through a factory. Use `factoryDeployer` for a real network. The v0.2 testnet `AccountFactory`, which deploys the multi-signer account, is `CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH` (used below).
+In a browser, `createPasskey` runs the real WebAuthn registration and deploys the account through an `AccountFactory`. By default, `factoryDeployer` uses the SoroPass-deployed factory for the network you name, so no contract work is needed on either network: testnet `CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH` and mainnet `CCCNRWMICVEMMUSBI7DL3IKB566QEOOQOLVDOAM5SLFDZ2KGUSRR3JVF`, both permissionless (`deploy` is not auth-gated). Pass `factoryContractId` only to deploy through your own factory instead.
 
 ```ts
 import { createPasskey, factoryDeployer } from '@soropass/core';
@@ -93,8 +93,7 @@ const account = await createPasskey({
   userName: 'alice',
   deployer: factoryDeployer({
     rpcUrl: 'https://soroban-testnet.stellar.org',
-    networkPassphrase: Networks.TESTNET,
-    factoryContractId: 'CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH',
+    networkPassphrase: Networks.TESTNET, // selects the deployed factory for this network
     sourceSecret, // a funded G-account secret that pays the deploy fee; see "Fees and sponsorship" below
   }),
 });
@@ -108,7 +107,9 @@ const account = await createPasskey({
 
 ### Fees and sponsorship
 
-Authorization and payment are separate: the passkey proves who may act, and a classic funded `G...` account sources every transaction, pays the network fee, and submits. `sourceSecret` is that fee source. In production it is your app's sponsor account (users hold no XLM, keep the secret server-side) or a relayer (Launchtube, OpenZeppelin Relayer). For development on testnet, fund a throwaway sponsor with friendbot, and poll the RPC before deploying, because friendbot returns before the Soroban RPC sees the new account:
+Authorization and payment are separate: the passkey proves who may act, and a classic funded `G...` account sources every transaction, pays the network fee, and submits. `sourceSecret` is that fee source, and you supply it on both networks; the deployed factories are open infrastructure, not a fee service.
+
+On testnet, fees cost nothing: fund a throwaway sponsor with friendbot, and poll the RPC before deploying, because friendbot returns before the Soroban RPC sees the new account:
 
 ```js
 import { Keypair, rpc } from '@stellar/stellar-sdk';
@@ -129,7 +130,7 @@ if (!funded) throw new Error('sponsor funded but not visible on the Soroban RPC 
 const sourceSecret = sponsor.secret();
 ```
 
-A contract account holds no base reserve, so sponsoring locks nothing per user. Measured on mainnet: ~0.05 XLM to create an account and ~0.005 XLM per passkey-signed transaction. Costs, models, and the mainnet factory address: https://docs.soropass.dev/docs/sponsorship
+On mainnet, the same code runs with two changes: `networkPassphrase: Networks.PUBLIC` with `rpcUrl: 'https://mainnet.sorobanrpc.com'` (the default factory switches to the mainnet deployment automatically), and `sourceSecret` must be an account you fund with real XLM: your app's sponsor account (users hold no XLM, keep the secret server-side) or a relayer (Launchtube, OpenZeppelin Relayer). A contract account holds no base reserve, so sponsoring locks nothing per user. Measured on mainnet: ~0.05 XLM to create an account and ~0.005 XLM per passkey-signed transaction. Costs and sponsorship models: https://docs.soropass.dev/docs/sponsorship
 
 To resolve an existing account without deploying, use `deriveAccountAddress` (synchronous and offline: it returns the C-address string directly, no `await` and no RPC) or `connect({ rpId, indexer })`. Note the encoding bridge: `createPasskey` returns `credentialId` as a base64url string, but `deriveAccountAddress` takes `Uint8Array` bytes. Pass the same bytes the factory received, which for `factoryDeployer` is the UTF-8 encoding of the base64url string, not its base64url-decoding. The options also require `publicKey`, the account's 65-byte SEC-1 key, because the v0.2 factory salts the deployed address by `sha256(credential_id ‖ public_key)`; binding the key fixes address squatting (credential ids are public, so a credential-only salt would let anyone pre-deploy at a victim's derived address with their own key).
 
@@ -137,10 +138,9 @@ To resolve an existing account without deploying, use `deriveAccountAddress` (sy
 import { deriveAccountAddress } from '@soropass/core';
 
 const address = deriveAccountAddress({
-  factoryContractId: 'CADKKP4BEFTZYK3NDGSBTPDJESPNRQ6HF36XAT62WQUPI47MNTENY3NH',
   credentialId: new TextEncoder().encode(account.credentialId), // UTF-8 bytes of the base64url id
   publicKey: account.publicKey, // 65-byte SEC-1 key, part of the v0.2 salt
-  networkPassphrase: Networks.TESTNET,
+  networkPassphrase: Networks.TESTNET, // selects the deployed factory; factoryContractId overrides
 });
 // address === account.contractId
 ```
@@ -301,7 +301,7 @@ await addSigner({
 
 `addSigner` and `removeSigner` target the v1 smart-wallet ABI only; they do not drive the v0.2 account (use the native flow above for it).
 
-`connect({ rpId, indexer })` resolves an account from a remembered credential id. `recover({ rpId, indexer })` prompts for any passkey and returns the accounts that credential controls, as `{ contractId, credentialId }[]`. Both take an `indexer` (for example `eventsIndexer({ rpcUrl, factoryContractId })`). See the full second-device flow at https://docs.soropass.dev/docs/sdk/accounts.
+`connect({ rpId, indexer })` resolves an account from a remembered credential id. `recover({ rpId, indexer })` prompts for any passkey and returns the accounts that credential controls, as `{ contractId, credentialId }[]`. Both take an `indexer` (for example `eventsIndexer({ rpcUrl, networkPassphrase })`, which reads the deployed factory's events; pass `factoryContractId` instead for your own factory). See the full second-device flow at https://docs.soropass.dev/docs/sdk/accounts.
 
 ## Register the passkey wallet in stellar-wallets-kit
 
