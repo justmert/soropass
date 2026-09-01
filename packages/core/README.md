@@ -17,7 +17,7 @@ A passkey signs with secp256r1 (ES256); a classic Stellar account (`G...`) only 
 npm install @soropass/core "@stellar/stellar-sdk@>=17"
 ```
 
-`@stellar/stellar-sdk` is a required peer dependency. Install version 17 or newer (the `>=17` peer range): this release builds against the stellar-sdk 17 XDR API. If you must stay on stellar-sdk 12 through 16, install `@soropass/core@0.2.1` instead; 0.2.1 signs only classic address credentials, while 0.3.0 also signs the `addressV2` credentials that Protocol 23 networks return from simulation. `@soropass/core` publishes ESM, CommonJS, and type declarations, and runs without a `Buffer` polyfill.
+`@stellar/stellar-sdk` is a required peer dependency. Install version 17 or newer (the `>=17` peer range): this release builds against the stellar-sdk 17 XDR API. If you must stay on stellar-sdk 12 through 16, install `@soropass/core@0.2.1` instead; 0.2.1 signs only classic address credentials, while 0.3.x also signs the `addressV2` credentials that Protocol 23 networks return from simulation. `@soropass/core` publishes ESM, CommonJS, and type declarations, and runs without a `Buffer` polyfill.
 
 ## Quick start (no browser)
 
@@ -54,8 +54,7 @@ const account = await createPasskey({
   userName: 'alice',
   deployer: factoryDeployer({
     rpcUrl: 'https://soroban-testnet.stellar.org',
-    networkPassphrase: Networks.TESTNET,
-    factoryContractId: 'C...', // your AccountFactory
+    networkPassphrase: Networks.TESTNET, // selects the deployed SoroPass factory; factoryContractId overrides
     sourceSecret, // a funded account that pays the one-time deploy fee
   }),
 });

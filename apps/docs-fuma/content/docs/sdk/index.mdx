@@ -7,7 +7,7 @@ description: The @soropass/core create + sign primitives, covering ES256-only re
 `@soropass/core` is a minimal, headless, ES256-only passkey SDK for Stellar smart accounts. This page is the core reference: registration, public-key extraction, and passkey signing. Connect, recovery, multi-device signers, and the submission/indexer adapters live on [Accounts, recovery & adapters](/docs/sdk/accounts).
 
 <Callout type="info" title="Version">
-  This reference documents `@soropass/core` 0.3.0, the npm `latest`, which requires
+  This reference documents `@soropass/core` 0.3.1, the npm `latest`, which requires
   `@stellar/stellar-sdk` 17 or newer. It pairs with the v0.2 account contracts: key-bound address
   derivation, the signer public key inline in the signature struct, and `userVerification`
   defaulting to `'required'`.
@@ -16,7 +16,7 @@ description: The @soropass/core create + sign primitives, covering ES256-only re
 ## SDK at a glance
 
 - **Tree-shakeable subpaths**: import only `/create`, `/sign`, `/connect`, `/recover`, `/types`, or `/testing`; the heavy crypto (noble) is shared and pulled only when `/create` or `/sign` is imported.
-- **~2 runtime deps**: `@noble/curves` + `@noble/hashes`; the core barrel entry is ~3.9 KB gzip, individual subpath entries from ~0.15 KB (measured on the 0.3.0 dist).
+- **~2 runtime deps**: `@noble/curves` + `@noble/hashes`; the core barrel entry is ~3.9 KB gzip, individual subpath entries from ~0.15 KB (measured on the 0.3.1 dist).
 - **`@stellar/stellar-sdk` is a peer dependency, never bundled** into the SDK output. Stated once here, it holds for every function on this page and the [accounts page](/docs/sdk/accounts). Contract-specific work lives behind the `AccountDeployer` / adapters you supply.
 - **Invariants**: ES256-only (alg −7), always low-S normalized, one frozen 10-code error taxonomy.
 

@@ -7,12 +7,11 @@ description: How the SoroPass PasskeyModule plugs passkey smart accounts into st
 SoroPass ships a `PasskeyModule` for [stellar-wallets-kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit) that implements the kit's `ModuleInterface`, so a passkey wallet appears in the kit's own picker next to Freighter, LOBSTR and xBull, and your existing `StellarWalletsKit.getAddress()` / `signTransaction()` calls work unchanged. The module is a thin adapter: every ceremony, the ES256 enforcement, the DER to compact low-S conversion, and the Soroban auth-entry assembly come from [`@soropass/core`](/docs/sdk).
 
 <Callout type="info" title="Where the module lives">
-  The module is built inside the kit codebase (kit v2.5.0, Deno-native, 31 kit-side tests) and ships
+  The module is built inside the kit codebase (kit v2.6.0, Deno-native, 31 kit-side tests) and ships
   with a reference app (`examples/passkey-vite`) that registers it in the real kit modal and drives
   the whole flow, connect, sign, add-device, and disconnect, covered by an 18-run cross-browser
-  suite (Chromium, Firefox, WebKit). It is proposed to the Creit Tech maintainers in
-  [Stellar-Wallets-Kit issue #95](https://github.com/Creit-Tech/Stellar-Wallets-Kit/issues/95). The
-  published `@creit.tech/stellar-wallets-kit@2.5.0` package does not include a `./modules/passkey`
+  suite (Chromium, Firefox, WebKit). It is proposed upstream to the Creit Tech maintainers. The
+  published `@creit.tech/stellar-wallets-kit@2.6.0` package does not include a `./modules/passkey`
   export, so the registration snippets on this page run once the module lands in a kit release.
   Everything else you need is published today: `@soropass/core` is on npm, and the [Integrate
   today](#integrate-today-with-soropasscore) section shows the same flows through the core SDK
@@ -27,7 +26,7 @@ SoroPass is not a wallet. It is the layer your wallet integrates: you keep your 
 npm install @soropass/core "@stellar/stellar-sdk@>=17"
 ```
 
-Install `@stellar/stellar-sdk` at version 17 or newer: `@soropass/core@0.3.0` builds against the stellar-sdk 17 XDR API, matching the kit's own stellar-sdk 17 dependency. The kit package that carries the module is `@creit.tech/stellar-wallets-kit` (note the dot).
+Install `@stellar/stellar-sdk` at version 17 or newer: `@soropass/core@0.3.1` builds against the stellar-sdk 17 XDR API, matching the kit's own stellar-sdk 17 dependency. The kit package that carries the module is `@creit.tech/stellar-wallets-kit` (note the dot).
 
 ## Integration walkthrough
 
