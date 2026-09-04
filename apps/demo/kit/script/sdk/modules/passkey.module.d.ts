@@ -15,6 +15,10 @@ import { type ModuleInterface, ModuleType } from "../../types/mod.js";
  * the public key, so the module captures it at create time, persists it beside the
  * credential id, and re-fetches it from the factory event on a returning device.
  *
+ * Accounts deploy through an AccountFactory contract. `@soropass/core` ships a
+ * permissionless factory on testnet and mainnet and uses it whenever `factoryContractId`
+ * is omitted, here and in its `factoryDeployer` and `eventsIndexer` adapters.
+ *
  * Requirements: `@stellar/stellar-sdk` 17 or newer and a secure context (https or
  * localhost), since WebAuthn is unavailable over plain http.
  *
@@ -25,6 +29,7 @@ import { type ModuleInterface, ModuleType } from "../../types/mod.js";
  * import { PasskeyModule } from "@creit.tech/stellar-wallets-kit/modules/passkey";
  * import { eventsIndexer, factoryDeployer } from "@soropass/core";
  *
+ * const rpcUrl = "https://soroban-testnet.stellar.org";
  * StellarWalletsKit.init({
  *   network: Networks.TESTNET,
  *   modules: [
@@ -32,7 +37,10 @@ import { type ModuleInterface, ModuleType } from "../../types/mod.js";
  *     new PasskeyModule({
  *       rpId: globalThis.location.hostname,
  *       networkPassphrase: Networks.TESTNET,
- *       factoryContractId: "C...",
+ *       // Pays the one-time deploy fee for a new account (a sponsor account or relayer).
+ *       deployer: factoryDeployer({ rpcUrl, networkPassphrase: Networks.TESTNET, sourceSecret }),
+ *       // Resolves a returning user's credential to their account on a new device.
+ *       indexer: eventsIndexer({ rpcUrl }),
  *     }),
  *   ],
  * });
@@ -54,9 +62,11 @@ export interface PasskeyModuleParams {
     /** Human-readable network name returned by `getNetwork`. Defaults to `"TESTNET"`. */
     network?: string;
     /**
-     * The AccountFactory C-address. With it and the persisted public key, `getAddress`
-     * derives the account address offline from the credential id, with no indexer and no
-     * deploy round-trip.
+     * The AccountFactory C-address the accounts deploy through. With it and the persisted
+     * public key, `getAddress` derives a returning device's account address offline, with
+     * no indexer and no deploy round-trip. Defaults to the `@soropass/core` factory for
+     * `networkPassphrase` (testnet and mainnet). Set it when your `deployer` targets
+     * another factory, so the offline derivation matches the deployed address.
      */
     factoryContractId?: string;
     /**
@@ -67,10 +77,10 @@ export interface PasskeyModuleParams {
     /** Contract ABI to sign for. Defaults to `"single-signer"`. */
     walletTarget?: PasskeyWalletTarget;
     /**
-     * Resolves a credential id to its deployed account(s). Required when neither
-     * `factoryContractId` nor `smartWalletDeployer` is set, and the fallback when an
-     * offline derivation is not possible. On the single-signer target it is also how a
-     * returning device with only its credential id re-fetches the public key the account
+     * Resolves a credential id to its deployed account(s). The fallback when an offline
+     * derivation is not possible: a device that remembers only its credential id, or a
+     * network with no default factory and no `factoryContractId`. On the single-signer
+     * target it is also how a returning device re-fetches the public key the account
      * verifies against.
      */
     indexer?: IndexerAdapter;
@@ -185,7 +195,12 @@ export declare class PasskeyModule implements ModuleInterface {
     /** Re-fetch the public key from the factory event for a returning device that lacks it. */
     private resolvePublicKey;
     private deriveAddress;
+    /** The configured factory, else the `@soropass/core` default for the network, else none. */
+    private factoryContractId;
     private publicKeyStorageKey;
+    private addressStorageKey;
+    /** The deployed address pinned at create or connect time when it is not the derivation. */
+    private rememberedAddress;
     private remember;
 }
 export {};

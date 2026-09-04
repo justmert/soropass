@@ -33,10 +33,10 @@ export interface NetworkConfig {
 }
 
 /**
- * The networks this page can run against. Mainnet is listed so the switch in the header
- * exists, and stays `undefined` until the mainnet deployment lands: it needs the mainnet
- * factory id (contracts/deployments.json) and a funded fee source that is not a secret in
- * a browser page (a relayer or Launchtube, not friendbot).
+ * The networks this page can run against. The page runs on testnet. The mainnet slot
+ * stays `undefined` because a browser page cannot hold a funded fee source safely: a
+ * mainnet run needs a relayer or the app's own sponsor account behind it, not friendbot
+ * and not a secret in the page.
  */
 export const NETWORKS: Record<'testnet' | 'mainnet', NetworkConfig | undefined> = {
   testnet: {
@@ -76,7 +76,7 @@ const SOURCE_KEY = 'swk-passkey-example-source';
  * A throwaway testnet account that sources and pays for every transaction. A passkey
  * account is a contract, so it can never be a transaction's source account: something
  * with a sequence number has to submit on its behalf. In a real wallet this is a
- * sponsor, a relayer, or Launchtube. Here it is a fresh friendbot key kept in
+ * sponsor account or a relayer. Here it is a fresh friendbot key kept in
  * sessionStorage, holding nothing worth stealing.
  */
 export async function ensureSource(log: (m: string) => void): Promise<Keypair> {

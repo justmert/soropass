@@ -20,6 +20,10 @@ const utils_js_1 = require("../utils.js");
  * the public key, so the module captures it at create time, persists it beside the
  * credential id, and re-fetches it from the factory event on a returning device.
  *
+ * Accounts deploy through an AccountFactory contract. `@soropass/core` ships a
+ * permissionless factory on testnet and mainnet and uses it whenever `factoryContractId`
+ * is omitted, here and in its `factoryDeployer` and `eventsIndexer` adapters.
+ *
  * Requirements: `@stellar/stellar-sdk` 17 or newer and a secure context (https or
  * localhost), since WebAuthn is unavailable over plain http.
  *
@@ -30,6 +34,7 @@ const utils_js_1 = require("../utils.js");
  * import { PasskeyModule } from "@creit.tech/stellar-wallets-kit/modules/passkey";
  * import { eventsIndexer, factoryDeployer } from "@soropass/core";
  *
+ * const rpcUrl = "https://soroban-testnet.stellar.org";
  * StellarWalletsKit.init({
  *   network: Networks.TESTNET,
  *   modules: [
@@ -37,7 +42,10 @@ const utils_js_1 = require("../utils.js");
  *     new PasskeyModule({
  *       rpId: globalThis.location.hostname,
  *       networkPassphrase: Networks.TESTNET,
- *       factoryContractId: "C...",
+ *       // Pays the one-time deploy fee for a new account (a sponsor account or relayer).
+ *       deployer: factoryDeployer({ rpcUrl, networkPassphrase: Networks.TESTNET, sourceSecret }),
+ *       // Resolves a returning user's credential to their account on a new device.
+ *       indexer: eventsIndexer({ rpcUrl }),
  *     }),
  *   ],
  * });
@@ -254,9 +262,9 @@ class PasskeyModule {
                 return { address: this.address };
             const remembered = this.rememberedCredentialId();
             if (remembered) {
-                const derived = this.deriveAddress(remembered, this.rememberedPublicKey());
-                if (derived)
-                    return this.remember(derived, remembered, this.rememberedPublicKey());
+                const known = this.rememberedAddress() ?? this.deriveAddress(remembered, this.rememberedPublicKey());
+                if (known)
+                    return this.remember(known, remembered, this.rememberedPublicKey());
             }
             // `skipRequestAccess` means answer without prompting, so stop before any ceremony.
             if (params?.skipRequestAccess === true) {
@@ -446,9 +454,10 @@ class PasskeyModule {
             });
         }
         // The factory salt binds the public key, so offline derivation needs it too.
-        if (this.params.factoryContractId && publicKey) {
+        const factoryContractId = this.factoryContractId();
+        if (factoryContractId && publicKey) {
             return (0, core_1.deriveAccountAddress)({
-                factoryContractId: this.params.factoryContractId,
+                factoryContractId,
                 credentialId: new TextEncoder().encode(credentialId),
                 publicKey,
                 networkPassphrase: this.params.networkPassphrase,
@@ -456,8 +465,31 @@ class PasskeyModule {
         }
         return undefined;
     }
+    /** The configured factory, else the `@soropass/core` default for the network, else none. */
+    factoryContractId() {
+        if (this.params.factoryContractId)
+            return this.params.factoryContractId;
+        try {
+            return (0, core_1.defaultAccountFactory)(this.params.networkPassphrase);
+        }
+        catch {
+            return undefined;
+        }
+    }
     publicKeyStorageKey() {
         return `${this.params.rpId}#pk`;
+    }
+    addressStorageKey() {
+        return `${this.params.rpId}#addr`;
+    }
+    /** The deployed address pinned at create or connect time when it is not the derivation. */
+    rememberedAddress() {
+        try {
+            return this.storage.get(this.addressStorageKey()) ?? undefined;
+        }
+        catch {
+            return undefined;
+        }
     }
     remember(address, credentialId, publicKey) {
         this.address = address;
@@ -465,11 +497,17 @@ class PasskeyModule {
         if (publicKey)
             this.publicKey = publicKey;
         // Persist for offline derivation and signing later. CredentialStorage holds only the
-        // credential id, so the key goes under a sibling key.
+        // credential id, so the key goes under a sibling key. When the deployed address is
+        // not what the derivation gives (the deployer targets a factory this module was not
+        // told about), pin the address itself so the next visit still resolves offline and
+        // to the right account.
         try {
             this.storage.set(this.params.rpId, credentialId);
             if (publicKey)
                 this.storage.set(this.publicKeyStorageKey(), (0, core_1.encodeChallenge)(publicKey));
+            if (this.deriveAddress(credentialId, publicKey) !== address) {
+                this.storage.set(this.addressStorageKey(), address);
+            }
         }
         catch {
             // A read-only store still leaves this session usable.
