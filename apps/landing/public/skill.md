@@ -376,3 +376,4 @@ The v0.2 account contract defines its own numeric contract errors, returned on-c
 
 - API reference, adapters (OpenZeppelin Relayer, Mercury indexer), and the device/browser compatibility matrix: https://docs.soropass.dev
 - Package: https://www.npmjs.com/package/@soropass/core
+- Drop-in UI screens (create, sign, recover, connect, add-device; framework-agnostic, token-themed): https://www.npmjs.com/package/@soropass/ui
