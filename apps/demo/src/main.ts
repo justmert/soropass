@@ -1,5 +1,10 @@
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk';
-import { KitEventType, Networks } from '@creit.tech/stellar-wallets-kit/types';
+import {
+  KitEventType,
+  Networks,
+  type ModuleInterface,
+} from '@creit.tech/stellar-wallets-kit/types';
+import { installText } from '@creit.tech/stellar-wallets-kit/state';
 import { FreighterModule } from '@creit.tech/stellar-wallets-kit/modules/freighter';
 import { LobstrModule } from '@creit.tech/stellar-wallets-kit/modules/lobstr';
 import { xBullModule } from '@creit.tech/stellar-wallets-kit/modules/xbull';
@@ -39,6 +44,59 @@ import {
 } from './checklist.ts';
 
 const RP_ID = globalThis.location.hostname;
+const EXISTING_WALLETS_GUIDE = 'https://docs.soropass.dev/docs/existing-wallets';
+const PASSKEY_WALLET_ID = 'passkey';
+
+/**
+ * A kit module the picker shows but never selects. Freighter, LOBSTR and xBull appear
+ * next to Passkey exactly as the kit lists them, so a visitor sees where the passkey
+ * entry sits; this run drives Passkey only. The kit renders an unavailable wallet with a
+ * label instead of a connect action and opens `productUrl` on tap, which here is the
+ * guide on how a classic wallet offers passkeys by embedding SoroPass.
+ */
+class DisplayOnlyModule implements ModuleInterface {
+  moduleType: ModuleInterface['moduleType'];
+  productId: string;
+  productName: string;
+  productUrl = EXISTING_WALLETS_GUIDE;
+  productIcon: string;
+
+  constructor(private readonly base: ModuleInterface) {
+    this.moduleType = base.moduleType;
+    this.productId = base.productId;
+    this.productName = base.productName;
+    this.productIcon = base.productIcon;
+  }
+
+  isAvailable(): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+  getAddress(params?: { path?: string; skipRequestAccess?: boolean }) {
+    return this.base.getAddress(params);
+  }
+  signTransaction(
+    xdr: string,
+    opts?: { networkPassphrase?: string; address?: string; path?: string },
+  ) {
+    return this.base.signTransaction(xdr, opts);
+  }
+  signAuthEntry(
+    authEntry: string,
+    opts?: { networkPassphrase?: string; address?: string; path?: string },
+  ) {
+    return this.base.signAuthEntry(authEntry, opts);
+  }
+  signMessage(
+    message: string,
+    opts?: { networkPassphrase?: string; address?: string; path?: string },
+  ) {
+    return this.base.signMessage(message, opts);
+  }
+  getNetwork() {
+    return this.base.getNetwork();
+  }
+}
+
 const RETURNING_FLAG = 'swk-passkey-example-returning';
 const RUN_KEY = 'swk-passkey-example-run';
 
@@ -434,10 +492,18 @@ async function boot(): Promise<void> {
     signer: backend.authenticator?.sign,
   });
 
+  // The kit's chip on an unavailable wallet reads "Install" by default; here it explains
+  // why the classic wallets stay display-only.
+  installText.value = 'Needs SoroPass integration';
   StellarWalletsKit.init({
     network: Networks.TESTNET,
-    modules: [new FreighterModule(), new LobstrModule(), new xBullModule(), passkey],
-    authModal: { hideUnsupportedWallets: false },
+    modules: [
+      new DisplayOnlyModule(new FreighterModule()),
+      new DisplayOnlyModule(new LobstrModule()),
+      new DisplayOnlyModule(new xBullModule()),
+      passkey,
+    ],
+    authModal: { hideUnsupportedWallets: false, showInstallLabel: true },
   });
 
   StellarWalletsKit.on(KitEventType.STATE_UPDATED, (e) => set('address', e.payload.address ?? '-'));
@@ -533,6 +599,13 @@ el('connect').addEventListener('click', async () => {
   });
   try {
     const { address, elapsed } = await connectThroughKit();
+    const selected = StellarWalletsKit.selectedModule;
+    if (selected.productId !== PASSKEY_WALLET_ID) {
+      await StellarWalletsKit.disconnect();
+      throw new Error(
+        `You connected ${selected.productName}, a classic G account. This run drives the Passkey entry: select Passkey in the picker. A classic wallet offers passkeys by embedding SoroPass, see ${EXISTING_WALLETS_GUIDE}`,
+      );
+    }
     const deployed = lastDeploy?.contractId === address;
     const evidence = onTestnet
       ? `${address} · ${elapsed} · ${deployed ? 'deployed through the factory' : 'existing account'}`

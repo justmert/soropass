@@ -47,7 +47,7 @@ test.describe('PasskeyModule inside the real Stellar Wallets Kit modal', () => {
     await page.screenshot({ path: 'test-results/01-kit-modal-wallet-list.png', fullPage: true });
   });
 
-  test('Passkey is offered as available, and the install label is only on the others', async ({
+  test('Passkey is offered as available, and the integration label is only on the others', async ({
     page,
   }) => {
     await page.goto('/?mode=local');
@@ -55,11 +55,31 @@ test.describe('PasskeyModule inside the real Stellar Wallets Kit modal', () => {
 
     const passkeyRow = modal(page);
     await expect(passkeyRow).toBeVisible();
-    // An unavailable wallet gets the kit's "Install" affordance; an available one does not.
-    await expect(passkeyRow.getByText('Install')).toHaveCount(0);
+    // The classic wallets are display-only: the kit's chip carries the integration hint
+    // instead of "Install"; the available Passkey row carries none.
+    await expect(passkeyRow.getByText('Needs SoroPass integration')).toHaveCount(0);
     await expect(
-      page.locator('li', { hasText: 'Freighter' }).first().getByText('Install'),
+      page.locator('li', { hasText: 'Freighter' }).first().getByText('Needs SoroPass integration'),
     ).toHaveCount(1);
+  });
+
+  test('a classic wallet row is display-only and opens the existing-wallets guide', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/?mode=local');
+    await page.getByTestId('connect').click();
+
+    const [guide] = await Promise.all([
+      context.waitForEvent('page'),
+      page.locator('li', { hasText: 'Freighter' }).first().click(),
+    ]);
+    await guide.waitForLoadState('domcontentloaded');
+    expect(guide.url()).toContain('docs.soropass.dev/docs/existing-wallets');
+    await guide.close();
+
+    // Nothing connected: the picker is still open with Passkey on offer.
+    await expect(modal(page)).toBeVisible();
   });
 
   test('connecting through the modal creates the account and returns a C-address', async ({

@@ -26,7 +26,7 @@ export const STEPS: Step[] = [
     id: 'connect',
     title: 'Connect through the kit picker',
     intro:
-      "Opens the kit's own wallet modal. Passkey sits next to Freighter, LOBSTR and xBull. Pick it and approve the OS sheet.",
+      "Opens the kit's own wallet modal. Passkey sits next to Freighter, LOBSTR and xBull; only Passkey is selectable in this run. Pick it and approve the OS sheet.",
     needs: 'any',
     checks: [{ id: 'address', label: 'The kit returns a C-address' }],
   },
