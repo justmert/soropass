@@ -1,0 +1,7 @@
+{
+  "fundingTxHash": "36e4f3d5b941013558ab029aa62b3515023d91cfbcecb4b31aef1539b2d04065",
+  "fundingStatus": "SUCCESS",
+  "paymentTxHash": "b63d9a5ab713c4b1978b1d792f6ea1664d7b6cbf6b2ef3ee02c0f7fbcb0e8782",
+  "paymentStatus": "SUCCESS",
+  "validUntil": 4585701
+}

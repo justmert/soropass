@@ -110,7 +110,7 @@ const account = await createPasskey({
 // account.publicKey     SEC-1 (65-byte) secp256r1 public key
 ```
 
-`createPasskey` uses `browserWebAuthnClient()` by default. `sourceSecret` funds the one-time deploy; in production a relayer or sponsor pays instead. Registration defaults `userVerification` to `'required'`, because the v0.2 account requires the User-Verified flag in `__check_auth`: a signature without UV fails on-chain. Passkey behavior varies by browser, platform, and authenticator; the compatibility matrix at https://docs.soropass.dev/docs/compatibility records what works in each case, with the recommended fallback where support diverges.
+`createPasskey` uses `browserWebAuthnClient()` by default. For a run with no browser against the real testnet (CI, an agent, a script), `mockAuthenticator({ rpId, seed })` from `@soropass/core/testing` is a software `WebAuthnClient` whose `sign` method is a `WebAuthnSigner`: pass it as `webauthn` to `createPasskey` and `registerPasskey`, and sign with `sign: (challenge) => auth.sign(challenge)` plus `publicKey: auth.publicKey`. Every recipe below then runs unchanged, deploys a real account through the factory, and the v0.2 account accepts its signatures on-chain. `sourceSecret` funds the one-time deploy; in production a relayer or sponsor pays instead. Registration defaults `userVerification` to `'required'`, because the v0.2 account requires the User-Verified flag in `__check_auth`: a signature without UV fails on-chain. Passkey behavior varies by browser, platform, and authenticator; the compatibility matrix at https://docs.soropass.dev/docs/compatibility records what works in each case, with the recommended fallback where support diverges.
 
 ### Fees and sponsorship
 
@@ -314,9 +314,13 @@ const tx = new TransactionBuilder(source, { fee: '1000000', networkPassphrase: N
   .build();
 const assembled = await server.prepareTransaction(tx);
 
-// The EXISTING enrolled device signs the account's auth entry:
+// The EXISTING enrolled device signs the account's auth entry. Stamp the
+// expiration exactly as in the payment recipe: without it the entry carries
+// ledger 0 and the enforcing re-simulation fails with "signature has expired".
+const validUntil = (await server.getLatestLedger()).sequence + 100;
 const signedXdr = await signTransaction(assembled.toXDR(), {
   networkPassphrase: Networks.TESTNET,
+  signatureExpirationLedger: validUntil,
   sign: browserPasskeySigner({
     rpId: location.hostname,
     allowCredentials: [account.credentialId],

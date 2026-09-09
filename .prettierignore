@@ -23,3 +23,6 @@ apps/docs-fuma/.source
 apps/docs-fuma/public/demo
 # Orphaned/experimental matrix explorer build output (untracked)
 apps/site
+# verbatim agent logs, never reformatted
+docs/verification/**/agent-log.md
+docs/verification/**/scripts/**
