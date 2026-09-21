@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "from": "2026-09-14",
+  "to": "2026-09-21",
+  "changed": [],
+  "added": [],
+  "removed": [],
+  "reverified": [
+    {
+      "cell": "conditional_mediation|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    },
+    {
+      "cell": "es256_alg|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    },
+    {
+      "cell": "hybrid_transport|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    },
+    {
+      "cell": "is_uvpaa|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    },
+    {
+      "cell": "related_origin_requests|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    },
+    {
+      "cell": "webauthn|Edge|Windows",
+      "fromVersion": "Edge 153.0.4234.32",
+      "toVersion": "Edge 153.0.4234.48"
+    }
+  ]
+}
