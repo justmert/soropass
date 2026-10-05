@@ -1,6 +1,6 @@
 {
   "latestSnapshot": "bcd.2026-06-13.json",
-  "pulledAt": "2026-09-28",
+  "pulledAt": "2026-10-05",
   "bcdVersion": "8.0.0",
   "rowCount": 88,
   "lastVerification": {
@@ -108,6 +108,24 @@
         ],
         "canonicalVerified": true,
         "snapshot": "matrix.2026-09-28.json",
+        "changed": true
+      },
+      {
+        "ranAt": "2026-10-05",
+        "runnerOs": "linux",
+        "bcdVersion": "8.0.0",
+        "engines": [
+          {
+            "browser": "Chromium",
+            "version": "148.0.7778.96"
+          },
+          {
+            "browser": "Edge",
+            "version": "154.0.4258.53"
+          }
+        ],
+        "canonicalVerified": true,
+        "snapshot": "matrix.2026-10-05.json",
         "changed": true
       }
     ]
