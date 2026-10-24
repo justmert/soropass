@@ -115,7 +115,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Pull the fresh virtual-authenticator results from matrix-ci
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: matrix-ci-data
           path: apps/matrix/data
