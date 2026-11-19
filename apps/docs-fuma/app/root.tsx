@@ -35,6 +35,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* Veristar analytics: no cookies, no IP addresses, honours Global Privacy Control.
+            Pinned version with integrity; sends nothing on hosts other than docs.soropass.dev. */}
+        <script
+          defer
+          src="https://in.veristar.app/v/1.4.0/sdk.js"
+          integrity="sha384-8bYExYW1FMGfNg5LETdGYFjtJPLfyY+gJQwWA0rL5xNM7Xl+3wK99GxSV3+siv/A"
+          crossOrigin="anonymous"
+          data-website-id="01a1f1c1-49b1-74fe-a8fb-1197b429894a"
+          data-domains="docs.soropass.dev"
+        />
       </head>
       <body className="flex flex-col min-h-screen">
         <RootProvider>{children}</RootProvider>
