@@ -71,7 +71,7 @@ jobs:
   # ceremonies against CDP virtual authenticators (Chromium + Edge), each
   # round-trip verified via p256.verify. Regenerates apps/matrix/data/ci.<date>.json.
   matrix-ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
