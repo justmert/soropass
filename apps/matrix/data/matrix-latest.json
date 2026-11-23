@@ -1,9 +1,9 @@
 {
-  "latestSnapshot": "matrix.2026-11-02.json",
-  "builtAt": "2026-11-02",
+  "latestSnapshot": "matrix.2026-11-23.json",
+  "builtAt": "2026-11-23",
   "cellCount": 88,
   "inputs": {
     "bcd": "bcd.2026-06-13.json",
-    "ci": "ci.2026-11-02.json"
+    "ci": "ci.2026-11-23.json"
   }
 }
